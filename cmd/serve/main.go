@@ -3,12 +3,16 @@ package main
 import (
 	"github.com/bpsoos/shiftbell/internal/endpoint"
 	"github.com/bpsoos/shiftbell/internal/routing"
+	"github.com/bpsoos/shiftbell/internal/view/home"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 )
 
 func main() {
-	homeHandler := endpoint.NewHandler()
+	homeTemplater := home.NewTemplater()
+	homeHandler := endpoint.NewHandler(&endpoint.HandlerDeps{
+		Templater: homeTemplater,
+	})
 	router := routing.NewRouter(&routing.RouterDeps{
 		HomeHandler: homeHandler,
 	})
