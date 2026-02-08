@@ -10,6 +10,7 @@ import (
 
 type Templater interface {
 	Home(context.Context, io.Writer) error
+	GetChoreBatch(context.Context, io.Writer) error
 }
 
 type HandlerDeps struct {
@@ -31,4 +32,18 @@ func (h *Handler) Home(ctx *echo.Context) error {
 	ctx.Response().WriteHeader(http.StatusOK)
 
 	return h.templater.Home(ctx.Request().Context(), ctx.Response())
+}
+
+func (h *Handler) GetChoreBatch(ctx *echo.Context) error {
+	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+	ctx.Response().WriteHeader(http.StatusOK)
+
+	return h.templater.GetChoreBatch(ctx.Request().Context(), ctx.Response())
+}
+
+func (h *Handler) CreateChore(ctx *echo.Context) error {
+	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+	ctx.Response().WriteHeader(http.StatusOK)
+
+	return ctx.String(http.StatusOK, "created")
 }

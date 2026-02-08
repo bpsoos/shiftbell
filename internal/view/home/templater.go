@@ -5,9 +5,9 @@ import (
 	"io"
 )
 
-type Templater struct {}
+type Templater struct{}
 
-func NewTemplater() *Templater{
+func NewTemplater() *Templater {
 	return &Templater{}
 }
 
@@ -15,3 +15,6 @@ func (t *Templater) Home(ctx context.Context, w io.Writer) error {
 	return home().Render(ctx, w)
 }
 
+func (t *Templater) GetChoreBatch(ctx context.Context, w io.Writer) error {
+	return getChoreBatch().Render(ctx, w)
+}

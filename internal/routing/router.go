@@ -4,13 +4,15 @@ import "github.com/labstack/echo/v5"
 
 type HomeHandler interface {
 	Home(*echo.Context) error
+	GetChoreBatch(ctx *echo.Context) error
+	CreateChore(ctx *echo.Context) error
 }
 
 type RouterDeps struct {
 	HomeHandler HomeHandler
 }
 
-type Router struct{
+type Router struct {
 	homeHandler HomeHandler
 }
 
