@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict bGB7qM5HWwGirAdSdeV3EeceZYu11YBzvtGlvc5pPpzlsn5wEnNbgC9iOSazIAg
+\restrict khCwICwDn9yvqyM4i1HH2wsR2GkwxEDkENYwZqXyZ8ZcZmEuEbsCdgLsCOqJGDC
 
 -- Dumped from database version 18.2 (Debian 18.2-1.pgdg13+1)
 -- Dumped by pg_dump version 18.2 (Debian 18.2-1.pgdg13+1)
@@ -53,12 +53,12 @@ COPY public.chore_types (id, description, interval_days) FROM stdin;
 -- Name: chore_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: testuser
 --
 
-SELECT pg_catalog.setval('public.chore_types_id_seq', 1, false);
+SELECT pg_catalog.setval('public.chore_types_id_seq', 22, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict bGB7qM5HWwGirAdSdeV3EeceZYu11YBzvtGlvc5pPpzlsn5wEnNbgC9iOSazIAg
+\unrestrict khCwICwDn9yvqyM4i1HH2wsR2GkwxEDkENYwZqXyZ8ZcZmEuEbsCdgLsCOqJGDC
 

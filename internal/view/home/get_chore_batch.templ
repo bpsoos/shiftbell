@@ -6,32 +6,40 @@ import (
 )
 
 templ getChoreBatch(offset int, limit int, result *models.GetChoreTypeBatchResult) {
-	<ul class="list-group">
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th scope="col">description</th>
+				<th scope="col">interval days</th>
+			</tr>
+		</thead>
 		for _, chore := range result.ChoreTypes {
-	<li class="list-group-item"><div>{ "description: " + chore.Description }</div><div>{ "interval days: " + strconv.Itoa(chore.IntervalDays) }</div></li>
+			<tr>
+				<td>{ chore.Description }</td>
+				<td>{ strconv.Itoa(chore.IntervalDays) }</td>
+			</tr>
 		}
-	</ul>
+	</table>
 	<div class="mt-2 px-3">
 		<div class="row ">
-			<div class="col text-center btn btn-secondary"
+			<button type="button" class="col text-center btn btn-secondary"
 				hx-get={ "/view-settings" + "?offset=" + strconv.Itoa(offset) +"&limit=" + strconv.Itoa(limit) +"&action=set-offset&action-value=" + strconv.Itoa(offset-limit)}
-				disabled={
-					if offset == 0 {
-						"false
-					} else {
-						"true"
-					}
+				if offset == 0 {
+					disabled
 				}
 			>
 				←
-			</div>
+			</button>
 			<div class="col-10">
 			</div>
-			<div class="col text-center btn btn-secondary"
+			<button type="button" class="col text-center btn btn-secondary"
 					hx-get={ "/view-settings" + "?offset=" + strconv.Itoa(offset) +"&limit=" + strconv.Itoa(limit) +"&action=set-offset&action-value=" + strconv.Itoa(offset+limit)}
+				if !result.More  {
+					disabled
+				}
 			>
 				→
-			</div>
+			</button>
 		</div>
 	</div>
 }

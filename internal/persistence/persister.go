@@ -39,7 +39,13 @@ func (p *Persister) Create(description string, intervalDays int) error {
 
 func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchResult, error) {
 	rows, err := p.db.Query(
-		`select * from chore_types offset $1 limit $2 + 1`,
+		`
+			select *
+			from chore_types
+			order by id desc
+			offset $1
+			limit $2 + 1
+		`,
 		offset,
 		limit,
 	)

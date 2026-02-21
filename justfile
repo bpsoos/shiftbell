@@ -23,6 +23,13 @@ db-psql:
     docker compose exec -ti postgres psql -U testuser testdb
 
 dump-dev-db:
-    docker compose exec -ti postgres pg_dump -U testuser -F p --exclude-table=schema_migrations --no-schema -f testdb.dump testdb
+    docker compose exec -ti postgres \
+        pg_dump \
+        -U testuser \
+        -F p \
+        --exclude-table=schema_migrations \
+        --no-schema \
+        -f testdb.dump \
+        testdb
     docker compose cp postgres:/testdb.dump .
 
