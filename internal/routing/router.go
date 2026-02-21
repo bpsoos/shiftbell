@@ -6,6 +6,7 @@ type HomeHandler interface {
 	Home(*echo.Context) error
 	GetChoreBatch(ctx *echo.Context) error
 	CreateChore(ctx *echo.Context) error
+	ViewSettings(ctx *echo.Context) error
 }
 
 type RouterDeps struct {

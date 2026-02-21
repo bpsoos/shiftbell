@@ -15,6 +15,8 @@ services:
     depends_on:
       migrator:
         condition: service_completed_successfully
+      testdata-loader:
+        condition: service_completed_successfully
 
   postgres:
     image: postgres:18
@@ -42,6 +44,23 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  testdata-loader:
+    image: postgres:18
+    entrypoint: ["psql"]
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpassword
+      POSTGRES_DB: testdb
+    command:
+      - postgres://testuser:testpassword@postgres:5432/testdb?sslmode=disable
+      - -f
+      - /src/testdata/testdb.dump
+    volumes:
+      - ./:/src
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
 
 volumes:
   go_build_cache:

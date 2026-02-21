@@ -1,3 +1,5 @@
+.DS_Store
+/testdb.dump
 /tmp
 *_templ.go
 
