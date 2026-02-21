@@ -67,6 +67,11 @@ templ addChoreForm() {
 
 			<div class="card-body">
 				<form hx-post="/chores" hx-swap="none">
+				<style>
+					me input::placeholder {
+						opacity: 0.55;
+					}
+				</style>
 				<div class="mb-3">
 					<label for="description" class="form-label">Description</label>
 					<input
