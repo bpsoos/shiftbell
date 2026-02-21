@@ -1,6 +1,8 @@
 package home
 
-import "strconv"
+import (
+	"github.com/bpsoos/shiftbell/internal/models"
+)
 
 templ home(offset int, limit int) {
 	<!DOCTYPE html>
@@ -9,7 +11,13 @@ templ home(offset int, limit int) {
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>ShiftBell</title>
+
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+		<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.js" integrity="sha384-ezjq8118wdwdRMj+nX4bevEi+cDLTbhLAeFF688VK8tPDGeLUe0WoY2MZtSla72F" crossorigin="anonymous"></script>
+
+		@cssScopeInline()
 	</head>
 		<body>
 			<nav class="navbar bg-body-tertiary">
@@ -23,27 +31,74 @@ templ home(offset int, limit int) {
 				</div>
 			</nav>
 			<div class="container">
-			<form hx-post="/chores" hx-swap="none">
-				<div class="my-3">Add Chore</div>
-				<div class="my-3">
-					<label for="inputItem" class="form-label">Description</label>
-					<input type="string" class="form-control" id="inputItem" name="description">
+				<div class="row">
+					<div class="container col-lg-3">
+						<style>
+							@media lg {
+								me {
+									order: 2
+								}
+							}
+						</style>
+						@addChoreForm()
+					</div>
+					<div class="container mt-3 col-lg-7 card">
+						<style>
+							@media lg {
+								me {
+									order: 1
+								}
+							}
+						</style>
+						@getChoreBatch(offset, limit, &models.GetChoreTypeBatchResult{}, true)
+					</div>
 				</div>
-				<div class="my-3">
-					<label for="inputItem" class="form-label">Interval days</label>
-					<input type="number" class="form-control" id="inputItem" name="interval-days">
-				</div>
-				<button type="submit" class="btn btn-primary">Submit</button>
-			</form>
 			</div>
-			<div
-				class="container mt-3"
-				hx-get={ "/chores" + "?offset=" + strconv.Itoa(offset) +"&limit=" + strconv.Itoa(limit) }
-				hx-trigger="load, load-chores from:body"
-			>
-			</div>
-			<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-			<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.js" integrity="sha384-ezjq8118wdwdRMj+nX4bevEi+cDLTbhLAeFF688VK8tPDGeLUe0WoY2MZtSla72F" crossorigin="anonymous"></script>
 		</body>
 	</html>
+}
+
+templ addChoreForm() {
+	<div class="container my-3">
+		<div class="card shadow-sm">
+			<div class="card-header bg-body">
+				Add chore
+			</div>
+
+			<div class="card-body">
+				<form hx-post="/chores" hx-swap="none">
+				<div class="mb-3">
+					<label for="description" class="form-label">Description</label>
+					<input
+					type="text"
+					class="form-control"
+					id="description"
+					name="description"
+					placeholder="e.g., Take out trash"
+					required
+					>
+				</div>
+
+				<div class="mb-3">
+					<label for="interval-days" class="form-label">Interval</label>
+					<div class="input-group">
+					<input
+						type="number"
+						class="form-control"
+						id="interval-days"
+						name="interval-days"
+						min="1"
+						placeholder="7"
+						required
+					>
+					<span class="input-group-text">days</span>
+					</div>
+					<div class="form-text">How often should this repeat?</div>
+				</div>
+
+				<button type="submit" class="btn btn-primary w-100">Add</button>
+				</form>
+			</div>
+		</div>
+	</div>
 }

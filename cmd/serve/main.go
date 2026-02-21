@@ -25,7 +25,7 @@ func main() {
 
 	homeTemplater := home.NewTemplater()
 	homeHandler := endpoint.NewHandler(&endpoint.HandlerDeps{
-		Templater:      homeTemplater,
+		Templater:          homeTemplater,
 		ChoreTypePersister: chorePersister,
 	})
 	router := routing.NewRouter(&routing.RouterDeps{

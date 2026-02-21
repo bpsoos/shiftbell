@@ -26,8 +26,8 @@ func (p *Persister) Create(description string, intervalDays int) error {
 		insert into chore_types (description, interval_days)
 		values (:description, :interval_days)
 	`, map[string]any{
-		"description":       description,
-		"interval_days":     intervalDays,
+		"description":   description,
+		"interval_days": intervalDays,
 	})
 
 	if err != nil {
@@ -53,9 +53,9 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchRe
 		return nil, fmt.Errorf("db query selecting chores: %v", err)
 	}
 	var (
-		id              int
-		description     string
-		intervalDays    int
+		id           int
+		description  string
+		intervalDays int
 	)
 	results := make([]models.ChoreType, 0)
 	for rows.Next() {
@@ -64,9 +64,9 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchRe
 			return nil, fmt.Errorf("reading fetched rows: %v", err)
 		}
 		results = append(results, models.ChoreType{
-			Id:              id,
-			Description:     description,
-			IntervalDays:    intervalDays,
+			Id:           id,
+			Description:  description,
+			IntervalDays: intervalDays,
 		})
 	}
 	if len(results) > limit {
@@ -75,6 +75,6 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchRe
 
 	return &models.GetChoreTypeBatchResult{
 		ChoreTypes: results,
-		More:   len(results) == limit,
+		More:       len(results) == limit,
 	}, nil
 }

@@ -4,42 +4,53 @@ import (
 	"github.com/bpsoos/shiftbell/internal/models"
 	"strconv"
 )
+const loadTrigger = "load-chores from:body"
 
-templ getChoreBatch(offset int, limit int, result *models.GetChoreTypeBatchResult) {
-	<table class="table table-striped">
-		<thead>
-			<tr>
-				<th scope="col">description</th>
-				<th scope="col">interval days</th>
-			</tr>
-		</thead>
-		for _, chore := range result.ChoreTypes {
-			<tr>
-				<td>{ chore.Description }</td>
-				<td>{ strconv.Itoa(chore.IntervalDays) }</td>
-			</tr>
+templ getChoreBatch(offset int, limit int, result *models.GetChoreTypeBatchResult, load bool) {
+	<div
+		hx-get={ "/chores" + "?offset=" + strconv.Itoa(offset) +"&limit=" + strconv.Itoa(limit) }
+		if load {
+			hx-trigger={ "load from:body," + loadTrigger }
+		} else {
+			hx-trigger={ loadTrigger }
 		}
-	</table>
-	<div class="mt-2 px-3">
-		<div class="row ">
-			<button type="button" class="col text-center btn btn-secondary"
-				hx-get={ "/view-settings" + "?offset=" + strconv.Itoa(offset) +"&limit=" + strconv.Itoa(limit) +"&action=set-offset&action-value=" + strconv.Itoa(offset-limit)}
-				if offset == 0 {
-					disabled
-				}
-			>
-				←
-			</button>
-			<div class="col-10">
+		hx-swap="outerHTML"
+	>
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th scope="col">description</th>
+					<th scope="col">interval days</th>
+				</tr>
+			</thead>
+			for _, chore := range result.ChoreTypes {
+				<tr>
+					<td>{ chore.Description }</td>
+					<td>{ strconv.Itoa(chore.IntervalDays) }</td>
+				</tr>
+			}
+		</table>
+		<div class="my-2 px-3">
+			<div class="row ">
+				<button type="button" class="col text-center btn btn-secondary"
+					hx-get={ "/view-settings" + "?offset=" + strconv.Itoa(offset) +"&limit=" + strconv.Itoa(limit) +"&action=set-offset&action-value=" + strconv.Itoa(offset-limit)}
+					if offset == 0 {
+						disabled
+					}
+				>
+					←
+				</button>
+				<div class="col-10">
+				</div>
+				<button type="button" class="col text-center btn btn-secondary"
+						hx-get={ "/view-settings" + "?offset=" + strconv.Itoa(offset) +"&limit=" + strconv.Itoa(limit) +"&action=set-offset&action-value=" + strconv.Itoa(offset+limit)}
+					if !result.More  {
+						disabled
+					}
+				>
+					→
+				</button>
 			</div>
-			<button type="button" class="col text-center btn btn-secondary"
-					hx-get={ "/view-settings" + "?offset=" + strconv.Itoa(offset) +"&limit=" + strconv.Itoa(limit) +"&action=set-offset&action-value=" + strconv.Itoa(offset+limit)}
-				if !result.More  {
-					disabled
-				}
-			>
-				→
-			</button>
 		</div>
 	</div>
 }

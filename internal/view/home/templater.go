@@ -18,5 +18,5 @@ func (t *Templater) Home(offset int, limit int, ctx context.Context, w io.Writer
 }
 
 func (t *Templater) GetChoreBatch(offset int, limit int, chores *models.GetChoreTypeBatchResult, ctx context.Context, w io.Writer) error {
-	return getChoreBatch(offset, limit, chores).Render(ctx, w)
+	return getChoreBatch(offset, limit, chores, false).Render(ctx, w)
 }
