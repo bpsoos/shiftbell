@@ -2,6 +2,7 @@ package choretypes
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/bpsoos/shiftbell/internal/models"
 	"github.com/jmoiron/sqlx"
@@ -22,12 +23,20 @@ func NewChoreTypePersister(deps *PersisterDeps) *Persister {
 }
 
 func (p *Persister) Create(description string, intervalDays int) error {
+	now := time.Now()
 	_, err := p.db.NamedExec(`
-		insert into chore_types (description, interval_days)
-		values (:description, :interval_days)
+		with chore_types_insert as (
+			insert into chore_types (description, interval_days)
+			values (:description, :interval_days)
+			returning id, interval_days
+		)
+		insert into chores (chore_type_id, created_at, deadline, is_complete)
+		select id, :now, :deadline, false from chore_types_insert
 	`, map[string]any{
 		"description":   description,
 		"interval_days": intervalDays,
+		"now":           now,
+		"deadline":      now.Add(time.Hour * time.Duration(intervalDays) * 24),
 	})
 
 	if err != nil {

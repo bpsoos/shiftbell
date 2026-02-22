@@ -32,8 +32,9 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 					<td><strong>{ chore.Deadline.Format("2006-01-02") }</strong></td>
 					<td class="text-center">{ fmt.Sprintf("%d", chore.IntervalDays) }</td>
 					<td class="text-center">{ chore.CreatedAt.Format("2006-01-02") }</td>
-					<td class="text-center">@markCompleteButton(chore)
-</td>
+					<td class="text-center">
+						@markCompleteButton(chore)
+					</td>
 				</tr>
 			}
 		</table>

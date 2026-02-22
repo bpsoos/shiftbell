@@ -1,6 +1,7 @@
 package chores
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/bpsoos/shiftbell/internal/models"
@@ -22,64 +23,55 @@ func NewPersister(deps *PersisterDeps) *Persister {
 }
 
 func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult, error) {
+	rows, err := p.db.Query(
+		`
+			select
+				c.id,
+				ct.description,
+				c.created_at,
+				c.deadline,
+				ct.interval_days
+			from chores c
+			join chore_types ct
+				on c.chore_type_id = ct.id
+			order by c.deadline desc
+			offset $1
+			limit $2 + 1
+		`,
+		offset,
+		limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("db query selecting chores: %v", err)
+	}
+	var (
+		id           int
+		description  string
+		createdAt    time.Time
+		deadline     time.Time
+		intervalDays int
+	)
+	results := make([]models.Chore, 0)
+	for rows.Next() {
+		err := rows.Scan(&id, &description, &createdAt, &deadline, &intervalDays)
+		if err != nil {
+			return nil, fmt.Errorf("reading fetched rows: %v", err)
+		}
+		results = append(results, models.Chore{
+			Id:           id,
+			Description:  description,
+			CreatedAt:    createdAt,
+			Deadline:     deadline,
+			IntervalDays: intervalDays,
+		})
+	}
+	if len(results) > limit {
+		results = results[:len(results)-1]
+	}
+
 	return &models.GetChoreBatchResult{
-		Chores: []models.Chore{
-			{
-				Id:           0,
-				IsCompleted:  false,
-				Description:  "test",
-				IntervalDays: 14,
-				Deadline:     time.Now(),
-				CreatedAt:    time.Now(),
-				CompletedAt:  time.Now(),
-			},
-			{
-				Id:           0,
-				IsCompleted:  false,
-				Description:  "test",
-				IntervalDays: 14,
-				Deadline:     time.Now().Add(time.Hour),
-				CreatedAt:    time.Now(),
-				CompletedAt:  time.Now(),
-			},
-			{
-				Id:           0,
-				IsCompleted:  false,
-				Description:  "test",
-				IntervalDays: 14,
-				Deadline:     time.Now().Add(23 * time.Hour),
-				CreatedAt:    time.Now(),
-				CompletedAt:  time.Now(),
-			},
-			{
-				Id:           0,
-				IsCompleted:  false,
-				Description:  "test",
-				IntervalDays: 14,
-				Deadline:     time.Now().Add(2 * 24 * time.Hour),
-				CreatedAt:    time.Now(),
-				CompletedAt:  time.Now(),
-			},
-			{
-				Id:           0,
-				IsCompleted:  false,
-				Description:  "test",
-				IntervalDays: 14,
-				Deadline:     time.Now().Add(6 * 24 * time.Hour),
-				CreatedAt:    time.Now(),
-				CompletedAt:  time.Now(),
-			},
-			{
-				Id:           0,
-				IsCompleted:  false,
-				Description:  "test",
-				IntervalDays: 14,
-				Deadline:     time.Now().Add(8 * 24 * time.Hour),
-				CreatedAt:    time.Now(),
-				CompletedAt:  time.Now(),
-			},
-		},
-		More: false,
+		Chores: results,
+		More:   len(results) == limit,
 	}, nil
 }
 
