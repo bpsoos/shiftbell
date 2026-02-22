@@ -1,14 +1,14 @@
 package choretypes
 
 import (
-	"github.com/bpsoos/shiftbell/internal/models"
 	"fmt"
+	"github.com/bpsoos/shiftbell/internal/models"
 )
 
 templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 	<div
 		id="chores-table-container"
-		hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset,limit) }
+		hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset, limit) }
 		hx-trigger="load-chores from:body"
 		hx-swap="outerHTML"
 	>
@@ -28,7 +28,9 @@ templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 		</table>
 		<div class="my-2 px-3">
 			<div class="row">
-				<button type="button" class="col text-center btn btn-secondary"
+				<button
+					type="button"
+					class="col text-center btn btn-secondary"
 					hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset-limit, limit) }
 					hx-target="#chores-table-container"
 					if offset == 0 {
@@ -38,10 +40,12 @@ templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 					←
 				</button>
 				<div class="col-8"></div>
-				<button type="button" class="col text-center btn btn-secondary"
+				<button
+					type="button"
+					class="col text-center btn btn-secondary"
 					hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset+limit, limit) }
 					hx-target="#chores-table-container"
-					if !result.More  {
+					if !result.More {
 						disabled
 					}
 				>

@@ -39,44 +39,41 @@ templ createForm() {
 			<div class="card-header bg-body">
 				Add chore
 			</div>
-
 			<div class="card-body">
 				<form hx-post="/chores" hx-swap="none">
-				<style>
+					<style>
 					me input::placeholder {
 						opacity: 0.55;
 					}
 				</style>
-				<div class="mb-3">
-					<label for="description" class="form-label">Description</label>
-					<input
-					type="text"
-					class="form-control"
-					id="description"
-					name="description"
-					placeholder="e.g., Take out trash"
-					required
-					>
-				</div>
-
-				<div class="mb-3">
-					<label for="interval-days" class="form-label">Interval</label>
-					<div class="input-group">
-					<input
-						type="number"
-						class="form-control"
-						id="interval-days"
-						name="interval-days"
-						min="1"
-						placeholder="7"
-						required
-					>
-					<span class="input-group-text">days</span>
+					<div class="mb-3">
+						<label for="description" class="form-label">Description</label>
+						<input
+							type="text"
+							class="form-control"
+							id="description"
+							name="description"
+							placeholder="e.g., Take out trash"
+							required
+						/>
 					</div>
-					<div class="form-text">How often should this repeat?</div>
-				</div>
-
-				<button type="submit" class="btn btn-primary w-100">Add</button>
+					<div class="mb-3">
+						<label for="interval-days" class="form-label">Interval</label>
+						<div class="input-group">
+							<input
+								type="number"
+								class="form-control"
+								id="interval-days"
+								name="interval-days"
+								min="1"
+								placeholder="7"
+								required
+							/>
+							<span class="input-group-text">days</span>
+						</div>
+						<div class="form-text">How often should this repeat?</div>
+					</div>
+					<button type="submit" class="btn btn-primary w-100">Add</button>
 				</form>
 			</div>
 		</div>
