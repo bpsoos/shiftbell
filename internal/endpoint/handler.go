@@ -42,15 +42,16 @@ func NewHandler(deps *HandlerDeps) *Handler {
 
 func (h *Handler) Home(ctx *echo.Context) error {
 	offsetStr := ctx.QueryParamOr("offset", "0")
-	limitStr := ctx.QueryParamOr("limit", "10")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
 		panic(err)
 	}
+	limitStr := ctx.QueryParamOr("limit", "10")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
 		panic(err)
 	}
+	content := ctx.QueryParamOr("content", "all")
 
 	chores, err := h.choreTypePersister.GetBatch(offset, limit)
 	if err != nil {
@@ -58,10 +59,23 @@ func (h *Handler) Home(ctx *echo.Context) error {
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 
-	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
-	ctx.Response().WriteHeader(http.StatusOK)
+	switch content {
+	case "table":
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+		ctx.Response().Header().Set("HX-Push-Url", fmt.Sprintf("?offset=%d&limit=%d", offset, limit))
+		ctx.Response().WriteHeader(http.StatusOK)
 
-	return h.templater.Home(offset, limit, chores, ctx.Request().Context(), ctx.Response())
+		return h.templater.GetChoreBatch(offset, limit, chores, ctx.Request().Context(), ctx.Response())
+	case "all":
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+		ctx.Response().Header().Set("HX-Push-Url", fmt.Sprintf("?offset=%d&limit=%d", offset, limit))
+		ctx.Response().WriteHeader(http.StatusOK)
+
+		return h.templater.Home(offset, limit, chores, ctx.Request().Context(), ctx.Response())
+	default:
+		slog.Error("unknown conent", "content", content)
+		return ctx.String(http.StatusUnprocessableEntity, "unknown content")
+	}
 }
 
 func (h *Handler) ViewSettings(ctx *echo.Context) error {
@@ -75,26 +89,7 @@ func (h *Handler) ViewSettings(ctx *echo.Context) error {
 	if err != nil {
 		panic(err)
 	}
-	action := ctx.QueryParamOr("action", "")
-	actionValueStr := ctx.QueryParamOr("action-value", "")
-	if action == "" || actionValueStr == "" {
-		return ctx.String(http.StatusOK, "noop")
-	}
-	actionValue, err := strconv.Atoi(actionValueStr)
-	if err != nil {
-		panic(err)
-	}
-
-	switch action {
-	case "set-offset":
-		offset = actionValue
-	case "set-limit":
-		limit = actionValue
-	default:
-		slog.Error("unknown action", "action", action)
-		return ctx.String(http.StatusUnprocessableEntity, "unknown action")
-	}
-	ctx.Response().Header().Set("HX-Location", fmt.Sprintf("?offset=%d&limit=%d", offset, limit))
+	ctx.Response().Header().Set("HX-Push-Url", fmt.Sprintf("?offset=%d&limit=%d", offset, limit))
 	ctx.Response().Header().Set("HX-Target", "none")
 	return ctx.String(http.StatusOK, "OK")
 }
