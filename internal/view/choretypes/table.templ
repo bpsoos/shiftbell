@@ -1,14 +1,14 @@
-package home
+package choretypes
 
 import (
 	"github.com/bpsoos/shiftbell/internal/models"
 	"fmt"
 )
 
-templ getChoreBatch(offset int, limit int, result *models.GetChoreTypeBatchResult) {
+templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 	<div
 		id="chores-table-container"
-		hx-get={ fmt.Sprintf("/?offset=%d&limit=%d&content=table", offset,limit) }
+		hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset,limit) }
 		hx-trigger="load-chores from:body"
 		hx-swap="outerHTML"
 	>
@@ -29,7 +29,7 @@ templ getChoreBatch(offset int, limit int, result *models.GetChoreTypeBatchResul
 		<div class="my-2 px-3">
 			<div class="row">
 				<button type="button" class="col text-center btn btn-secondary"
-					hx-get={ fmt.Sprintf("/?offset=%d&limit=%d&content=table", offset-limit, limit) }
+					hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset-limit, limit) }
 					hx-target="#chores-table-container"
 					if offset == 0 {
 						disabled
@@ -39,7 +39,7 @@ templ getChoreBatch(offset int, limit int, result *models.GetChoreTypeBatchResul
 				</button>
 				<div class="col-8"></div>
 				<button type="button" class="col text-center btn btn-secondary"
-					hx-get={ fmt.Sprintf("/?offset=%d&limit=%d&content=table", offset+limit, limit) }
+					hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset+limit, limit) }
 					hx-target="#chores-table-container"
 					if !result.More  {
 						disabled

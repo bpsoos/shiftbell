@@ -4,10 +4,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/bpsoos/shiftbell/internal/endpoint"
+	choretypesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretypes"
 	"github.com/bpsoos/shiftbell/internal/persistence"
 	"github.com/bpsoos/shiftbell/internal/routing"
-	"github.com/bpsoos/shiftbell/internal/view/home"
+	choretypesview "github.com/bpsoos/shiftbell/internal/view/choretypes"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -23,13 +23,13 @@ func main() {
 		Db: db,
 	})
 
-	homeTemplater := home.NewTemplater()
-	homeHandler := endpoint.NewHandler(&endpoint.HandlerDeps{
-		Templater:          homeTemplater,
+	choreTypesTemplater := choretypesview.NewTemplater()
+	choreTypesHandler := choretypesendpoint.NewHandler(&choretypesendpoint.HandlerDeps{
+		Templater:          choreTypesTemplater,
 		ChoreTypePersister: chorePersister,
 	})
 	router := routing.NewRouter(&routing.RouterDeps{
-		HomeHandler: homeHandler,
+		ChoreTypeHandler: choreTypesHandler,
 	})
 	e := echo.New()
 	e.Use(middleware.RequestLogger())

@@ -1,0 +1,85 @@
+package choretypes
+
+import (
+	"github.com/bpsoos/shiftbell/internal/models"
+	"github.com/bpsoos/shiftbell/internal/view/layouts"
+)
+
+templ page(offset int, limit int, results *models.GetChoreTypeBatchResult) {
+	@layouts.Main() {
+		<div class="container">
+			<div class="row">
+				<div class="container col-lg-3">
+					<style>
+						@media lg {
+							me {
+								order: 2
+							}
+						}
+					</style>
+					@createForm()
+				</div>
+				<div class="container mt-3 col-lg-7 card">
+					<style>
+						@media lg {
+							me {
+								order: 1
+							}
+						}
+					</style>
+					@table(offset, limit, results)
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ createForm() {
+	<div class="container my-3">
+		<div class="card shadow-sm">
+			<div class="card-header bg-body">
+				Add chore
+			</div>
+
+			<div class="card-body">
+				<form hx-post="/chores" hx-swap="none">
+				<style>
+					me input::placeholder {
+						opacity: 0.55;
+					}
+				</style>
+				<div class="mb-3">
+					<label for="description" class="form-label">Description</label>
+					<input
+					type="text"
+					class="form-control"
+					id="description"
+					name="description"
+					placeholder="e.g., Take out trash"
+					required
+					>
+				</div>
+
+				<div class="mb-3">
+					<label for="interval-days" class="form-label">Interval</label>
+					<div class="input-group">
+					<input
+						type="number"
+						class="form-control"
+						id="interval-days"
+						name="interval-days"
+						min="1"
+						placeholder="7"
+						required
+					>
+					<span class="input-group-text">days</span>
+					</div>
+					<div class="form-text">How often should this repeat?</div>
+				</div>
+
+				<button type="submit" class="btn btn-primary w-100">Add</button>
+				</form>
+			</div>
+		</div>
+	</div>
+}
