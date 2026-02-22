@@ -1,0 +1,60 @@
+package chores
+
+import (
+	"fmt"
+	"github.com/bpsoos/shiftbell/internal/models"
+)
+
+templ table(offset int, limit int, result *models.GetChoreBatchResult) {
+	<div
+		id="chores-table-container"
+		hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset, limit) }
+		hx-push-url="true"
+		hx-trigger="load-chores from:body"
+		hx-swap="outerHTML"
+	>
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th scope="col" style="width: 80%">description</th>
+					<th scope="col text-center" style="width: 20%">interval days</th>
+				</tr>
+			</thead>
+			for _, chore := range result.Chores {
+				<tr>
+					<td>{ chore.Description }</td>
+					<td>{ fmt.Sprintf("%d", chore.IntervalDays) }</td>
+				</tr>
+			}
+		</table>
+		<div class="my-2 px-3">
+			<div class="row">
+				<button
+					type="button"
+					class="col text-center btn btn-secondary"
+					hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset-limit, limit) }
+					hx-push-url="true"
+					hx-target="#chores-table-container"
+					if offset == 0 {
+						disabled
+					}
+				>
+					←
+				</button>
+				<div class="col-8"></div>
+				<button
+					type="button"
+					class="col text-center btn btn-secondary"
+					hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset+limit, limit) }
+					hx-target="#chores-table-container"
+					hx-push-url="true"
+					if !result.More {
+						disabled
+					}
+				>
+					→
+				</button>
+			</div>
+		</div>
+	</div>
+}

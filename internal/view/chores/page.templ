@@ -1,0 +1,13 @@
+package chores
+
+import (
+	"github.com/bpsoos/shiftbell/internal/models"
+	"github.com/bpsoos/shiftbell/internal/view/layouts"
+)
+
+templ page(offset int, limit int, results *models.GetChoreBatchResult) {
+	@layouts.Nav("chores")
+	<div class="container card">
+		@table(offset, limit, results)
+	</div>
+}

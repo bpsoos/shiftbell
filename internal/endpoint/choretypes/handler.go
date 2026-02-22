@@ -2,7 +2,6 @@ package choretypes
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"log/slog"
@@ -81,13 +80,11 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 	switch content {
 	case "table":
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
-		ctx.Response().Header().Set("HX-Push-Url", fmt.Sprintf("?offset=%d&limit=%d", offset, limit))
 		ctx.Response().WriteHeader(http.StatusOK)
 
 		return h.templater.Table(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
 	case "all":
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
-		ctx.Response().Header().Set("HX-Push-Url", fmt.Sprintf("?offset=%d&limit=%d", offset, limit))
 		ctx.Response().WriteHeader(http.StatusOK)
 
 		if ctx.Request().Header.Get("HX-Request") == "true" {
@@ -117,7 +114,7 @@ func (h *Handler) Create(ctx *echo.Context) error {
 		log.Println(err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
-	ctx.Response().Header().Set("HX-Trigger", "load-chores")
+	ctx.Response().Header().Set("HX-Trigger", "load-chore-types")
 
 	return ctx.String(http.StatusOK, "created")
 }

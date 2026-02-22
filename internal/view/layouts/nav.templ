@@ -3,7 +3,13 @@ package layouts
 templ Nav(active string) {
 	<nav class="navbar navbar-expand-sm bg-body-tertiary">
 		<div class="container-fluid">
-			<a class="navbar-brand" hx-target="body" hx-get="/" href="/">
+			<a
+				class="navbar-brand"
+				hx-target="body"
+				hx-get="/"
+				hx-push-url="true"
+				href="/"
+			>
 				@logo()
 				ShiftBell
 			</a>
@@ -21,6 +27,7 @@ templ Nav(active string) {
 							}
 							aria-current="page"
 							hx-target="body"
+							hx-push-url="true"
 							hx-get="/"
 							href="/"
 						>Home</a>
@@ -33,6 +40,7 @@ templ Nav(active string) {
 								class="nav-link"
 							}
 							hx-target="body"
+							hx-push-url="true"
 							hx-get="/choretypes"
 							href="/choretypes"
 						>Chore Types</a>

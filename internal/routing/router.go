@@ -7,16 +7,24 @@ type ChoreTypeHandler interface {
 	Create(ctx *echo.Context) error
 }
 
+type ChoreHandler interface {
+	GetBatch(*echo.Context) error
+	PatchStatus(*echo.Context) error
+}
+
 type RouterDeps struct {
 	ChoreTypeHandler ChoreTypeHandler
+	ChoreHandler     ChoreHandler
 }
 
 type Router struct {
 	choreTypeHandler ChoreTypeHandler
+	choreHandler     ChoreHandler
 }
 
 func NewRouter(deps *RouterDeps) *Router {
 	return &Router{
 		choreTypeHandler: deps.ChoreTypeHandler,
+		choreHandler:     deps.ChoreHandler,
 	}
 }

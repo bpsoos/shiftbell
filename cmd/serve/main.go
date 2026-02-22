@@ -4,9 +4,12 @@ import (
 	"log"
 	"os"
 
+	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	choretypesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretypes"
-	"github.com/bpsoos/shiftbell/internal/persistence"
+	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
+	choretypespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretypes"
 	"github.com/bpsoos/shiftbell/internal/routing"
+	choresview "github.com/bpsoos/shiftbell/internal/view/chores"
 	choretypesview "github.com/bpsoos/shiftbell/internal/view/choretypes"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
@@ -19,7 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatal("could not connect to db", err)
 	}
-	chorePersister := persistence.NewChoreTypePersister(&persistence.PersisterDeps{
+	chorePersister := choretypespersistence.NewChoreTypePersister(&choretypespersistence.PersisterDeps{
 		Db: db,
 	})
 
@@ -28,7 +31,16 @@ func main() {
 		Templater:          choreTypesTemplater,
 		ChoreTypePersister: chorePersister,
 	})
+
+	choresPersister := chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
+	choresTemplater := choresview.NewTemplater()
+	choresHandler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+		Templater: choresTemplater,
+		Persister: choresPersister,
+	})
+
 	router := routing.NewRouter(&routing.RouterDeps{
+		ChoreHandler:     choresHandler,
 		ChoreTypeHandler: choreTypesHandler,
 	})
 	e := echo.New()
