@@ -3,7 +3,6 @@ package choretypes
 import (
 	"context"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -62,18 +61,20 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 	offsetStr := ctx.QueryParamOr("offset", "0")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		panic(err)
+		slog.Info("invalid offset", "err", err)
+		return ctx.String(http.StatusUnprocessableEntity, "invalid offset")
 	}
 	limitStr := ctx.QueryParamOr("limit", "10")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		panic(err)
+		slog.Info("invalid limit", "err", err)
+		return ctx.String(http.StatusUnprocessableEntity, "invalid limit")
 	}
 	content := ctx.QueryParamOr("content", "all")
 
 	chores, err := h.choreTypePersister.GetBatch(offset, limit)
 	if err != nil {
-		log.Println(err)
+		slog.Error("get chore type batch error", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 
@@ -94,7 +95,7 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 		return h.templater.PageWithLayout(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
 
 	default:
-		slog.Error("unknown conent", "content", content)
+		slog.Error("unknown content", "content", content)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown content")
 	}
 }
@@ -111,7 +112,7 @@ func (h *Handler) Create(ctx *echo.Context) error {
 
 	err = h.choreTypePersister.Create(description, intervalDays)
 	if err != nil {
-		log.Println(err)
+		slog.Error("create chore type error", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 	ctx.Response().Header().Set("HX-Trigger", "load-chore-types")

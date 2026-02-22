@@ -7,14 +7,21 @@ type GetChoreBatchResult struct {
 	More   bool
 }
 
+type ChoreStatus string
+
+const (
+	ChoreStatusComplete   ChoreStatus = "complete"
+	ChoreStatusIncomplete ChoreStatus = "incomplete"
+)
+
 type Chore struct {
-	Id           int
-	IsCompleted  bool
-	Description  string
-	IntervalDays int
-	Deadline     time.Time
-	CreatedAt    time.Time
-	CompletedAt  time.Time
+	Id              int
+	Status          ChoreStatus
+	Description     string
+	IntervalDays    int
+	Deadline        time.Time
+	LastCompletedAt time.Time
+	CompletedAt     time.Time
 }
 
 type ChoreType struct {

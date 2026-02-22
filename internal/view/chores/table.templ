@@ -20,7 +20,7 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 					<th scope="col" style="width: 50%">description</th>
 					<th scope="col" style="width: 15%">deadline</th>
 					<th class="text-center" scope="col" style="width: 15%">interval days</th>
-					<th class="text-center" scope="col" style="width: 15%">created at</th>
+					<th class="text-center" scope="col" style="width: 15%">last completed at</th>
 					<th class="text-center" scope="col" style="width: 5%">mark complete</th>
 				</tr>
 			</thead>
@@ -31,7 +31,7 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 					<td>{ chore.Description }</td>
 					<td><strong>{ chore.Deadline.Format("2006-01-02") }</strong></td>
 					<td class="text-center">{ fmt.Sprintf("%d", chore.IntervalDays) }</td>
-					<td class="text-center">{ chore.CreatedAt.Format("2006-01-02") }</td>
+					<td class="text-center">{ chore.LastCompletedAt.Format("2006-01-02") }</td>
 					<td class="text-center">
 						@markCompleteButton(chore)
 					</td>
@@ -76,7 +76,7 @@ templ markCompleteButton(chore models.Chore) {
 		hx-swap="outerHTML swap:1s"
 		hx-target="closest tr"
 	>
-		<input type="hidden" value="true" name="complete" id="complete"/>
+		<input type="hidden" value="complete" name="status" id="status"/>
 		<button type="submit" class="btn btn-success">✓</button>
 	</form>
 }
@@ -93,5 +93,5 @@ func getRowClass(deadline time.Time) string {
 }
 
 func getBatchUrlWithQuery(offset int, limit int, content string) string {
-	return fmt.Sprintf("/choretypes?offset=%d&limit=%d&content=%s", offset, limit, content)
+	return fmt.Sprintf("/chores?status=incomplete&offset=%d&limit=%d&content=%s", offset, limit, content)
 }

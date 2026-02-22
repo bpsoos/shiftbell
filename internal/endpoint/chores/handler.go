@@ -3,10 +3,10 @@ package chores
 import (
 	"context"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/bpsoos/shiftbell/internal/models"
 	"github.com/labstack/echo/v5"
@@ -31,7 +31,7 @@ type Templater interface {
 
 type Persister interface {
 	GetBatch(offset int, limit int) (*models.GetChoreBatchResult, error)
-	PatchStatus(id int, isComplete bool) error
+	MarkComplete(id int, completedAt time.Time) error
 }
 
 type HandlerDeps struct {
@@ -55,18 +55,25 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 	offsetStr := ctx.QueryParamOr("offset", "0")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		panic(err)
+		slog.Info("invalid offset", "err", err)
+		return ctx.String(http.StatusUnprocessableEntity, "invalid offset")
 	}
 	limitStr := ctx.QueryParamOr("limit", "10")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		panic(err)
+		slog.Info("invalid limit", "err", err)
+		return ctx.String(http.StatusUnprocessableEntity, "invalid limit")
+	}
+	statusFilter := ctx.QueryParamOr("status", "incomplete")
+	if statusFilter != "incomplete" {
+		slog.Info("unsupported status filter", "status_filter", statusFilter)
+		return ctx.String(http.StatusUnprocessableEntity, "unsupported status filter")
 	}
 	content := ctx.QueryParamOr("content", "all")
 
 	chores, err := h.persister.GetBatch(offset, limit)
 	if err != nil {
-		log.Println(err)
+		slog.Error("get batch error", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 
@@ -82,7 +89,7 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 		return h.templater.PageWithLayout(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
 
 	default:
-		slog.Error("unknown conent", "content", content)
+		slog.Error("unknown content", "content", content)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown content")
 	}
 }
@@ -97,11 +104,21 @@ func (h *Handler) PatchStatus(ctx *echo.Context) error {
 		slog.Info("invalid id received", "err", err)
 		return ctx.String(http.StatusUnprocessableEntity, "invalid id")
 	}
-	isCompleteStr := ctx.FormValueOr("complete", "")
-	if isCompleteStr == "" {
-		return ctx.String(http.StatusUnprocessableEntity, "complete missing")
+	status := ctx.FormValueOr("status", "")
+	if status == "" {
+		slog.Info("status missing")
+		return ctx.String(http.StatusUnprocessableEntity, "status missing")
 	}
-	err = h.persister.PatchStatus(id, isCompleteStr == "true")
+	switch status {
+	case "complete":
+	case "incomplete":
+		return ctx.String(http.StatusConflict, "setting status to incomplete dissalowed")
+	default:
+		slog.Info("unknown status", "status", status)
+		return ctx.String(http.StatusUnprocessableEntity, "unknown status")
+	}
+
+	err = h.persister.MarkComplete(id, time.Now())
 	if err != nil {
 		slog.Error("patch chore status error", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")

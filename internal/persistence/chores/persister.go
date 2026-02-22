@@ -28,7 +28,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 			select
 				c.id,
 				ct.description,
-				c.created_at,
+				c.last_completed_at,
 				c.deadline,
 				ct.interval_days
 			from chores c
@@ -46,24 +46,25 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 		return nil, fmt.Errorf("db query selecting chores: %v", err)
 	}
 	var (
-		id           int
-		description  string
-		createdAt    time.Time
-		deadline     time.Time
-		intervalDays int
+		id              int
+		description     string
+		lastCompletedAt time.Time
+		deadline        time.Time
+		intervalDays    int
 	)
 	results := make([]models.Chore, 0)
 	for rows.Next() {
-		err := rows.Scan(&id, &description, &createdAt, &deadline, &intervalDays)
+		err := rows.Scan(&id, &description, &lastCompletedAt, &deadline, &intervalDays)
 		if err != nil {
 			return nil, fmt.Errorf("reading fetched rows: %v", err)
 		}
 		results = append(results, models.Chore{
-			Id:           id,
-			Description:  description,
-			CreatedAt:    createdAt,
-			Deadline:     deadline,
-			IntervalDays: intervalDays,
+			Id:              id,
+			Status:          models.ChoreStatusIncomplete,
+			Description:     description,
+			LastCompletedAt: lastCompletedAt,
+			Deadline:        deadline,
+			IntervalDays:    intervalDays,
 		})
 	}
 	if len(results) > limit {
@@ -76,14 +77,40 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 	}, nil
 }
 
-func (p *Persister) PatchStatus(id int, isComplete bool) error {
+func (p *Persister) MarkComplete(id int, completedAt time.Time) error {
 	_, err := p.db.Exec(
-		`update chores set is_complete = $1 where id = $2`,
-		isComplete,
+		markCompleteQuery,
 		id,
+		completedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("update chores exec: %v", err)
 	}
 	return nil
 }
+
+const markCompleteQuery = `
+	with candidate as (
+		select
+			id,
+			chore_type_id
+		from chores
+		where id = $1 and is_complete = false
+	),
+	updated as (
+		update chores c
+		set is_complete = true,
+			completed_at = $2
+		from candidate
+		where c.id = candidate.id
+		returning candidate.chore_type_id
+	)
+	insert into chores (chore_type_id, last_completed_at, deadline, is_complete)
+	select
+		u.chore_type_id,
+		$2,
+		$2::date + interval '1 day' * ct.interval_days,
+		false
+	from updated u
+	join chore_types ct on ct.id = u.chore_type_id
+`

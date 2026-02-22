@@ -30,7 +30,7 @@ func (p *Persister) Create(description string, intervalDays int) error {
 			values (:description, :interval_days)
 			returning id, interval_days
 		)
-		insert into chores (chore_type_id, created_at, deadline, is_complete)
+		insert into chores (chore_type_id, last_completed_at, deadline, is_complete)
 		select id, :now, :deadline, false from chore_types_insert
 	`, map[string]any{
 		"description":   description,
