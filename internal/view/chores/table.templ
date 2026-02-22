@@ -6,13 +6,7 @@ import (
 )
 
 templ table(offset int, limit int, result *models.GetChoreBatchResult) {
-	<div
-		id="chores-table-container"
-		hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset, limit) }
-		hx-push-url="true"
-		hx-trigger="load-chores from:body"
-		hx-swap="outerHTML"
-	>
+	<div id="chores-table-container">
 		<table class="table table-striped">
 			<thead>
 				<tr>
@@ -32,8 +26,8 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 				<button
 					type="button"
 					class="col text-center btn btn-secondary"
-					hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset-limit, limit) }
-					hx-push-url="true"
+					hx-get={ getBatchUrlWithQuery(offset-limit, limit, "table") }
+					hx-push-url={ getBatchUrlWithQuery(offset-limit, limit, "all") }
 					hx-target="#chores-table-container"
 					if offset == 0 {
 						disabled
@@ -45,9 +39,9 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 				<button
 					type="button"
 					class="col text-center btn btn-secondary"
-					hx-get={ fmt.Sprintf("/chores?offset=%d&limit=%d&content=table", offset+limit, limit) }
+					hx-get={ getBatchUrlWithQuery(offset+limit, limit, "table") }
+					hx-push-url={ getBatchUrlWithQuery(offset+limit, limit, "all") }
 					hx-target="#chores-table-container"
-					hx-push-url="true"
 					if !result.More {
 						disabled
 					}
@@ -57,4 +51,8 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 			</div>
 		</div>
 	</div>
+}
+
+func getBatchUrlWithQuery(offset int, limit int, content string) string {
+	return fmt.Sprintf("/choretypes?offset=%d&limit=%d&content=%s", offset, limit, content)
 }
