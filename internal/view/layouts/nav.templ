@@ -1,12 +1,42 @@
 package layouts
 
-templ Nav() {
-	<nav class="navbar bg-body-tertiary">
+templ Nav(active string) {
+	<nav class="navbar navbar-expand-sm bg-body-tertiary">
 		<div class="container-fluid">
-			<a class="navbar-brand" hx-target="body" hx-get="/">
+			<a class="navbar-brand" hx-target="body" hx-get="/" href="/">
 				@logo()
 				ShiftBell
 			</a>
+			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+						<span class="navbar-toggler-icon"></span>
+			</button>
+			<div class="collapse navbar-collapse" id="navbarNav">
+				<ul class="navbar-nav">
+					<li class="nav-item">
+						<a
+							if active == "home" {
+								class="nav-link active"
+							} else {
+								class="nav-link"
+							}
+							aria-current="page"
+							hx-target="body"
+							hx-get="/"
+							href="/">Home</a>
+					</li>
+					<li class="nav-item">
+						<a
+							if active == "choretypes" {
+								class="nav-link active"
+							} else {
+								class="nav-link"
+							}
+							hx-target="body"
+							hx-get="/choretypes"
+							href="/choretypes">Chore Types</a>
+					</li>
+				</ul>
+			</div>
 		</div>
 	</nav>
 }
