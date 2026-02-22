@@ -14,6 +14,13 @@ import (
 )
 
 type Templater interface {
+	PageWithLayout(
+		context.Context,
+		io.Writer,
+		int,
+		int,
+		*models.GetChoreTypeBatchResult,
+	) error
 	Page(
 		context.Context,
 		io.Writer,
@@ -83,7 +90,12 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 		ctx.Response().Header().Set("HX-Push-Url", fmt.Sprintf("?offset=%d&limit=%d", offset, limit))
 		ctx.Response().WriteHeader(http.StatusOK)
 
-		return h.templater.Page(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
+		if ctx.Request().Header.Get("HX-Request") == "true" {
+			return h.templater.Page(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
+		}
+
+		return h.templater.PageWithLayout(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
+
 	default:
 		slog.Error("unknown conent", "content", content)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown content")

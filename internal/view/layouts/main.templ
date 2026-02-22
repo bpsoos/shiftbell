@@ -1,7 +1,6 @@
 package layouts
 
 templ Main() {
-
 	<!DOCTYPE html>
 	<html>
 	<head>
@@ -11,14 +10,6 @@ templ Main() {
 		@dependencies()
 	</head>
 		<body>
-			<nav class="navbar bg-body-tertiary">
-				<div class="container-fluid">
-					<a class="navbar-brand" href="#">
-						@logo()
-						ShiftBell
-					</a>
-				</div>
-			</nav>
 			{ children... }
 		</body>
 	</html>

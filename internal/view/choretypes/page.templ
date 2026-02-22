@@ -6,32 +6,31 @@ import (
 )
 
 templ page(offset int, limit int, results *models.GetChoreTypeBatchResult) {
-	@layouts.Main() {
-		<div class="container">
-			<div class="row">
-				<div class="container col-lg-3">
-					<style>
-						@media lg {
-							me {
-								order: 2
-							}
+	@layouts.Nav()
+	<div class="container">
+		<div class="row">
+			<div class="container col-lg-3">
+				<style>
+					@media lg {
+						me {
+							order: 2
 						}
-					</style>
-					@createForm()
-				</div>
-				<div class="container mt-3 col-lg-7 card">
-					<style>
-						@media lg {
-							me {
-								order: 1
-							}
+					}
+				</style>
+				@createForm()
+			</div>
+			<div class="container mt-3 col-lg-7 card">
+				<style>
+					@media lg {
+						me {
+							order: 1
 						}
-					</style>
-					@table(offset, limit, results)
-				</div>
+					}
+				</style>
+				@table(offset, limit, results)
 			</div>
 		</div>
-	}
+	</div>
 }
 
 templ createForm() {
