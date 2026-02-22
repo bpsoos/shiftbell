@@ -34,6 +34,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 			from chores c
 			join chore_types ct
 				on c.chore_type_id = ct.id
+			where c.is_complete = false
 			order by c.deadline desc
 			offset $1
 			limit $2 + 1
@@ -76,5 +77,13 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 }
 
 func (p *Persister) PatchStatus(id int, isComplete bool) error {
+	_, err := p.db.Exec(
+		`update chores set is_complete = $1 where id = $2`,
+		isComplete,
+		id,
+	)
+	if err != nil {
+		return fmt.Errorf("update chores exec: %v", err)
+	}
 	return nil
 }

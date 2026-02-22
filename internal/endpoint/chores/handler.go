@@ -88,5 +88,26 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 }
 
 func (h *Handler) PatchStatus(ctx *echo.Context) error {
+	idStr := ctx.ParamOr("id", "")
+	if idStr == "" {
+		return ctx.String(http.StatusUnprocessableEntity, "id missing")
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		slog.Info("invalid id received", "err", err)
+		return ctx.String(http.StatusUnprocessableEntity, "invalid id")
+	}
+	isCompleteStr := ctx.FormValueOr("complete", "")
+	if isCompleteStr == "" {
+		return ctx.String(http.StatusUnprocessableEntity, "complete missing")
+	}
+	err = h.persister.PatchStatus(id, isCompleteStr == "true")
+	if err != nil {
+		slog.Error("patch chore status error", "err", err)
+		return ctx.String(http.StatusInternalServerError, "something went wrong")
+	}
+
+	ctx.Response().WriteHeader(http.StatusOK)
+
 	return nil
 }
