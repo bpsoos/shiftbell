@@ -4,23 +4,18 @@ import (
 	"github.com/bpsoos/shiftbell/internal/models"
 	"strconv"
 )
-const loadTrigger = "load-chores from:body"
 
 templ getChoreBatch(offset int, limit int, result *models.GetChoreTypeBatchResult, load bool) {
 	<div
 		hx-get={ "/chores" + "?offset=" + strconv.Itoa(offset) +"&limit=" + strconv.Itoa(limit) }
-		if load {
-			hx-trigger={ "load from:body," + loadTrigger }
-		} else {
-			hx-trigger={ loadTrigger }
-		}
+		hx-trigger="load-chores from:body"
 		hx-swap="outerHTML"
 	>
-		<table class="table table-striped">
+		<table id="chores-table" class="table table-striped">
 			<thead>
 				<tr>
-					<th scope="col">description</th>
-					<th scope="col">interval days</th>
+					<th scope="col" style="width: 80%">description</th>
+					<th scope="col text-center" style="width: 20%">interval days</th>
 				</tr>
 			</thead>
 			for _, chore := range result.ChoreTypes {

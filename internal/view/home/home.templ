@@ -4,7 +4,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/models"
 )
 
-templ home(offset int, limit int) {
+templ home(offset int, limit int, results *models.GetChoreTypeBatchResult) {
 	<!DOCTYPE html>
 	<html>
 	<head>
@@ -50,7 +50,7 @@ templ home(offset int, limit int) {
 								}
 							}
 						</style>
-						@getChoreBatch(offset, limit, &models.GetChoreTypeBatchResult{}, true)
+						@getChoreBatch(offset, limit, results, true)
 					</div>
 				</div>
 			</div>

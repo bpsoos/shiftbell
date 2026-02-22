@@ -14,7 +14,7 @@ import (
 )
 
 type Templater interface {
-	Home(int, int, context.Context, io.Writer) error
+	Home(int, int, *models.GetChoreTypeBatchResult, context.Context, io.Writer) error
 	GetChoreBatch(int, int, *models.GetChoreTypeBatchResult, context.Context, io.Writer) error
 }
 
@@ -52,10 +52,16 @@ func (h *Handler) Home(ctx *echo.Context) error {
 		panic(err)
 	}
 
+	chores, err := h.choreTypePersister.GetBatch(offset, limit)
+	if err != nil {
+		log.Println(err)
+		return ctx.String(http.StatusInternalServerError, "something went wrong")
+	}
+
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
 	ctx.Response().WriteHeader(http.StatusOK)
 
-	return h.templater.Home(offset, limit, ctx.Request().Context(), ctx.Response())
+	return h.templater.Home(offset, limit, chores, ctx.Request().Context(), ctx.Response())
 }
 
 func (h *Handler) ViewSettings(ctx *echo.Context) error {
