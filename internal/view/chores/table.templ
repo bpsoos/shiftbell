@@ -3,21 +3,37 @@ package chores
 import (
 	"fmt"
 	"github.com/bpsoos/shiftbell/internal/models"
+	"time"
 )
 
 templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 	<div id="chores-table-container">
 		<table class="table table-striped">
+			<style>
+			me tr.htmx-swapping {
+				opacity: 0;
+				transition: opacity 1s ease-out;
+			}
+		</style>
 			<thead>
 				<tr>
-					<th scope="col" style="width: 80%">description</th>
-					<th scope="col text-center" style="width: 20%">interval days</th>
+					<th scope="col" style="width: 50%">description</th>
+					<th scope="col" style="width: 15%">deadline</th>
+					<th class="text-center" scope="col" style="width: 15%">interval days</th>
+					<th class="text-center" scope="col" style="width: 15%">created at</th>
+					<th class="text-center" scope="col" style="width: 5%">mark complete</th>
 				</tr>
 			</thead>
 			for _, chore := range result.Chores {
-				<tr>
+				<tr
+					class={ getRowClass(chore.Deadline) }
+				>
 					<td>{ chore.Description }</td>
-					<td>{ fmt.Sprintf("%d", chore.IntervalDays) }</td>
+					<td><strong>{ chore.Deadline.Format("2006-01-02") }</strong></td>
+					<td class="text-center">{ fmt.Sprintf("%d", chore.IntervalDays) }</td>
+					<td class="text-center">{ chore.CreatedAt.Format("2006-01-02") }</td>
+					<td class="text-center">@markCompleteButton(chore)
+</td>
 				</tr>
 			}
 		</table>
@@ -51,6 +67,28 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 			</div>
 		</div>
 	</div>
+}
+
+templ markCompleteButton(chore models.Chore) {
+	<form
+		hx-patch={ fmt.Sprintf("/chores/%d/status", chore.Id) }
+		hx-swap="outerHTML swap:1s"
+		hx-target="closest tr"
+	>
+		<input type="hidden" value="true" name="status" id="status"/>
+		<button type="submit" class="btn btn-success">✓</button>
+	</form>
+}
+
+func getRowClass(deadline time.Time) string {
+	now := time.Now()
+	if deadline.Before(now) || deadline.Sub(now) <= 24*time.Hour {
+		return "table-danger"
+	}
+	if deadline.Sub(now) > 24*time.Hour && deadline.Sub(now) <= 7*24*time.Hour {
+		return "table-warning"
+	}
+	return "table-info"
 }
 
 func getBatchUrlWithQuery(offset int, limit int, content string) string {
