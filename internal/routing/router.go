@@ -5,6 +5,7 @@ import "github.com/labstack/echo/v5"
 type ChoreTypeHandler interface {
 	GetBatch(*echo.Context) error
 	Create(ctx *echo.Context) error
+	Delete(ctx *echo.Context) error
 }
 
 type ChoreHandler interface {

@@ -22,6 +22,21 @@ func NewChoreTypePersister(deps *PersisterDeps) *Persister {
 	}
 }
 
+func (p *Persister) Delete(id int) error {
+	_, err := p.db.Exec(`
+		with chores_deleted as (
+			delete from chores where chore_type_id = $1
+		)
+		delete from chore_types where id = $1
+	`,
+		id,
+	)
+	if err != nil {
+		return fmt.Errorf("delete exec: %v", err)
+	}
+	return nil
+}
+
 func (p *Persister) Create(description string, intervalDays int) error {
 	now := time.Now()
 	_, err := p.db.NamedExec(`

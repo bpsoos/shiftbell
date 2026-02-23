@@ -99,7 +99,6 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 		}
 
 		return h.templater.PageWithLayout(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
-
 	default:
 		slog.Error("unknown content", "content", content)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown content")
@@ -136,6 +135,7 @@ func (h *Handler) PatchStatus(ctx *echo.Context) error {
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 
+	ctx.Response().Header().Set("HX-Trigger", "load-chores")
 	ctx.Response().WriteHeader(http.StatusOK)
 
 	return nil

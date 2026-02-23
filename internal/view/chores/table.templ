@@ -7,25 +7,33 @@ import (
 )
 
 templ table(offset int, limit int, result *models.GetChoreBatchResult) {
-	<div id="chores-table-container">
+	<div
+		id="chores-table-container"
+		hx-get={ getBatchUrlWithQuery(offset, limit, "table") }
+		hx-push-url={ getBatchUrlWithQuery(offset, limit, "all") }
+		hx-trigger="load-chores from:body delay:1s"
+		hx-swap="outerHTML"
+	>
 		<table class="table table-striped">
 			<style>
-			me tr.htmx-swapping {
-				opacity: 0;
-				transition: opacity 1s ease-out;
-			}
-		</style>
+				me tr.htmx-swapping {
+					opacity: 0;
+					transition: opacity 1s ease-out;
+				}
+			</style>
 			<thead>
 				<tr>
+					<th scope="col" style="width: 3%">#</th>
 					<th scope="col" style="width: 50%">description</th>
 					<th scope="col" style="width: 15%">deadline</th>
-					<th class="text-center" scope="col" style="width: 15%">interval days</th>
+					<th class="text-center" scope="col" style="width: 10%">interval days</th>
 					<th class="text-center" scope="col" style="width: 15%">last completed at</th>
 					<th class="text-center" scope="col" style="width: 5%">mark complete</th>
 				</tr>
 			</thead>
 			for _, chore := range result.Chores {
 				<tr>
+					<td>{ chore.Id }</td>
 					<td>{ chore.Description }</td>
 					<td class={ getRowClass(chore.Deadline) }>{ chore.Deadline.Format("2006-01-02") }</td>
 					<td class="text-center">{ fmt.Sprintf("%d", chore.IntervalDays) }</td>
@@ -70,7 +78,7 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 
 templ markCompleteButton(chore models.Chore) {
 	<form
-		hx-patch={ fmt.Sprintf("/chores/%d/status", chore.Id) }
+		hx-patch={ fmt.Sprintf("/chores/%d", chore.Id) }
 		hx-swap="outerHTML swap:1s"
 		hx-target="closest tr"
 	>

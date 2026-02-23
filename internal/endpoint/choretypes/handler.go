@@ -37,6 +37,7 @@ type Templater interface {
 
 type ChoreTypePersister interface {
 	Create(description string, intervalDays int) error
+	Delete(id int) error
 	GetBatch(offset int, limit int) (*models.GetChoreTypeBatchResult, error)
 }
 
@@ -98,6 +99,28 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 		slog.Error("unknown content", "content", content)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown content")
 	}
+}
+
+func (h *Handler) Delete(ctx *echo.Context) error {
+	choreTypeIdStr := ctx.ParamOr("id", "")
+	if choreTypeIdStr == "" {
+		slog.Info("chore type id missing")
+		return ctx.String(http.StatusUnprocessableEntity, "missing chore type id")
+	}
+	choreTypeId, err := strconv.Atoi(choreTypeIdStr)
+	if err != nil {
+		slog.Info("invalid chore type id")
+		return ctx.String(http.StatusUnprocessableEntity, "invalid chore type id")
+	}
+	err = h.choreTypePersister.Delete(choreTypeId)
+	if err != nil {
+		slog.Info("chore type delete: %v", "err", err)
+		return ctx.String(http.StatusInternalServerError, "something went wrong")
+	}
+
+	ctx.Response().Header().Set("HX-Trigger", "load-chore-types")
+	ctx.Response().WriteHeader(http.StatusOK)
+	return nil
 }
 
 func (h *Handler) Create(ctx *echo.Context) error {

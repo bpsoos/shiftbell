@@ -10,20 +10,39 @@ templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 		id="chore-types-table-container"
 		hx-get={ getBatchUrlWithQuery(offset, limit, "table") }
 		hx-push-url={ getBatchUrlWithQuery(offset, limit, "all") }
-		hx-trigger="load-chore-types from:body"
+		hx-trigger="load-chore-types from:body delay:1s"
 		hx-swap="outerHTML"
 	>
 		<table class="table table-striped">
+			<style>
+				me tr.htmx-swapping {
+					opacity: 0;
+					transition: opacity 1s ease-out;
+				}
+			</style>
 			<thead>
 				<tr>
 					<th scope="col" style="width: 80%">description</th>
 					<th scope="col text-center" style="width: 20%">interval days</th>
+					<th scope="col text-center" style="width: 20%"></th>
 				</tr>
 			</thead>
 			for _, choreType := range result.ChoreTypes {
 				<tr>
 					<td>{ choreType.Description }</td>
 					<td>{ fmt.Sprintf("%d", choreType.IntervalDays) }</td>
+					<td>
+						<button
+							class="btn btn-outline-danger px-3 py-0"
+							type="button"
+							hx-delete={ fmt.Sprintf("/choretypes/%d", choreType.Id) }
+							hx-confirm="Are you sure you want to delete this chore type?"
+							hx-swap="outerHTML swap:1s"
+							hx-target="closest tr"
+						>
+							@wasteBasketIcon()
+						</button>
+					</td>
 				</tr>
 			}
 		</table>
@@ -61,4 +80,10 @@ templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 
 func getBatchUrlWithQuery(offset int, limit int, content string) string {
 	return fmt.Sprintf("/choretypes?offset=%d&limit=%d&content=%s", offset, limit, content)
+}
+
+templ wasteBasketIcon() {
+	<svg fill="currentColor" width="1.4em" height="1.4em" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg">
+		<path d="M215.99609,48H180V36A28.03146,28.03146,0,0,0,152,8H104A28.03146,28.03146,0,0,0,76,36V48H39.99609a12,12,0,0,0,0,24h4V208a20.0226,20.0226,0,0,0,20,20h128a20.0226,20.0226,0,0,0,20-20V72h4a12,12,0,0,0,0-24ZM100,36a4.00458,4.00458,0,0,1,4-4h48a4.00458,4.00458,0,0,1,4,4V48H100Zm87.99609,168h-120V72h120ZM116,104v64a12,12,0,0,1-24,0V104a12,12,0,0,1,24,0Zm48,0v64a12,12,0,0,1-24,0V104a12,12,0,0,1,24,0Z"></path>
+	</svg>
 }

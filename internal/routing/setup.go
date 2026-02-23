@@ -13,10 +13,13 @@ func (r *Router) Setup(app *echo.Echo) error {
 		return fmt.Errorf("styles: %v", err)
 	}
 	app.StaticFS("/styles", stylesFs)
+
 	app.GET("/", r.choreHandler.GetBatch)
 	app.GET("/chores", r.choreHandler.GetBatch)
-	app.PATCH("/chores/:id/status", r.choreHandler.PatchStatus)
+	app.PATCH("/chores/:id", r.choreHandler.PatchStatus)
+
 	app.GET("/choretypes", r.choreTypeHandler.GetBatch)
 	app.POST("/choretypes", r.choreTypeHandler.Create)
+	app.DELETE("/choretypes/:id", r.choreTypeHandler.Delete)
 	return nil
 }
