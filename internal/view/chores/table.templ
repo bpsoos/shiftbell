@@ -25,11 +25,9 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 				</tr>
 			</thead>
 			for _, chore := range result.Chores {
-				<tr
-					class={ getRowClass(chore.Deadline) }
-				>
+				<tr>
 					<td>{ chore.Description }</td>
-					<td><strong>{ chore.Deadline.Format("2006-01-02") }</strong></td>
+					<td class={ getRowClass(chore.Deadline) }>{ chore.Deadline.Format("2006-01-02") }</td>
 					<td class="text-center">{ fmt.Sprintf("%d", chore.IntervalDays) }</td>
 					<td class="text-center">{ chore.LastCompletedAt.Format("2006-01-02") }</td>
 					<td class="text-center">
@@ -77,19 +75,31 @@ templ markCompleteButton(chore models.Chore) {
 		hx-target="closest tr"
 	>
 		<input type="hidden" value="complete" name="status" id="status"/>
-		<button type="submit" class="btn btn-success">✓</button>
+		<button type="submit" class="btn btn-success btn-xs">
+			<style>
+			me {
+				margin-top: 0;
+				margin-bottom: 0;
+				padding-top: 0rem;
+				padding-bottom: 0rem;
+				padding-left: 1.5rem;
+				padding-right: 1.5rem;
+			}
+		</style>
+			✓
+		</button>
 	</form>
 }
 
 func getRowClass(deadline time.Time) string {
 	now := time.Now()
 	if deadline.Before(now) || deadline.Sub(now) <= 24*time.Hour {
-		return "table-danger"
+		return "text-bg-danger"
 	}
 	if deadline.Sub(now) > 24*time.Hour && deadline.Sub(now) <= 7*24*time.Hour {
-		return "table-warning"
+		return "text-bg-warning"
 	}
-	return "table-info"
+	return ""
 }
 
 func getBatchUrlWithQuery(offset int, limit int, content string) string {

@@ -35,7 +35,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 			join chore_types ct
 				on c.chore_type_id = ct.id
 			where c.is_complete = false
-			order by c.deadline desc
+			order by c.deadline asc
 			offset $1
 			limit $2 + 1
 		`,

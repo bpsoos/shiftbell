@@ -7,7 +7,7 @@ import (
 
 templ page(offset int, limit int, results *models.GetChoreBatchResult) {
 	@layouts.Nav("chores")
-	<div class="container card">
+	<div class="container card mt-3">
 		@table(offset, limit, results)
 	</div>
 }
