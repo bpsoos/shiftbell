@@ -13,6 +13,7 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 		hx-push-url={ getBatchUrlWithQuery(offset, limit, "all") }
 		hx-trigger="load-chores from:body delay:1s"
 		hx-swap="outerHTML"
+		style="min-width: fit-content"
 	>
 		<table class="table table-striped">
 			<style>

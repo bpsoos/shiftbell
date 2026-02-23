@@ -1,4 +1,6 @@
 dev_image := "shiftbell-dev"
+prod_image := "shiftbell"
+prod_migrate_image := "shiftbell-migrate"
 export DEV_IMAGE := dev_image
 
 default:
@@ -32,4 +34,12 @@ dump-dev-db:
         -f testdb.dump \
         testdb
     docker compose cp postgres:/testdb.dump .
+
+build-prod:
+    docker buildx build --load --platform=linux/amd64 -f Dockerfile.migrate -t {{prod_migrate_image}} .
+    docker buildx build --load --platform=linux/amd64 -f Dockerfile.serve -t {{prod_image}} .
+    docker save -o out/{{prod_migrate_image}}.tar {{prod_migrate_image}}:latest
+    gzip -f out/{{prod_migrate_image}}.tar
+    docker save -o out/{{prod_image}}.tar {{prod_image}}:latest
+    gzip -f out/{{prod_image}}.tar
 

@@ -1,0 +1,10 @@
+FROM golang:1.26.0-alpine as build
+
+WORKDIR /src
+COPY cmd internal ./
+RUN CGO_ENABLED=0 go build -o /app ./cmd/migrate
+
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=build /app /app
+ENTRYPOINT ["/app"]
+
