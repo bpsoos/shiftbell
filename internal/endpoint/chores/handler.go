@@ -13,6 +13,13 @@ import (
 )
 
 type Templater interface {
+	Table(
+		context.Context,
+		io.Writer,
+		int,
+		int,
+		*models.GetChoreBatchResult,
+	) error
 	Page(
 		context.Context,
 		io.Writer,
@@ -78,6 +85,11 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 	}
 
 	switch content {
+	case "table":
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+		ctx.Response().WriteHeader(http.StatusOK)
+
+		return h.templater.Table(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
 	case "all":
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
 		ctx.Response().WriteHeader(http.StatusOK)

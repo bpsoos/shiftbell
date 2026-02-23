@@ -15,6 +15,16 @@ func NewTemplater() *Templater {
 	return &Templater{}
 }
 
+func (t *Templater) Table(
+	ctx context.Context,
+	w io.Writer,
+	offset int,
+	limit int,
+	chores *models.GetChoreBatchResult,
+) error {
+	return table(offset, limit, chores).Render(ctx, w)
+}
+
 func (t *Templater) Page(
 	ctx context.Context,
 	w io.Writer,
