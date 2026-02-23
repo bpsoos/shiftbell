@@ -3,6 +3,7 @@ package chores
 import (
 	"fmt"
 	"github.com/bpsoos/shiftbell/internal/models"
+	"github.com/bpsoos/shiftbell/internal/view/icons"
 	"time"
 )
 
@@ -25,11 +26,12 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 			<thead>
 				<tr>
 					<th scope="col" style="width: 3%">#</th>
-					<th scope="col" style="width: 50%">description</th>
+					<th scope="col" style="width: 40%">description</th>
 					<th scope="col" style="width: 15%">deadline</th>
 					<th class="text-center" scope="col" style="width: 10%">interval days</th>
 					<th class="text-center" scope="col" style="width: 15%">last completed at</th>
 					<th class="text-center" scope="col" style="width: 5%">mark complete</th>
+					<th class="text-center" scope="col" style="width: 5%">edit</th>
 				</tr>
 			</thead>
 			for _, chore := range result.Chores {
@@ -41,6 +43,9 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 					<td class="text-center">{ chore.LastCompletedAt.Format("2006-01-02") }</td>
 					<td class="text-center">
 						@markCompleteButton(chore)
+					</td>
+					<td class="text-center">
+						@editButton(chore)
 					</td>
 				</tr>
 			}
@@ -77,6 +82,15 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 	</div>
 }
 
+templ editButton(chore models.Chore) {
+	<button
+		type="button"
+		class="btn btn-secondary my-0 py-0 px-3"
+	>
+		@icons.Edit()
+	</button>
+}
+
 templ markCompleteButton(chore models.Chore) {
 	<form
 		hx-patch={ fmt.Sprintf("/chores/%d", chore.Id) }
@@ -84,17 +98,7 @@ templ markCompleteButton(chore models.Chore) {
 		hx-target="closest tr"
 	>
 		<input type="hidden" value="complete" name="status" id="status"/>
-		<button type="submit" class="btn btn-success btn-xs">
-			<style>
-			me {
-				margin-top: 0;
-				margin-bottom: 0;
-				padding-top: 0rem;
-				padding-bottom: 0rem;
-				padding-left: 1.5rem;
-				padding-right: 1.5rem;
-			}
-		</style>
+		<button type="submit" class="btn btn-success my-0 py-0 px-3">
 			✓
 		</button>
 	</form>
