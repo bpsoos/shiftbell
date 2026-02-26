@@ -22,6 +22,60 @@ func NewPersister(deps *PersisterDeps) *Persister {
 		db: deps.Db,
 	}
 }
+
+func (p *Persister) SetLastCompletedAt(id int, lastUpdatedAt time.Time) (*models.Chore, error) {
+	row := p.db.QueryRow(
+		`
+			with updated as (
+				update chores
+				set last_completed_at = $2
+				where id = $1
+				returning *
+			)
+			select 
+				ct.description,
+				u.last_completed_at,
+				u.deadline,
+				ct.interval_days,
+				u.completed_at
+			from updated u
+			join chore_types ct
+			on u.chore_type_id = ct.id
+		`,
+		id,
+		lastUpdatedAt,
+	)
+	var (
+		description         string
+		lastCompletedAt     time.Time
+		status              models.ChoreStatus
+		deadline            time.Time
+		intervalDays        int
+		completedAtNullable sql.NullTime
+		completedAt         time.Time
+	)
+	err := row.Scan(&description, &lastCompletedAt, &deadline, &intervalDays, &completedAtNullable)
+	if err != nil {
+		return nil, fmt.Errorf("update chore query: %v", err)
+	}
+
+	if completedAtNullable.Valid {
+		completedAt = completedAtNullable.Time
+		status = models.ChoreStatusComplete
+	}
+	status = models.ChoreStatusIncomplete
+
+	return &models.Chore{
+		Id:              id,
+		Status:          status,
+		Description:     description,
+		IntervalDays:    intervalDays,
+		Deadline:        deadline,
+		LastCompletedAt: lastCompletedAt,
+		CompletedAt:     completedAt,
+	}, nil
+}
+
 func (p *Persister) Get(id int) (*models.Chore, error) {
 	row := p.db.QueryRow(
 		`

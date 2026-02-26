@@ -6,20 +6,55 @@ import (
 )
 
 templ choreForEdit(chore *models.Chore) {
+	<style>
+	</style>
 	<tr>
 		<td>{ chore.Id }</td>
-		<td>{ chore.Description }</td>
-		<td class={ getRowClass(chore.Deadline) }>{ chore.Deadline.Format("2006-01-02") }</td>
-		<td class="text-center">{ fmt.Sprintf("%d", chore.IntervalDays) }</td>
-		<td class="text-center">edit here</td>
+		<td class="disabled">{ chore.Description }</td>
+		<td class={ "disabled " + getRowClass(chore.Deadline) }>{ chore.Deadline.Format("2006-01-02") }</td>
 		<td class="text-center">
-			-
+			<input
+				type="date"
+				class="form-control"
+				id="lastCompletedAt"
+				name="lastCompletedAt"
+				min="1970.01.01"
+				max="2100.01.01"
+				value={ chore.LastCompletedAt.Format("2006-01-02") }
+				required
+			/>
+		</td>
+		<td class="text-center disabled">
+			@disabledMarkCompleteButton(chore)
 		</td>
 		<td class="text-center">
-			cancel edit
+			<button
+				class="btn btn-success my-0 py-0 px-3"
+				hx-patch={ fmt.Sprintf("/chores/%d", chore.Id) }
+				hx-swap="outerHTML swap:0.5s"
+				hx-target="closest tr"
+				hx-include="closest tr"
+			>
+				save edit
+			</button>
 		</td>
 		<td class="text-center">
-			cancel edit
+			<button
+				class="btn btn-danger my-0 py-0 px-3"
+				hx-get={ fmt.Sprintf("/chores/%d?for=readonly", chore.Id) }
+				hx-swap="outerHTML swap:0.5s"
+				hx-target="closest tr"
+			>
+				cancel edit
+			</button>
 		</td>
 	</tr>
+}
+
+templ disabledMarkCompleteButton(chore *models.Chore) {
+	<form>
+		<button type="submit" disabled class="btn btn-success my-0 py-0 px-3">
+			✓
+		</button>
+	</form>
 }

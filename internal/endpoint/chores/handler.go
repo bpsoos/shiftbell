@@ -20,6 +20,11 @@ type Templater interface {
 		int,
 		*models.GetChoreBatchResult,
 	) error
+	Chore(
+		context.Context,
+		io.Writer,
+		*models.Chore,
+	) error
 	ChoreForEdit(
 		context.Context,
 		io.Writer,
@@ -45,6 +50,7 @@ type Persister interface {
 	GetBatch(offset int, limit int) (*models.GetChoreBatchResult, error)
 	Get(id int) (*models.Chore, error)
 	MarkComplete(id int, completedAt time.Time) error
+	SetLastCompletedAt(id int, lastCompletedAt time.Time) (*models.Chore, error)
 }
 
 type HandlerDeps struct {
@@ -81,10 +87,23 @@ func (h *Handler) Get(ctx *echo.Context) error {
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 
-	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
-	ctx.Response().WriteHeader(http.StatusOK)
+	getForType := ctx.QueryParamOr("for", "readonly")
+	switch getForType {
+	case "readonly":
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+		ctx.Response().WriteHeader(http.StatusOK)
 
-	return h.templater.ChoreForEdit(ctx.Request().Context(), ctx.Response(), chore)
+		return h.templater.Chore(ctx.Request().Context(), ctx.Response(), chore)
+	case "edit":
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+		ctx.Response().WriteHeader(http.StatusOK)
+
+		return h.templater.ChoreForEdit(ctx.Request().Context(), ctx.Response(), chore)
+	default:
+		slog.Error("unknown get for cause", "get_for_type", getForType)
+		return ctx.String(http.StatusUnprocessableEntity, "unknown get for type")
+	}
+
 }
 
 func (h *Handler) GetBatch(ctx *echo.Context) error {
@@ -134,7 +153,7 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 	}
 }
 
-func (h *Handler) PatchStatus(ctx *echo.Context) error {
+func (h *Handler) Patch(ctx *echo.Context) error {
 	idStr := ctx.ParamOr("id", "")
 	if idStr == "" {
 		return ctx.String(http.StatusUnprocessableEntity, "id missing")
@@ -145,11 +164,8 @@ func (h *Handler) PatchStatus(ctx *echo.Context) error {
 		return ctx.String(http.StatusUnprocessableEntity, "invalid id")
 	}
 	status := ctx.FormValueOr("status", "")
-	if status == "" {
-		slog.Info("status missing")
-		return ctx.String(http.StatusUnprocessableEntity, "status missing")
-	}
 	switch status {
+	case "":
 	case "complete":
 	case "incomplete":
 		return ctx.String(http.StatusConflict, "setting status to incomplete dissalowed")
@@ -158,14 +174,44 @@ func (h *Handler) PatchStatus(ctx *echo.Context) error {
 		return ctx.String(http.StatusUnprocessableEntity, "unknown status")
 	}
 
-	err = h.persister.MarkComplete(id, time.Now())
-	if err != nil {
-		slog.Error("patch chore status error", "err", err)
-		return ctx.String(http.StatusInternalServerError, "something went wrong")
+	lastCompletedAtStr := ctx.FormValueOr("lastCompletedAt", "")
+
+	if lastCompletedAtStr == "" && status == "" {
+		slog.Info("patch request request content empty")
+		return ctx.String(http.StatusUnprocessableEntity, "patch content missing")
+	}
+	slog.Info("updating lastCompletedAt", "last_completed_at", lastCompletedAtStr, "status", status)
+
+	var lastCompletedAt time.Time
+	if lastCompletedAtStr != "" {
+		lastCompletedAt, err = time.Parse("2006-01-02", lastCompletedAtStr)
+		if err != nil {
+			slog.Info("invalid lastCompletedAt", "last_completed_at", lastCompletedAtStr)
+			return ctx.String(http.StatusUnprocessableEntity, "invalid lastCompletedAt")
+		}
 	}
 
-	ctx.Response().Header().Set("HX-Trigger", "load-chores")
-	ctx.Response().WriteHeader(http.StatusOK)
+	if status != "" {
+		err = h.persister.MarkComplete(id, time.Now())
+		if err != nil {
+			slog.Error("patch chore status error", "err", err)
+			return ctx.String(http.StatusInternalServerError, "something went wrong")
+		}
 
-	return nil
+		ctx.Response().Header().Set("HX-Trigger", "load-chores")
+	}
+	if lastCompletedAtStr != "" {
+		slog.Info("updating lastCompletedAt", "last_completed_at", lastCompletedAtStr)
+		chore, err := h.persister.SetLastCompletedAt(id, lastCompletedAt)
+		if err != nil {
+			slog.Error("set last updated at error", "err", err)
+			return ctx.String(http.StatusInternalServerError, "something went wrong")
+		}
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+		ctx.Response().WriteHeader(http.StatusOK)
+
+		return h.templater.Chore(ctx.Request().Context(), ctx.Response(), chore)
+	}
+
+	return ctx.String(http.StatusOK, "OK")
 }

@@ -22,32 +22,23 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 					opacity: 0;
 					transition: opacity 0.5s ease-out;
 				}
+				me>tbody>tr:nth-of-type(odd)>*.disabled {
+					opacity: 0.25;
+					cursor: not-allowed;
+				}
 			</style>
 			<thead>
 				<tr>
 					<th scope="col" style="width: 3%">#</th>
-					<th scope="col" style="width: 40%">description</th>
+					<th scope="col" style="width: 50%">description</th>
 					<th scope="col" style="width: 15%">deadline</th>
-					<th class="text-center" scope="col" style="width: 10%">interval days</th>
 					<th class="text-center" scope="col" style="width: 15%">last completed at</th>
 					<th class="text-center" scope="col" style="width: 5%">mark complete</th>
 					<th class="text-center" scope="col" style="width: 5%">edit</th>
 				</tr>
 			</thead>
 			for _, chore := range result.Chores {
-				<tr>
-					<td>{ chore.Id }</td>
-					<td>{ chore.Description }</td>
-					<td class={ getRowClass(chore.Deadline) }>{ chore.Deadline.Format("2006-01-02") }</td>
-					<td class="text-center">{ fmt.Sprintf("%d", chore.IntervalDays) }</td>
-					<td class="text-center">{ chore.LastCompletedAt.Format("2006-01-02") }</td>
-					<td class="text-center">
-						@markCompleteButton(chore)
-					</td>
-					<td class="text-center">
-						@editButton(chore)
-					</td>
-				</tr>
+				@choreRow(&chore)
 			}
 		</table>
 		<div class="my-2 px-3">
@@ -82,7 +73,22 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 	</div>
 }
 
-templ editButton(chore models.Chore) {
+templ choreRow(chore *models.Chore) {
+	<tr>
+		<td>{ chore.Id }</td>
+		<td>{ chore.Description }</td>
+		<td class={ getRowClass(chore.Deadline) }>{ chore.Deadline.Format("2006-01-02") }</td>
+		<td class="text-center">{ chore.LastCompletedAt.Format("2006-01-02") }</td>
+		<td class="text-center">
+			@markCompleteButton(chore)
+		</td>
+		<td class="text-center">
+			@editButton(chore)
+		</td>
+	</tr>
+}
+
+templ editButton(chore *models.Chore) {
 	<button
 		type="button"
 		class="btn btn-secondary my-0 py-0 px-3"
@@ -94,7 +100,7 @@ templ editButton(chore models.Chore) {
 	</button>
 }
 
-templ markCompleteButton(chore models.Chore) {
+templ markCompleteButton(chore *models.Chore) {
 	<form
 		hx-patch={ fmt.Sprintf("/chores/%d", chore.Id) }
 		hx-swap="outerHTML swap:0.5s"
@@ -110,10 +116,10 @@ templ markCompleteButton(chore models.Chore) {
 func getRowClass(deadline time.Time) string {
 	now := time.Now()
 	if deadline.Before(now) || deadline.Sub(now) <= 24*time.Hour {
-		return "text-bg-danger"
+		return ""
 	}
 	if deadline.Sub(now) > 24*time.Hour && deadline.Sub(now) <= 7*24*time.Hour {
-		return "text-bg-warning"
+		return ""
 	}
 	return ""
 }
