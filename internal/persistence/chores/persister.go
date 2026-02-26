@@ -1,6 +1,7 @@
 package chores
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -20,6 +21,53 @@ func NewPersister(deps *PersisterDeps) *Persister {
 	return &Persister{
 		db: deps.Db,
 	}
+}
+func (p *Persister) Get(id int) (*models.Chore, error) {
+	row := p.db.QueryRow(
+		`
+			select 
+				ct.description,
+				c.last_completed_at,
+				c.deadline,
+				ct.interval_days,
+				c.completed_at
+			from chores c
+			join chore_types ct
+			on c.chore_type_id = ct.id
+			where c.id = $1
+		`,
+		id,
+	)
+
+	var (
+		description         string
+		lastCompletedAt     time.Time
+		status              models.ChoreStatus
+		deadline            time.Time
+		intervalDays        int
+		completedAtNullable sql.NullTime
+		completedAt         time.Time
+	)
+	err := row.Scan(&description, &lastCompletedAt, &deadline, &intervalDays, &completedAtNullable)
+	if err != nil {
+		return nil, fmt.Errorf("get chore query: %v", err)
+	}
+
+	if completedAtNullable.Valid {
+		completedAt = completedAtNullable.Time
+		status = models.ChoreStatusComplete
+	}
+	status = models.ChoreStatusIncomplete
+
+	return &models.Chore{
+		Id:              id,
+		Status:          status,
+		Description:     description,
+		IntervalDays:    intervalDays,
+		Deadline:        deadline,
+		LastCompletedAt: lastCompletedAt,
+		CompletedAt:     completedAt,
+	}, nil
 }
 
 func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult, error) {

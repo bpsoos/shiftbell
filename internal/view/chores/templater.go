@@ -33,6 +33,11 @@ func (t *Templater) Page(
 	chores *models.GetChoreBatchResult,
 ) error {
 	return page(offset, limit, chores).Render(ctx, w)
+
+}
+
+func (t *Templater) ChoreForEdit(ctx context.Context, w io.Writer, chore *models.Chore) error {
+	return choreForEdit(chore).Render(ctx, w)
 }
 
 func (t *Templater) PageWithLayout(

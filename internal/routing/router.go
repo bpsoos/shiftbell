@@ -9,6 +9,7 @@ type ChoreTypeHandler interface {
 }
 
 type ChoreHandler interface {
+	Get(*echo.Context) error
 	GetBatch(*echo.Context) error
 	PatchStatus(*echo.Context) error
 }

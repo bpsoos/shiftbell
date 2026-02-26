@@ -16,6 +16,7 @@ func (r *Router) Setup(app *echo.Echo) error {
 
 	app.GET("/", r.choreHandler.GetBatch)
 	app.GET("/chores", r.choreHandler.GetBatch)
+	app.GET("/chores/:id", r.choreHandler.Get)
 	app.PATCH("/chores/:id", r.choreHandler.PatchStatus)
 
 	app.GET("/choretypes", r.choreTypeHandler.GetBatch)

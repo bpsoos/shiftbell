@@ -20,6 +20,11 @@ type Templater interface {
 		int,
 		*models.GetChoreBatchResult,
 	) error
+	ChoreForEdit(
+		context.Context,
+		io.Writer,
+		*models.Chore,
+	) error
 	Page(
 		context.Context,
 		io.Writer,
@@ -38,6 +43,7 @@ type Templater interface {
 
 type Persister interface {
 	GetBatch(offset int, limit int) (*models.GetChoreBatchResult, error)
+	Get(id int) (*models.Chore, error)
 	MarkComplete(id int, completedAt time.Time) error
 }
 
@@ -56,6 +62,29 @@ func NewHandler(deps *HandlerDeps) *Handler {
 		templater: deps.Templater,
 		persister: deps.Persister,
 	}
+}
+
+func (h *Handler) Get(ctx *echo.Context) error {
+	idStr := ctx.ParamOr("id", "")
+	if idStr == "" {
+		return ctx.String(http.StatusUnprocessableEntity, "id missing")
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		slog.Info("invalid id received", "err", err)
+		return ctx.String(http.StatusUnprocessableEntity, "invalid id")
+	}
+
+	chore, err := h.persister.Get(id)
+	if err != nil {
+		slog.Error("get batch error", "err", err)
+		return ctx.String(http.StatusInternalServerError, "something went wrong")
+	}
+
+	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+	ctx.Response().WriteHeader(http.StatusOK)
+
+	return h.templater.ChoreForEdit(ctx.Request().Context(), ctx.Response(), chore)
 }
 
 func (h *Handler) GetBatch(ctx *echo.Context) error {

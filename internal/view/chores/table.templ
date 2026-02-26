@@ -12,7 +12,7 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 		id="chores-table-container"
 		hx-get={ getBatchUrlWithQuery(offset, limit, "table") }
 		hx-push-url={ getBatchUrlWithQuery(offset, limit, "all") }
-		hx-trigger="load-chores from:body delay:1s"
+		hx-trigger="load-chores from:body delay:0.4s"
 		hx-swap="outerHTML"
 		style="min-width: fit-content"
 	>
@@ -20,7 +20,7 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 			<style>
 				me tr.htmx-swapping {
 					opacity: 0;
-					transition: opacity 1s ease-out;
+					transition: opacity 0.5s ease-out;
 				}
 			</style>
 			<thead>
@@ -86,6 +86,9 @@ templ editButton(chore models.Chore) {
 	<button
 		type="button"
 		class="btn btn-secondary my-0 py-0 px-3"
+		hx-get={ fmt.Sprintf("/chores/%d?for=edit", chore.Id) }
+		hx-swap="outerHTML swap:0.5s"
+		hx-target="closest tr"
 	>
 		@icons.Edit()
 	</button>
@@ -94,7 +97,7 @@ templ editButton(chore models.Chore) {
 templ markCompleteButton(chore models.Chore) {
 	<form
 		hx-patch={ fmt.Sprintf("/chores/%d", chore.Id) }
-		hx-swap="outerHTML swap:1s"
+		hx-swap="outerHTML swap:0.5s"
 		hx-target="closest tr"
 	>
 		<input type="hidden" value="complete" name="status" id="status"/>
