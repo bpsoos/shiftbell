@@ -26,20 +26,15 @@ func NewPersister(deps *PersisterDeps) *Persister {
 func (p *Persister) SetLastCompletedAt(id int, lastUpdatedAt time.Time) (*models.Chore, error) {
 	row := p.db.QueryRow(
 		`
-			with updated as (
-				update chores
-				set last_completed_at = $2
-				where id = $1
-				returning *
-			)
-			select 
-				ct.description,
-				u.last_completed_at,
+			update chores as c
+			set last_completed_at = $2
+			from chore_types as ct
+			where c.id = $1
+			and c.chore_type_id = ct.id
+			returning ct.description,
+				c.last_completed_at,
 				ct.interval_days,
-				u.completed_at
-			from updated u
-			join chore_types ct
-			on u.chore_type_id = ct.id
+				c.completed_at
 		`,
 		id,
 		lastUpdatedAt,
@@ -200,7 +195,7 @@ const markCompleteQuery = `
 		where c.id = candidate.id
 		returning candidate.chore_type_id
 	)
-	insert into chores (chore_type_id, last_completed_at,  is_complete)
+	insert into chores (chore_type_id, last_completed_at, is_complete)
 	select
 		u.chore_type_id,
 		$2,
