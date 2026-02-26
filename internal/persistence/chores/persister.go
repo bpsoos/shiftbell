@@ -35,7 +35,6 @@ func (p *Persister) SetLastCompletedAt(id int, lastUpdatedAt time.Time) (*models
 			select 
 				ct.description,
 				u.last_completed_at,
-				u.deadline,
 				ct.interval_days,
 				u.completed_at
 			from updated u
@@ -49,12 +48,11 @@ func (p *Persister) SetLastCompletedAt(id int, lastUpdatedAt time.Time) (*models
 		description         string
 		lastCompletedAt     time.Time
 		status              models.ChoreStatus
-		deadline            time.Time
 		intervalDays        int
 		completedAtNullable sql.NullTime
 		completedAt         time.Time
 	)
-	err := row.Scan(&description, &lastCompletedAt, &deadline, &intervalDays, &completedAtNullable)
+	err := row.Scan(&description, &lastCompletedAt, &intervalDays, &completedAtNullable)
 	if err != nil {
 		return nil, fmt.Errorf("update chore query: %v", err)
 	}
@@ -70,7 +68,7 @@ func (p *Persister) SetLastCompletedAt(id int, lastUpdatedAt time.Time) (*models
 		Status:          status,
 		Description:     description,
 		IntervalDays:    intervalDays,
-		Deadline:        deadline,
+		Deadline:        lastCompletedAt.Add(24 * time.Hour * time.Duration(intervalDays)),
 		LastCompletedAt: lastCompletedAt,
 		CompletedAt:     completedAt,
 	}, nil
@@ -79,16 +77,13 @@ func (p *Persister) SetLastCompletedAt(id int, lastUpdatedAt time.Time) (*models
 func (p *Persister) Get(id int) (*models.Chore, error) {
 	row := p.db.QueryRow(
 		`
-			select 
-				ct.description,
-				c.last_completed_at,
-				c.deadline,
-				ct.interval_days,
-				c.completed_at
-			from chores c
-			join chore_types ct
-			on c.chore_type_id = ct.id
-			where c.id = $1
+			select description,
+				last_completed_at,
+				interval_days,
+				completed_at,
+				deadline
+			from chores_full
+			where id = $1
 		`,
 		id,
 	)
@@ -102,7 +97,7 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 		completedAtNullable sql.NullTime
 		completedAt         time.Time
 	)
-	err := row.Scan(&description, &lastCompletedAt, &deadline, &intervalDays, &completedAtNullable)
+	err := row.Scan(&description, &lastCompletedAt, &intervalDays, &completedAtNullable, &deadline)
 	if err != nil {
 		return nil, fmt.Errorf("get chore query: %v", err)
 	}
@@ -118,9 +113,9 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 		Status:          status,
 		Description:     description,
 		IntervalDays:    intervalDays,
-		Deadline:        deadline,
 		LastCompletedAt: lastCompletedAt,
 		CompletedAt:     completedAt,
+		Deadline:        deadline,
 	}, nil
 }
 
@@ -128,16 +123,14 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 	rows, err := p.db.Query(
 		`
 			select
-				c.id,
-				ct.description,
-				c.last_completed_at,
-				c.deadline,
-				ct.interval_days
-			from chores c
-			join chore_types ct
-				on c.chore_type_id = ct.id
-			where c.is_complete = false
-			order by c.deadline asc
+				id,
+				description,
+				last_completed_at,
+				interval_days,
+				deadline
+			from chores_full c
+			where is_complete = false
+			order by deadline asc
 			offset $1
 			limit $2 + 1
 		`,
@@ -151,12 +144,12 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 		id              int
 		description     string
 		lastCompletedAt time.Time
-		deadline        time.Time
 		intervalDays    int
+		deadline        time.Time
 	)
 	results := make([]models.Chore, 0)
 	for rows.Next() {
-		err := rows.Scan(&id, &description, &lastCompletedAt, &deadline, &intervalDays)
+		err := rows.Scan(&id, &description, &lastCompletedAt, &intervalDays, &deadline)
 		if err != nil {
 			return nil, fmt.Errorf("reading fetched rows: %v", err)
 		}
@@ -207,11 +200,10 @@ const markCompleteQuery = `
 		where c.id = candidate.id
 		returning candidate.chore_type_id
 	)
-	insert into chores (chore_type_id, last_completed_at, deadline, is_complete)
+	insert into chores (chore_type_id, last_completed_at,  is_complete)
 	select
 		u.chore_type_id,
 		$2,
-		$2::date + interval '1 day' * ct.interval_days,
 		false
 	from updated u
 	join chore_types ct on ct.id = u.chore_type_id
