@@ -1,7 +1,25 @@
 package chores
 
-import "github.com/bpsoos/shiftbell/internal/models"
+import (
+	"fmt"
+	"github.com/bpsoos/shiftbell/internal/models"
+)
 
 templ choreForEdit(chore *models.Chore) {
-	<tr></tr>
+	<tr>
+		<td>{ chore.Id }</td>
+		<td>{ chore.Description }</td>
+		<td class={ getRowClass(chore.Deadline) }>{ chore.Deadline.Format("2006-01-02") }</td>
+		<td class="text-center">{ fmt.Sprintf("%d", chore.IntervalDays) }</td>
+		<td class="text-center">edit here</td>
+		<td class="text-center">
+			-
+		</td>
+		<td class="text-center">
+			cancel edit
+		</td>
+		<td class="text-center">
+			cancel edit
+		</td>
+	</tr>
 }
