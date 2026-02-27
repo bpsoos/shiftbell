@@ -11,7 +11,7 @@ templ choreForEdit(chore *models.Chore) {
 	<tr>
 		<td>{ chore.Id }</td>
 		<td class="disabled">{ chore.Description }</td>
-		<td class={ "disabled " + getRowClass(chore.Deadline) }>{ chore.Deadline.Format("2006-01-02") }</td>
+		<td class="disabled">{ chore.Deadline.Format("2006-01-02") }</td>
 		<td class="text-center">
 			<input
 				type="date"
