@@ -22,6 +22,15 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 					opacity: 0;
 					transition: opacity 0.5s ease-out;
 				}
+				me>tbody>tr.warning{
+					background: linear-gradient(1deg, var(--bs-warning) 0%, transparent 25%);
+				}
+				me>tbody>tr.danger{
+					background: linear-gradient(1deg, var(--bs-danger) 0%, transparent 25%);
+				}
+				.table>:not(caption)>*>* {
+					background-color: transparent;
+				}
 				me>tbody>tr:nth-of-type(odd)>*.disabled {
 					opacity: 0.25;
 					cursor: not-allowed;
@@ -74,10 +83,10 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 }
 
 templ choreRow(chore *models.Chore) {
-	<tr>
+	<tr class={ getRowClass(chore.Deadline) }>
 		<td>{ chore.Id }</td>
 		<td>{ chore.Description }</td>
-		<td class={ getRowClass(chore.Deadline) }>{ chore.Deadline.Format("2006-01-02") }</td>
+		<td>{ chore.Deadline.Format("2006-01-02") }</td>
 		<td class="text-center">{ chore.LastCompletedAt.Format("2006-01-02") }</td>
 		<td class="text-center">
 			@markCompleteButton(chore)
@@ -116,10 +125,10 @@ templ markCompleteButton(chore *models.Chore) {
 func getRowClass(deadline time.Time) string {
 	now := time.Now()
 	if deadline.Before(now) || deadline.Sub(now) <= 24*time.Hour {
-		return ""
+		return "danger"
 	}
 	if deadline.Sub(now) > 24*time.Hour && deadline.Sub(now) <= 7*24*time.Hour {
-		return ""
+		return "warning"
 	}
 	return ""
 }
