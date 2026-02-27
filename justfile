@@ -43,3 +43,10 @@ build-prod:
     docker save -o out/{{prod_image}}.tar {{prod_image}}:latest
     gzip -f out/{{prod_image}}.tar
 
+fmt:
+    docker run --rm -it \
+        -v {{justfile_dir()}}:/src \
+        --entrypoint /bin/sh \
+        --workdir /src \
+        {{dev_image}} \
+        -c "go fmt ./... && go tool templ fmt ."

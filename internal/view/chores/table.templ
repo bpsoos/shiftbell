@@ -3,9 +3,6 @@ package chores
 import (
 	"fmt"
 	"github.com/bpsoos/shiftbell/internal/models"
-	"github.com/bpsoos/shiftbell/internal/view/icons"
-	"math"
-	"time"
 )
 
 templ table(offset int, limit int, result *models.GetChoreBatchResult) {
@@ -17,17 +14,15 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 		hx-swap="outerHTML"
 		style="min-width: fit-content"
 	>
-		<table>
-			<style>
-				me tr.htmx-swapping {
-					opacity: 0;
-					transition: opacity 0.5s ease-out;
-				}
-			</style>
-			for _, chore := range result.Chores {
-				@choreRow(&chore)
+		<style>
+			me div.htmx-swapping {
+				opacity: 0;
+				transition: opacity 0.5s ease-out;
 			}
-		</table>
+		</style>
+		for _, chore := range result.Chores {
+			@choreCard(&chore)
+		}
 		<div class="my-2 px-3">
 			<div class="row">
 				<button
@@ -58,99 +53,6 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 			</div>
 		</div>
 	</div>
-}
-
-templ choreRow(chore *models.Chore) {
-	<tr class>
-		<div class="card my-3">
-			<div class="card-header d-flex align-items-center py-1 ps-1">
-				<span class={ "m-0 p-1 badge text-bg-" + getDeadlineLevel(chore.Deadline) }>
-					Due: { chore.Deadline.Format("2006-01-02") }
-				</span>
-			</div>
-			<div class="card-body">
-				<p class="card-title">
-					{ chore.Description }
-				</p>
-				<p class="card-text">
-					<small class="text-body-secondary">
-						@lastDoneText(chore)
-					</small>
-				</p>
-				<div class="row justify-content-between">
-					<div class="mr-auto col-auto" style="width: fit-content">
-						@markCompleteButton(chore)
-					</div>
-					<div class="ml-auto col-auto" style="width: fit-content">
-						@editButton(chore)
-					</div>
-				</div>
-			</div>
-		</div>
-	</tr>
-}
-
-templ lastDoneText(chore *models.Chore) {
-	Last done: { chore.LastCompletedAt.Format("2006-01-02") } ({ getDaysAgoText(getDaysAgoCount(chore.LastCompletedAt)) })
-}
-
-func getDaysAgoCount(since time.Time) int {
-	return int(math.Floor(time.Now().Sub(since).Hours() / 24))
-}
-
-func getDaysAgoText(daysAgo int) string {
-	if daysAgo == 0 {
-		return "today"
-	}
-	if daysAgo == 1 {
-		return "1 day ago"
-	}
-	return fmt.Sprintf("%d days ago", daysAgo)
-}
-
-templ editButton(chore *models.Chore) {
-	<div class="btn-group">
-		<button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-			@icons.KebabMenu()
-		</button>
-		<ul class="dropdown-menu">
-			<li>
-				<button
-					type="button"
-					class="dropdown-item"
-					hx-get={ fmt.Sprintf("/chores/%d?for=edit", chore.Id) }
-					hx-swap="outerHTML swap:0.5s"
-					hx-target="closest tr"
-				>
-					edit
-				</button>
-			</li>
-		</ul>
-	</div>
-}
-
-templ markCompleteButton(chore *models.Chore) {
-	<form
-		hx-patch={ fmt.Sprintf("/chores/%d", chore.Id) }
-		hx-swap="outerHTML swap:0.5s"
-		hx-target="closest tr"
-	>
-		<input type="hidden" value="complete" name="status" id="status"/>
-		<button type="submit" class="btn btn-success">
-			Mark Complete
-		</button>
-	</form>
-}
-
-func getDeadlineLevel(deadline time.Time) string {
-	now := time.Now()
-	if deadline.Before(now) || deadline.Sub(now) <= 24*time.Hour {
-		return "danger"
-	}
-	if deadline.Sub(now) > 24*time.Hour && deadline.Sub(now) <= 7*24*time.Hour {
-		return "warning"
-	}
-	return "secondary"
 }
 
 func getBatchUrlWithQuery(offset int, limit int, content string) string {

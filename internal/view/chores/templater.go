@@ -36,7 +36,7 @@ func (t *Templater) Page(
 }
 
 func (t *Templater) Chore(ctx context.Context, w io.Writer, chore *models.Chore) error {
-	return choreRow(chore).Render(ctx, w)
+	return choreCard(chore).Render(ctx, w)
 }
 
 func (t *Templater) ChoreForEdit(ctx context.Context, w io.Writer, chore *models.Chore) error {
