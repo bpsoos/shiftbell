@@ -207,6 +207,7 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 			slog.Error("set last updated at error", "err", err)
 			return ctx.String(http.StatusInternalServerError, "something went wrong")
 		}
+		ctx.Response().Header().Set("HX-Trigger", "load-chores")
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
 		ctx.Response().WriteHeader(http.StatusOK)
 

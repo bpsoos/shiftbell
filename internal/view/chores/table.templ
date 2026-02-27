@@ -14,12 +14,6 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 		hx-swap="outerHTML"
 		style="min-width: fit-content"
 	>
-		<style>
-			me div.htmx-swapping {
-				opacity: 0;
-				transition: opacity 0.5s ease-out;
-			}
-		</style>
 		for _, chore := range result.Chores {
 			@choreCard(&chore)
 		}

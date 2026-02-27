@@ -11,9 +11,10 @@ import (
 templ choreCard(chore *models.Chore) {
 	<div class="card my-3">
 		<div class="card-header border-bottom-0 d-flex align-items-center py-1 ps-1">
-			<span class={ "m-0 p-1 badge text-bg-" + getDeadlineLevel(chore.Deadline) }>
+			<span class={ "col-auto me-auto p-1 badge text-bg-" + getDeadlineLevel(chore.Deadline) }>
 				Due: { chore.Deadline.Format("2006-01-02") }
 			</span>
+			<span class="col-auto ms-auto">{ fmt.Sprintf("#%d",chore.Id) }</span>
 		</div>
 		<div class="card-body">
 			<p class="card-title">
@@ -24,11 +25,11 @@ templ choreCard(chore *models.Chore) {
 					@lastDoneText(chore)
 				</small>
 			</p>
-			<div class="row justify-content-between">
-				<div class="mr-auto col-auto" style="width: fit-content">
+			<div class="row">
+				<div class="me-auto col-auto" style="width: fit-content">
 					@markCompleteButton(chore)
 				</div>
-				<div class="ml-auto col-auto" style="width: fit-content">
+				<div class="ms-auto col-auto" style="width: fit-content">
 					@choreCardMenuButton(chore)
 				</div>
 			</div>
@@ -72,7 +73,7 @@ templ choreForEdit(chore *models.Chore) {
 					<button
 						class="btn btn-danger w-100"
 						hx-get={ fmt.Sprintf("/chores/%d?for=readonly", chore.Id) }
-						hx-swap="outerHTML swap:0.5s"
+						hx-swap="outerHTML"
 						hx-target="closest .card"
 					>
 						cancel
@@ -101,8 +102,8 @@ templ lastDoneText(chore *models.Chore) {
 templ markCompleteButton(chore *models.Chore) {
 	<form
 		hx-patch={ fmt.Sprintf("/chores/%d", chore.Id) }
-		hx-swap="outerHTML swap:0.5s"
-		hx-target="closest tr"
+		hx-swap="none"
+		hx-target="closest .card"
 	>
 		<input type="hidden" value="complete" name="status" id="status"/>
 		<button type="submit" class="btn btn-success">
@@ -122,7 +123,7 @@ templ choreCardMenuButton(chore *models.Chore) {
 					type="button"
 					class="dropdown-item"
 					hx-get={ fmt.Sprintf("/chores/%d?for=edit", chore.Id) }
-					hx-swap="outerHTML swap:0.5s"
+					hx-swap="outerHTML"
 					hx-target="closest .card"
 				>
 					Edit last completion date
