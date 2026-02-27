@@ -63,12 +63,20 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 templ choreRow(chore *models.Chore) {
 	<tr class>
 		<div class="card my-3">
-			<div class="card-header">
-				<span class={ "badge text-bg-" + getDeadlineLevel(chore.Deadline) }>Due: { chore.Deadline.Format("2006-01-02") }</span>
+			<div class="card-header d-flex align-items-center py-1 ps-1">
+				<span class={ "m-0 p-1 badge text-bg-" + getDeadlineLevel(chore.Deadline) }>
+					Due: { chore.Deadline.Format("2006-01-02") }
+				</span>
 			</div>
 			<div class="card-body">
-				<p class="card-text">{ chore.Description }</p>
-				<p class="card-text"><small class="text-body-secondary">Last done: { chore.LastCompletedAt.Format("2006-01-02") } ({ getDaysAgoText(getDaysAgoCount(chore.LastCompletedAt)) })</small></p>
+				<p class="card-title">
+					{ chore.Description }
+				</p>
+				<p class="card-text">
+					<small class="text-body-secondary">
+						@lastDoneText(chore)
+					</small>
+				</p>
 				<div class="row justify-content-between">
 					<div class="mr-auto col-auto" style="width: fit-content">
 						@markCompleteButton(chore)
@@ -80,6 +88,10 @@ templ choreRow(chore *models.Chore) {
 			</div>
 		</div>
 	</tr>
+}
+
+templ lastDoneText(chore *models.Chore) {
+	Last done: { chore.LastCompletedAt.Format("2006-01-02") } ({ getDaysAgoText(getDaysAgoCount(chore.LastCompletedAt)) })
 }
 
 func getDaysAgoCount(since time.Time) int {
