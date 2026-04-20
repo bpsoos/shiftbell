@@ -25,9 +25,9 @@ type Chore struct {
 }
 
 type ChoreType struct {
-	Id           int
-	Description  string
-	IntervalDays int
+	Id          int
+	Description string
+	Name        string
 }
 
 type GetChoreTypeBatchResult struct {

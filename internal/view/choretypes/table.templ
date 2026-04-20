@@ -22,15 +22,15 @@ templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 			</style>
 			<thead>
 				<tr>
+					<th scope="col text-center" style="width: 20%">name</th>
 					<th scope="col" style="width: 80%">description</th>
-					<th scope="col text-center" style="width: 20%">interval days</th>
 					<th scope="col text-center" style="width: 20%"></th>
 				</tr>
 			</thead>
 			for _, choreType := range result.ChoreTypes {
 				<tr>
+					<td>{ choreType.Name }</td>
 					<td>{ choreType.Description }</td>
-					<td>{ fmt.Sprintf("%d", choreType.IntervalDays) }</td>
 					<td>
 						<button
 							class="btn btn-outline-danger px-3 py-0"

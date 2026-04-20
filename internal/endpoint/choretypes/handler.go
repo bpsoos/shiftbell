@@ -36,7 +36,7 @@ type Templater interface {
 }
 
 type ChoreTypePersister interface {
-	Create(description string, intervalDays int) error
+	Create(name string, description string) error
 	Delete(id int) error
 	GetBatch(offset int, limit int) (*models.GetChoreTypeBatchResult, error)
 }
@@ -124,16 +124,16 @@ func (h *Handler) Delete(ctx *echo.Context) error {
 }
 
 func (h *Handler) Create(ctx *echo.Context) error {
-	description := ctx.FormValue("description")
-	intervalDaysStr := ctx.FormValue("interval-days")
-	intervalDays, err := strconv.Atoi(intervalDaysStr)
-	if err != nil {
-		panic(err)
+	name := ctx.FormValue("name")
+	if name == "" {
+		slog.Info("missing name for create chore type")
+		return ctx.String(http.StatusUnprocessableEntity, "missing name")
 	}
+	description := ctx.FormValue("description")
 
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
 
-	err = h.choreTypePersister.Create(description, intervalDays)
+	err := h.choreTypePersister.Create(name, description)
 	if err != nil {
 		slog.Error("create chore type error", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")

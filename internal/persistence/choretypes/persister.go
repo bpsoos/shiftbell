@@ -1,8 +1,8 @@
 package choretypes
 
 import (
+	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/bpsoos/shiftbell/internal/models"
 	"github.com/jmoiron/sqlx"
@@ -24,9 +24,6 @@ func NewChoreTypePersister(deps *PersisterDeps) *Persister {
 
 func (p *Persister) Delete(id int) error {
 	_, err := p.db.Exec(`
-		with chores_deleted as (
-			delete from chores where chore_type_id = $1
-		)
 		delete from chore_types where id = $1
 	`,
 		id,
@@ -37,20 +34,20 @@ func (p *Persister) Delete(id int) error {
 	return nil
 }
 
-func (p *Persister) Create(description string, intervalDays int) error {
-	now := time.Now()
+func (p *Persister) Create(name string, description string) error {
+	var sqlDesc sql.NullString
+	if name != "" {
+		sqlDesc = sql.NullString{
+			String: description,
+			Valid:  true,
+		}
+	}
 	_, err := p.db.NamedExec(`
-		with chore_types_insert as (
-			insert into chore_types (description, interval_days)
-			values (:description, :interval_days)
-			returning id, interval_days
-		)
-		insert into chores (chore_type_id, last_completed_at, is_complete)
-		select id, :now, false from chore_types_insert
+		insert into chore_types (name, description)
+		values (:name, :description)
 	`, map[string]any{
-		"description":   description,
-		"interval_days": intervalDays,
-		"now":           now,
+		"description": sqlDesc,
+		"name":        name,
 	})
 
 	if err != nil {
@@ -76,20 +73,24 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchRe
 		return nil, fmt.Errorf("db query selecting chores: %v", err)
 	}
 	var (
-		id           int
-		description  string
-		intervalDays int
+		id          int
+		name        string
+		description sql.NullString
 	)
 	results := make([]models.ChoreType, 0)
 	for rows.Next() {
-		err := rows.Scan(&id, &description, &intervalDays)
+		err := rows.Scan(&id, &name, &description)
 		if err != nil {
 			return nil, fmt.Errorf("reading fetched rows: %v", err)
 		}
+		desc := ""
+		if description.Valid {
+			desc = description.String
+		}
 		results = append(results, models.ChoreType{
-			Id:           id,
-			Description:  description,
-			IntervalDays: intervalDays,
+			Id:          id,
+			Name:        name,
+			Description: desc,
 		})
 	}
 	if len(results) > limit {

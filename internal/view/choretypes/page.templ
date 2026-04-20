@@ -45,33 +45,31 @@ templ createForm() {
 					me input::placeholder {
 						opacity: 0.55;
 					}
+					me textarea::placeholder {
+						opacity: 0.55;
+					}
 				</style>
 					<div class="mb-3">
-						<label for="description" class="form-label">Description</label>
+						<label for="name" class="form-label">Name</label>
 						<input
 							type="text"
 							class="form-control"
-							id="description"
-							name="description"
+							id="name"
+							name="name"
 							placeholder="e.g., Take out trash"
 							required
 						/>
 					</div>
 					<div class="mb-3">
-						<label for="interval-days" class="form-label">Interval</label>
-						<div class="input-group">
-							<input
-								type="number"
-								class="form-control"
-								id="interval-days"
-								name="interval-days"
-								min="1"
-								placeholder="7"
-								required
-							/>
-							<span class="input-group-text">days</span>
-						</div>
-						<div class="form-text">How often should this repeat?</div>
+						<label for="description" class="form-label">Description</label>
+						<textarea
+							rows="4"
+							class="form-control"
+							id="description"
+							name="description"
+							min="1"
+							placeholder="(optional) — e.g., Empty the bin, replace the bag with a new one, make sure to clean the bin if needed"
+						></textarea>
 					</div>
 					<button type="submit" class="btn btn-primary w-100">Add</button>
 				</form>
