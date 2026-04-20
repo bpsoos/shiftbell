@@ -18,10 +18,15 @@ type Chore struct {
 	Id              int
 	Status          ChoreStatus
 	Description     string
-	IntervalDays    int
 	Deadline        time.Time
 	LastCompletedAt time.Time
 	CompletedAt     time.Time
+}
+
+type CreateChoreParams struct {
+	Name        string
+	Description string
+	Deadline    time.Time
 }
 
 type ChoreType struct {

@@ -23,18 +23,49 @@ func NewPersister(deps *PersisterDeps) *Persister {
 	}
 }
 
+func (p *Persister) Create(params *models.CreateChoreParams) (*models.Chore, error) {
+	var descNullable sql.NullString
+	if params.Description != "" {
+		descNullable = sql.NullString{
+			String: params.Description,
+			Valid:  true,
+		}
+	}
+	var deadlineNullable sql.NullTime
+	if !time.Now().IsZero() {
+		deadlineNullable = sql.NullTime{
+			Time:  params.Deadline,
+			Valid: true,
+		}
+	}
+	p.db.NamedExec(
+		`
+			insert into chores
+				(name, description, is_complete, deadline)
+			values
+				(:name, :description, :is_complete, :deadline)
+		`,
+		map[string]any{
+			"name":        params.Name,
+			"description": descNullable,
+			"is_complete": false,
+			"deadline":    deadlineNullable,
+		},
+	)
+
+	return nil, nil
+}
+
 func (p *Persister) SetLastCompletedAt(id int, lastUpdatedAt time.Time) (*models.Chore, error) {
 	row := p.db.QueryRow(
 		`
-			update chores as c
+			update chores
 			set last_completed_at = $2
-			from chore_types as ct
 			where c.id = $1
-			and c.chore_type_id = ct.id
-			returning ct.description,
-				c.last_completed_at,
-				ct.interval_days,
-				c.completed_at
+			returning description,
+				last_completed_at,
+				deadline,
+				completed_at
 		`,
 		id,
 		lastUpdatedAt,
@@ -42,12 +73,12 @@ func (p *Persister) SetLastCompletedAt(id int, lastUpdatedAt time.Time) (*models
 	var (
 		description         string
 		lastCompletedAt     time.Time
+		deadline            time.Time
 		status              models.ChoreStatus
-		intervalDays        int
 		completedAtNullable sql.NullTime
 		completedAt         time.Time
 	)
-	err := row.Scan(&description, &lastCompletedAt, &intervalDays, &completedAtNullable)
+	err := row.Scan(&description, &lastCompletedAt, &deadline, &completedAtNullable)
 	if err != nil {
 		return nil, fmt.Errorf("update chore query: %v", err)
 	}
@@ -62,8 +93,7 @@ func (p *Persister) SetLastCompletedAt(id int, lastUpdatedAt time.Time) (*models
 		Id:              id,
 		Status:          status,
 		Description:     description,
-		IntervalDays:    intervalDays,
-		Deadline:        lastCompletedAt.Add(24 * time.Hour * time.Duration(intervalDays)),
+		Deadline:        deadline,
 		LastCompletedAt: lastCompletedAt,
 		CompletedAt:     completedAt,
 	}, nil
@@ -74,10 +104,9 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 		`
 			select description,
 				last_completed_at,
-				interval_days,
 				completed_at,
 				deadline
-			from chores_full
+			from chores
 			where id = $1
 		`,
 		id,
@@ -88,11 +117,10 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 		lastCompletedAt     time.Time
 		status              models.ChoreStatus
 		deadline            time.Time
-		intervalDays        int
 		completedAtNullable sql.NullTime
 		completedAt         time.Time
 	)
-	err := row.Scan(&description, &lastCompletedAt, &intervalDays, &completedAtNullable, &deadline)
+	err := row.Scan(&description, &lastCompletedAt, &completedAtNullable, &deadline)
 	if err != nil {
 		return nil, fmt.Errorf("get chore query: %v", err)
 	}
@@ -107,7 +135,6 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 		Id:              id,
 		Status:          status,
 		Description:     description,
-		IntervalDays:    intervalDays,
 		LastCompletedAt: lastCompletedAt,
 		CompletedAt:     completedAt,
 		Deadline:        deadline,
@@ -121,9 +148,8 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 				id,
 				description,
 				last_completed_at,
-				interval_days,
 				deadline
-			from chores_full c
+			from chores
 			where is_complete = false
 			order by deadline asc
 			offset $1
@@ -139,12 +165,11 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 		id              int
 		description     string
 		lastCompletedAt time.Time
-		intervalDays    int
 		deadline        time.Time
 	)
 	results := make([]models.Chore, 0)
 	for rows.Next() {
-		err := rows.Scan(&id, &description, &lastCompletedAt, &intervalDays, &deadline)
+		err := rows.Scan(&id, &description, &lastCompletedAt, &deadline)
 		if err != nil {
 			return nil, fmt.Errorf("reading fetched rows: %v", err)
 		}
@@ -154,7 +179,6 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 			Description:     description,
 			LastCompletedAt: lastCompletedAt,
 			Deadline:        deadline,
-			IntervalDays:    intervalDays,
 		})
 	}
 	if len(results) > limit {
@@ -169,7 +193,18 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 
 func (p *Persister) MarkComplete(id int, completedAt time.Time) error {
 	_, err := p.db.Exec(
-		markCompleteQuery,
+		`
+			with candidate as (
+				select id
+				from chores
+				where id = $1 and is_complete = false
+			)
+			update chores c
+			set is_complete = true,
+				completed_at = $2
+			from candidate
+			where c.id = candidate.id
+		`,
 		id,
 		completedAt,
 	)
@@ -178,28 +213,3 @@ func (p *Persister) MarkComplete(id int, completedAt time.Time) error {
 	}
 	return nil
 }
-
-const markCompleteQuery = `
-	with candidate as (
-		select
-			id,
-			chore_type_id
-		from chores
-		where id = $1 and is_complete = false
-	),
-	updated as (
-		update chores c
-		set is_complete = true,
-			completed_at = $2
-		from candidate
-		where c.id = candidate.id
-		returning candidate.chore_type_id
-	)
-	insert into chores (chore_type_id, last_completed_at, is_complete)
-	select
-		u.chore_type_id,
-		$2,
-		false
-	from updated u
-	join chore_types ct on ct.id = u.chore_type_id
-`

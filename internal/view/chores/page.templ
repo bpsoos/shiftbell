@@ -3,11 +3,91 @@ package chores
 import (
 	"github.com/bpsoos/shiftbell/internal/models"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
+	"time"
 )
 
 templ page(offset int, limit int, results *models.GetChoreBatchResult) {
 	@layouts.Nav("chores")
 	<div class="container mt-3" style="min-width: fit-content">
-		@table(offset, limit, results)
+		<div class="row">
+			<div class="container col-lg-3">
+				<style>
+					@media lg {
+						me {
+							order: 2
+						}
+					}
+				</style>
+				@createForm()
+			</div>
+			<div class="container mt-3 col-lg-7">
+				<style>
+					@media lg {
+						me {
+							order: 1
+						}
+					}
+				</style>
+				@table(offset, limit, results)
+			</div>
+		</div>
+	</div>
+}
+
+templ createForm() {
+	<div class="container my-3">
+		<div class="card shadow-sm">
+			<div class="card-header bg-body">
+				Add chore
+			</div>
+			<div class="card-body">
+				<form hx-post="/choretypes" hx-swap="none">
+					<style>
+					me input::placeholder {
+						opacity: 0.55;
+					}
+					me textarea::placeholder {
+						opacity: 0.55;
+					}
+				</style>
+					<div class="mb-3">
+						<label for="name" class="form-label">Name</label>
+						<input
+							type="text"
+							class="form-control"
+							id="name"
+							name="name"
+							placeholder="e.g., Take out trash"
+							required
+						/>
+					</div>
+					<div class="mb-3">
+						<label for="description" class="form-label">Description</label>
+						<textarea
+							rows="4"
+							class="form-control"
+							id="description"
+							name="description"
+							min="1"
+							placeholder="(optional) — e.g., Empty the bin, replace the bag with a new one, make sure to clean the bin if needed"
+						></textarea>
+					</div>
+					<div class="mb-3">
+						<label for="deadline" class="form-label">Deadline</label>
+						<input
+							type="date"
+							class="form-control mb-3"
+							id="deadline"
+							name="deadline"
+							min="1970.01.01"
+							max="2100.01.01"
+							value={ time.Now().Format("2006-01-02") }
+							required
+						/>
+					</div>
+					<button type="submit" class="btn btn-primary w-100">Add</button>
+				</form>
+			</div>
+		</div>
 	</div>
 }

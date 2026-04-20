@@ -3,7 +3,7 @@ CREATE TABLE chores (
     chore_type_id integer references chore_types (id),
     name text not null,
     description text,
-    last_completed_at timestamp not null,
+    last_completed_at timestamp,
     is_complete boolean not null,
     completed_at timestamp,
     deadline date
