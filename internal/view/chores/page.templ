@@ -3,149 +3,47 @@ package chores
 import (
 	"github.com/bpsoos/shiftbell/internal/models"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
-	"time"
 )
 
-templ page(offset int, limit int, results *models.GetChoreBatchResult) {
+templ page(
+	offset int,
+	limit int,
+	results *models.GetChoreBatchResult,
+	choreTypes *models.GetChoreTypeBatchResult,
+	selectedChoreType *models.ChoreType,
+) {
+	@choreTypeSelector()
 	@layouts.Nav("chores")
 	<div class="container mt-3" style="min-width: fit-content">
+		<div class="row justify-content-between px-0">
+			<div class="col">@searchBar()
+</div>
+			<div class="col-lg-2">@newChoreLink()
+</div>
+		</div>
 		<div class="row">
-			<div class="container col-lg-3">
-				<style>
-					@media lg {
-						me {
-							order: 2
-						}
-					}
-				</style>
-				@createForm()
-			</div>
-			<div class="container mt-3 col-lg-7">
-				<style>
-					@media lg {
-						me {
-							order: 1
-						}
-					}
-				</style>
-				@table(offset, limit, results)
-			</div>
+			@table(offset, limit, results)
 		</div>
 	</div>
 }
 
-templ enableManualInputSwitch() {
-	<div class="form-check form-switch">
-		<input class="form-check-input" type="checkbox" role="switch" id="switchCheck" checked/>
-		<label class="form-check-label" for="switchCheck">Enable manual input</label>
+templ searchBar() {
+	<div class="input-group">
+		<input type="text" class="form-control" placeholder="search"/>
+		<button class="btn btn-outline-secondary" type="button" id="button-addon2">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+				<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"></path>
+			</svg>
+		</button>
 	</div>
 }
 
-templ choreTypeSelector() {
-	<div
-		class="modal fade"
-		id="choreTypeSelector"
-		tabindex="-1"
+templ newChoreLink() {
+	<a
+		class="btn btn-primary w-100"
+		hx-get="/chores/new"
+		hx-target="body"
 	>
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="exampleModalLabel">Select a chore type</h1>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body" id="choreTypeList">
-					@searchChoreTypes()
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-primary">Confirm</button>
-				</div>
-			</div>
-		</div>
-	</div>
-}
-
-templ searchChoreTypes() {
-	<input
-		class="form-control"
-		type="search"
-		name="search"
-		placeholder="Begin typing to search chore types..."
-		hx-post="/choretypes/search"
-		hx-trigger="input changed delay:500ms, keyup[key=='Enter'], load"
-		hx-target="#search-results"
-		hx-indicator=".htmx-indicator"
-	/>
-	<table class="table">
-		<thead>
-			<tr>
-				<th>ID</th>
-				<th>Name</th>
-				<th>Description</th>
-			</tr>
-		</thead>
-		<tbody id="search-results"></tbody>
-	</table>
-}
-
-templ createForm() {
-	@choreTypeSelector()
-	<div class="container my-3">
-		<div class="card shadow-sm">
-			<div class="card-header bg-body">
-				Add chore
-			</div>
-			<div class="card-body">
-				<form hx-post="/chores" hx-swap="none">
-					<style>
-					me input::placeholder {
-						opacity: 0.55;
-					}
-					me textarea::placeholder {
-						opacity: 0.55;
-					}
-				</style>
-					<button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="modal" data-bs-target="#choreTypeSelector">
-						Select from chore types
-					</button>
-					<div class="mb-3">
-						<label for="name" class="form-label">Name</label>
-						<input
-							type="text"
-							class="form-control"
-							id="name"
-							name="name"
-							placeholder="e.g., Take out trash"
-							required
-						/>
-					</div>
-					<div class="mb-3">
-						<label for="description" class="form-label">Description</label>
-						<textarea
-							rows="4"
-							class="form-control"
-							id="description"
-							name="description"
-							min="1"
-							placeholder="(optional) — e.g., Empty the bin, replace the bag with a new one, make sure to clean the bin if needed"
-						></textarea>
-					</div>
-					<div class="mb-3">
-						<label for="deadline" class="form-label">Deadline</label>
-						<input
-							type="date"
-							class="form-control mb-3"
-							id="deadline"
-							name="deadline"
-							min="1970.01.01"
-							max="2100.01.01"
-							value={ time.Now().Format("2006-01-02") }
-							required
-						/>
-					</div>
-					<button type="submit" class="btn btn-primary w-100">Add</button>
-				</form>
-			</div>
-		</div>
-	</div>
+		New chore
+	</a>
 }

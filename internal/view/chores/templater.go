@@ -31,12 +31,29 @@ func (t *Templater) Page(
 	offset int,
 	limit int,
 	chores *models.GetChoreBatchResult,
+	choreTypes *models.GetChoreTypeBatchResult,
+	selectedChoreType *models.ChoreType,
 ) error {
-	return page(offset, limit, chores).Render(ctx, w)
+	return page(offset, limit, chores, choreTypes, selectedChoreType).Render(ctx, w)
 }
 
 func (t *Templater) Chore(ctx context.Context, w io.Writer, chore *models.Chore) error {
 	return choreCard(chore).Render(ctx, w)
+}
+
+func (t *Templater) NewChorePage(
+	ctx context.Context,
+	w io.Writer,
+	choreTypes *models.GetChoreTypeBatchResult,
+	selectedChoreType *models.ChoreType,
+) error {
+	return layouts.Main().Render(
+		templ.WithChildren(
+			ctx,
+			newChorePage(nil, nil),
+		),
+		w,
+	)
 }
 
 func (t *Templater) ChoreForEdit(ctx context.Context, w io.Writer, chore *models.Chore) error {
@@ -53,7 +70,7 @@ func (t *Templater) PageWithLayout(
 	return layouts.Main().Render(
 		templ.WithChildren(
 			ctx,
-			page(offset, limit, chores),
+			page(offset, limit, chores, nil, nil),
 		),
 		w,
 	)

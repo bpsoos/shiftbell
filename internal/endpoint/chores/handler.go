@@ -36,6 +36,8 @@ type Templater interface {
 		int,
 		int,
 		*models.GetChoreBatchResult,
+		*models.GetChoreTypeBatchResult,
+		*models.ChoreType,
 	) error
 	PageWithLayout(
 		context.Context,
@@ -43,6 +45,12 @@ type Templater interface {
 		int,
 		int,
 		*models.GetChoreBatchResult,
+	) error
+	NewChorePage(
+		context.Context,
+		io.Writer,
+		*models.GetChoreTypeBatchResult,
+		*models.ChoreType,
 	) error
 }
 
@@ -143,7 +151,7 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 		ctx.Response().WriteHeader(http.StatusOK)
 
 		if ctx.Request().Header.Get("HX-Request") == "true" {
-			return h.templater.Page(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
+			return h.templater.Page(ctx.Request().Context(), ctx.Response(), offset, limit, chores, nil, nil)
 		}
 
 		return h.templater.PageWithLayout(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
@@ -215,4 +223,8 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 	}
 
 	return ctx.String(http.StatusOK, "OK")
+}
+
+func (h *Handler) New(ctx *echo.Context) error {
+	return h.templater.NewChorePage(ctx.Request().Context(), ctx.Response(), nil, nil)
 }

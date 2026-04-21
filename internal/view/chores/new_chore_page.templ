@@ -1,0 +1,147 @@
+package chores
+
+import (
+	"github.com/bpsoos/shiftbell/internal/models"
+	"github.com/bpsoos/shiftbell/internal/view/layouts"
+	"time"
+)
+
+templ newChorePage(
+	choreTypes *models.GetChoreTypeBatchResult,
+	selectedChoreType *models.ChoreType,
+) {
+	@choreTypeSelector()
+	@layouts.Nav("chores")
+	<div class="container mt-3" style="min-width: fit-content">
+		@createForm(selectedChoreType)
+	</div>
+}
+
+templ choreTypeSelector() {
+	<div
+		class="modal fade"
+		id="choreTypeSelector"
+		tabindex="-1"
+	>
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="exampleModalLabel">Select a chore type</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body" id="choreTypeList">
+					@searchChoreTypes()
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary">Confirm</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ searchChoreTypes() {
+	<input
+		class="form-control"
+		type="search"
+		name="search"
+		placeholder="Begin typing to search chore types..."
+		hx-post="/choretypes/search"
+		hx-trigger="input changed delay:500ms, keyup[key=='Enter'], load"
+		hx-target="#search-results"
+		hx-indicator=".htmx-indicator"
+	/>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Name</th>
+				<th>Description</th>
+			</tr>
+		</thead>
+		<tbody id="search-results"></tbody>
+	</table>
+}
+
+templ disabledChoreTypeInputs(choreType *models.ChoreType) {
+	<div class="mb-3">
+		<label for="name" class="form-label">Name</label>
+		<input
+			type="text"
+			class="form-control"
+			id="name"
+			if choreType != nil {
+				value="choreType.Name"
+			}
+			name="name"
+			placeholder="no chore type selected"
+			disabled
+		/>
+	</div>
+	<div class="mb-3">
+		<label for="description" class="form-label">Description</label>
+		<textarea
+			rows="4"
+			class="form-control"
+			id="description"
+			name="description"
+			if choreType != nil {
+				value="choreType.Description"
+			}
+			placeholder="no chore type selected"
+			disabled
+		></textarea>
+	</div>
+}
+
+templ createForm(choreType *models.ChoreType) {
+	<div class="container my-3">
+		<div class="card shadow-sm">
+			<div class="card-header bg-body">
+				Add chore
+			</div>
+			<div class="card-body">
+				<form hx-post="/chores" hx-swap="none">
+					<style>
+					me input::placeholder {
+						opacity: 0.55;
+					}
+					me textarea::placeholder {
+						opacity: 0.55;
+					}
+				</style>
+					<button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="modal" data-bs-target="#choreTypeSelector">
+						Select type
+					</button>
+					<button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="modal" data-bs-target="#choreTypeSelector">
+						Enable manual input
+					</button>
+					@disabledChoreTypeInputs(choreType)
+					<div class="mb-3">
+						<label for="deadline" class="form-label">Deadline</label>
+						<input
+							type="date"
+							class="form-control mb-3"
+							id="deadline"
+							name="deadline"
+							min="1970.01.01"
+							max="2100.01.01"
+							value={ time.Now().Format("2006-01-02") }
+							required
+						/>
+					</div>
+					<div class="row justify-content-between">
+						<style>
+							me button {
+								max-width: 8rem;
+							}
+						</style>
+						<button type="submit" class="ms-2 col btn btn-secondary">Cancel</button>
+						<button type="submit" class="me-2 col btn btn-primary">Add</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+}
