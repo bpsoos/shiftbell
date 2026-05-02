@@ -41,16 +41,28 @@ func (t *Templater) Chore(ctx context.Context, w io.Writer, chore *models.Chore)
 	return choreCard(chore).Render(ctx, w)
 }
 
-func (t *Templater) NewChorePage(
+func (t *Templater) NewChoreByTypePage(
 	ctx context.Context,
 	w io.Writer,
-	choreTypes *models.GetChoreTypeBatchResult,
 	selectedChoreType *models.ChoreType,
 ) error {
 	return layouts.Main().Render(
 		templ.WithChildren(
 			ctx,
-			newChorePage(selectedChoreType),
+			newChoreByTypePage(selectedChoreType),
+		),
+		w,
+	)
+}
+
+func (t *Templater) NewManualChorePage(
+	ctx context.Context,
+	w io.Writer,
+) error {
+	return layouts.Main().Render(
+		templ.WithChildren(
+			ctx,
+			newManualChorePage(),
 		),
 		w,
 	)

@@ -6,11 +6,19 @@ import (
 	"time"
 )
 
-templ newChorePage(selectedChoreType *models.ChoreType) {
+templ newChoreByTypePage(selectedChoreType *models.ChoreType) {
 	@choreTypeSelector()
 	@layouts.Nav("chores")
 	<div class="container mt-3" style="min-width: fit-content">
 		@createForm(selectedChoreType)
+	</div>
+}
+
+templ newManualChorePage() {
+	@choreTypeSelector()
+	@layouts.Nav("chores")
+	<div class="container mt-3" style="min-width: fit-content">
+		@createForm(nil)
 	</div>
 }
 
@@ -129,9 +137,9 @@ templ createForm(choreType *models.ChoreType) {
 					<button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="modal" data-bs-target="#choreTypeSelector">
 						Select type
 					</button>
-					<button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="modal" data-bs-target="#choreTypeSelector">
+					<a type="button" hx-get="/chores/new?inputType=manual" hx-target="body" class="btn btn-outline-secondary w-100">
 						Enable manual input
-					</button>
+					</a>
 					@disabledChoreTypeInputs(choreType)
 					<div class="mb-3">
 						<label for="deadline" class="form-label">Deadline</label>

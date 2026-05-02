@@ -46,11 +46,14 @@ type Templater interface {
 		int,
 		*models.GetChoreBatchResult,
 	) error
-	NewChorePage(
+	NewChoreByTypePage(
 		context.Context,
 		io.Writer,
-		*models.GetChoreTypeBatchResult,
 		*models.ChoreType,
+	) error
+	NewManualChorePage(
+		context.Context,
+		io.Writer,
 	) error
 }
 
@@ -248,5 +251,14 @@ func (h *Handler) New(ctx *echo.Context) error {
 		}
 	}
 
-	return h.templater.NewChorePage(ctx.Request().Context(), ctx.Response(), nil, selectedChoreType)
+	inputType := ctx.QueryParamOr("inputType", "selectChoreType")
+	switch inputType {
+	case "selectChoreType":
+		return h.templater.NewChoreByTypePage(ctx.Request().Context(), ctx.Response(), selectedChoreType)
+	case "manual":
+		return h.templater.NewManualChorePage(ctx.Request().Context(), ctx.Response())
+	default:
+		slog.Info("invalid input type", "input_type", inputType)
+		return ctx.String(http.StatusUnprocessableEntity, "invalid input type")
+	}
 }
