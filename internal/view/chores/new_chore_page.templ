@@ -10,7 +10,7 @@ templ newChoreByTypePage(selectedChoreType *models.ChoreType) {
 	@choreTypeSelector()
 	@layouts.Nav("chores")
 	<div class="container mt-3" style="min-width: fit-content">
-		@createForm(selectedChoreType)
+		@createForm(selectedChoreType, false)
 	</div>
 }
 
@@ -18,107 +18,11 @@ templ newManualChorePage() {
 	@choreTypeSelector()
 	@layouts.Nav("chores")
 	<div class="container mt-3" style="min-width: fit-content">
-		@createForm(nil)
+		@createForm(nil, true)
 	</div>
 }
 
-templ choreTypeSelector() {
-	<div
-		class="modal fade"
-		id="choreTypeSelector"
-		tabindex="-1"
-	>
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="exampleModalLabel">Select a chore type</h1>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body" id="choreTypeList">
-					@searchChoreTypes()
-					@choreTypesTable()
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-					<button
-						type="button"
-						class="btn btn-primary"
-					>Confirm</button>
-				</div>
-			</div>
-		</div>
-	</div>
-}
-
-templ searchChoreTypes() {
-	<input
-		class="form-control"
-		type="search"
-		name="search"
-		placeholder="Begin typing to search chore types..."
-		hx-post="/choretypes/search"
-		hx-target="#chore-type-selector"
-		hx-indicator=".htmx-indicator"
-	/>
-}
-
-templ choreTypesTable() {
-	<table
-		class="table"
-		hx-get="/choretypes?content=selector"
-		hx-target="#chore-type-selector"
-		hx-trigger="load"
-	>
-		<thead>
-			<tr>
-				<th></th>
-				<th>ID</th>
-				<th>Name</th>
-				<th>Description</th>
-			</tr>
-		</thead>
-		<tbody id="chore-type-selector"></tbody>
-	</table>
-}
-
-templ disabledChoreTypeInputs(choreType *models.ChoreType) {
-	<div class="mb-3">
-		<label for="name" class="form-label">Name</label>
-		<input
-			type="text"
-			class="form-control"
-			id="name"
-			name="name"
-			if choreType != nil {
-				value={ choreType.Name }
-			} else {
-				placeholder="no chore type selected"
-			}
-			disabled
-			readonly
-		/>
-	</div>
-	<div class="mb-3">
-		<label for="description" class="form-label">Description</label>
-		<textarea
-			rows="4"
-			class="form-control"
-			id="description"
-			name="description"
-			if choreType == nil {
-				placeholder="no chore type selected"
-			}
-			disabled
-			readonly
-		>
-			if choreType != nil {
-				{ choreType.Description }
-			}
-		</textarea>
-	</div>
-}
-
-templ createForm(choreType *models.ChoreType) {
+templ createForm(choreType *models.ChoreType, isManual bool) {
 	<div class="container my-3">
 		<div class="card shadow-sm">
 			<div class="card-header bg-body">
@@ -134,13 +38,26 @@ templ createForm(choreType *models.ChoreType) {
 						opacity: 0.55;
 					}
 				</style>
-					<button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="modal" data-bs-target="#choreTypeSelector">
-						Select type
-					</button>
-					<a type="button" hx-get="/chores/new?inputType=manual" hx-target="body" class="btn btn-outline-secondary w-100">
-						Enable manual input
-					</a>
-					@disabledChoreTypeInputs(choreType)
+					<fieldset>
+						<legend class="mb-2">Input Type</legend>
+						@selectInputTypeButtonGroup(isManual)
+					</fieldset>
+					if !isManual {
+						<label for="selectChoreTypeButton" class="form-label">Chore Type Selection</label>
+						<div class="mb-4">
+							<button
+								id="selectChoreTypeButton"
+								class="btn btn-outline-secondary"
+								data-bs-toggle="modal"
+								data-bs-target="#choreTypeSelector"
+							>
+								Select
+							</button>
+						</div>
+						@readonlyChoreTypeInputs(choreType)
+					} else {
+						@manualChoreTypeInputs()
+					}
 					<div class="mb-3">
 						<label for="deadline" class="form-label">Deadline</label>
 						<input
@@ -166,5 +83,179 @@ templ createForm(choreType *models.ChoreType) {
 				</form>
 			</div>
 		</div>
+	</div>
+}
+
+templ choreTypeSelector() {
+	<div
+		class="modal fade"
+		id="choreTypeSelector"
+		tabindex="-1"
+	>
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="exampleModalLabel">Select a chore type</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body" id="choreTypeList">
+					@searchChoreTypes()
+					@choreTypesSelectionTable()
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		document.body.addEventListener("htmx:beforeSwap", function (evt) {
+			const target = evt.detail.target;
+
+			if (!target || target.tagName !== "BODY") return;
+
+			const modalElement = document.getElementById("choreTypeSelector");
+			if (!modalElement) return;
+
+			const modal = bootstrap.Modal.getInstance(modalElement);
+			console.debug(modal);
+			if (modal) {
+				modal.hide();
+			}
+		});
+
+		document.getElementById("choreTypeSelector")?.addEventListener("hidden.bs.modal", function () {
+			document.body.classList.remove("modal-open");
+			document.body.style.removeProperty("overflow");
+			document.body.style.removeProperty("padding-right");
+			document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
+		});
+	</script>
+}
+
+templ searchChoreTypes() {
+	<input
+		class="form-control"
+		type="search"
+		name="search"
+		placeholder="Begin typing to search chore types..."
+		hx-get="/choretypes?content=selector&searchquery=placeholder"
+		hx-target="#chore-type-selector"
+		hx-indicator=".htmx-indicator"
+	/>
+}
+
+templ choreTypesSelectionTable() {
+	<table
+		class="table"
+		hx-get="/choretypes?content=selector"
+		hx-target="#chore-type-selector"
+		hx-trigger="load"
+	>
+		<thead>
+			<tr>
+				<th></th>
+				<th>ID</th>
+				<th>Name</th>
+				<th>Description</th>
+			</tr>
+		</thead>
+		<tbody id="chore-type-selector"></tbody>
+	</table>
+}
+
+templ manualChoreTypeInputs() {
+	<div class="mb-3">
+		<label for="name" class="form-label">Name</label>
+		<input
+			type="text"
+			class="form-control"
+			id="name"
+			name="name"
+			placeholder="e.g. Take out the trash"
+		/>
+	</div>
+	<div class="mb-3">
+		<label for="description" class="form-label">Description</label>
+		<textarea
+			rows="4"
+			class="form-control"
+			id="description"
+			name="description"
+			placeholder="e.g. Clean the bin and make sure to insert a new bag after taking out the old one."
+		></textarea>
+	</div>
+}
+
+templ readonlyChoreTypeInputs(choreType *models.ChoreType) {
+	<div class="mb-3">
+		<label for="name" class="form-label">Name</label>
+		<input
+			type="text"
+			class="form-control"
+			id="name"
+			name="name"
+			if choreType != nil {
+				value={ choreType.Name }
+			} else {
+				placeholder="no chore type selected"
+			}
+			readonly
+		/>
+	</div>
+	<div class="mb-3">
+		<label for="description" class="form-label">Description</label>
+		<textarea
+			rows="4"
+			class="form-control"
+			id="description"
+			name="description"
+			if choreType == nil {
+				placeholder="no chore type selected"
+			}
+			readonly
+		>
+			if choreType != nil {
+				{ choreType.Description }
+			}
+		</textarea>
+	</div>
+}
+
+templ selectInputTypeButtonGroup(isManual bool) {
+	<div class="btn-group mb-4" role="group" aria-label="Chore input select button group">
+		<input
+			if !isManual {
+				hx-get="/chores/new?inputType=manual"
+			} else {
+				hx-get="/chores/new?inputType=selectChoreType"
+			}
+			hx-target="body"
+			hx-swap="innerHTML"
+			autocomplete="off"
+			type="radio"
+			class="btn-check"
+			id="selectChoreTypeBasedInput"
+			name="inputTypeSelector"
+			if !isManual {
+				checked
+			}
+		/>
+		<label class="btn btn-outline-secondary" for="selectChoreTypeBasedInput">Chore Type Based</label>
+		<input
+			if !isManual {
+				hx-get="/chores/new?inputType=manual"
+			} else {
+				hx-get="/chores/new?inputType=selectChoreType"
+			}
+			hx-target="body"
+			hx-swap="innerHTML"
+			autocomplete="off"
+			type="radio"
+			class="btn-check"
+			id="selectManualInput"
+			name="inputTypeSelector"
+			if isManual {
+				checked
+			}
+		/>
+		<label class="btn btn-outline-secondary" for="selectManualInput">Manual</label>
 	</div>
 }

@@ -252,6 +252,7 @@ func (h *Handler) New(ctx *echo.Context) error {
 	}
 
 	inputType := ctx.QueryParamOr("inputType", "selectChoreType")
+	slog.Info("new chore input type", "input_type", inputType)
 	switch inputType {
 	case "selectChoreType":
 		return h.templater.NewChoreByTypePage(ctx.Request().Context(), ctx.Response(), selectedChoreType)
