@@ -54,6 +54,10 @@ type Templater interface {
 	) error
 }
 
+type ChoreTypePersister interface {
+	Get(id int) (*models.ChoreType, error)
+}
+
 type Persister interface {
 	GetBatch(offset int, limit int) (*models.GetChoreBatchResult, error)
 	Get(id int) (*models.Chore, error)
@@ -62,19 +66,22 @@ type Persister interface {
 }
 
 type HandlerDeps struct {
-	Templater Templater
-	Persister Persister
+	Templater          Templater
+	Persister          Persister
+	ChoreTypePersister ChoreTypePersister
 }
 
 type Handler struct {
-	templater Templater
-	persister Persister
+	templater          Templater
+	persister          Persister
+	choreTypePersister ChoreTypePersister
 }
 
 func NewHandler(deps *HandlerDeps) *Handler {
 	return &Handler{
-		templater: deps.Templater,
-		persister: deps.Persister,
+		templater:          deps.Templater,
+		persister:          deps.Persister,
+		choreTypePersister: deps.ChoreTypePersister,
 	}
 }
 
@@ -226,5 +233,20 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 }
 
 func (h *Handler) New(ctx *echo.Context) error {
-	return h.templater.NewChorePage(ctx.Request().Context(), ctx.Response(), nil, nil)
+	var selectedChoreType *models.ChoreType
+	choreTypeIdStr := ctx.QueryParamOr("choreTypeId", "")
+	if choreTypeIdStr != "" {
+		selectedChoreTypeId, err := strconv.Atoi(choreTypeIdStr)
+		if err != nil {
+			slog.Info("chore type id parse error", "err", err)
+			return ctx.String(http.StatusUnprocessableEntity, "invalid chore type id")
+		}
+		selectedChoreType, err = h.choreTypePersister.Get(selectedChoreTypeId)
+		if err != nil {
+			slog.Info("get chore type error", "err", err)
+			return ctx.String(http.StatusInternalServerError, "something went wrong")
+		}
+	}
+
+	return h.templater.NewChorePage(ctx.Request().Context(), ctx.Response(), nil, selectedChoreType)
 }

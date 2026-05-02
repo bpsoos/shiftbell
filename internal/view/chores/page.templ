@@ -16,10 +16,12 @@ templ page(
 	@layouts.Nav("chores")
 	<div class="container mt-3" style="min-width: fit-content">
 		<div class="row justify-content-between px-0">
-			<div class="col">@searchBar()
-</div>
-			<div class="col-lg-2">@newChoreLink()
-</div>
+			<div class="col">
+				@searchBar()
+			</div>
+			<div class="col-lg-2">
+				@newChoreLink()
+			</div>
 		</div>
 		<div class="row">
 			@table(offset, limit, results)

@@ -57,6 +57,31 @@ func (p *Persister) Create(name string, description string) error {
 	return nil
 }
 
+func (p *Persister) Get(id int) (*models.ChoreType, error) {
+	row := p.db.QueryRow(
+		`
+			select name, description
+			from chore_types
+			where id=$1
+		`,
+		id,
+	)
+	var (
+		name        string
+		description string
+	)
+	err := row.Scan(&name, &description)
+	if err != nil {
+		return nil, fmt.Errorf("db query selecting chores: %v", err)
+	}
+
+	return &models.ChoreType{
+		Id:          id,
+		Name:        name,
+		Description: description,
+	}, nil
+}
+
 func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchResult, error) {
 	rows, err := p.db.Query(
 		`

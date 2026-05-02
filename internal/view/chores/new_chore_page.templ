@@ -6,10 +6,7 @@ import (
 	"time"
 )
 
-templ newChorePage(
-	choreTypes *models.GetChoreTypeBatchResult,
-	selectedChoreType *models.ChoreType,
-) {
+templ newChorePage(selectedChoreType *models.ChoreType) {
 	@choreTypeSelector()
 	@layouts.Nav("chores")
 	<div class="container mt-3" style="min-width: fit-content">
@@ -31,10 +28,14 @@ templ choreTypeSelector() {
 				</div>
 				<div class="modal-body" id="choreTypeList">
 					@searchChoreTypes()
+					@choreTypesTable()
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-primary">Confirm</button>
+					<button
+						type="button"
+						class="btn btn-primary"
+					>Confirm</button>
 				</div>
 			</div>
 		</div>
@@ -48,19 +49,27 @@ templ searchChoreTypes() {
 		name="search"
 		placeholder="Begin typing to search chore types..."
 		hx-post="/choretypes/search"
-		hx-trigger="input changed delay:500ms, keyup[key=='Enter'], load"
-		hx-target="#search-results"
+		hx-target="#chore-type-selector"
 		hx-indicator=".htmx-indicator"
 	/>
-	<table class="table">
+}
+
+templ choreTypesTable() {
+	<table
+		class="table"
+		hx-get="/choretypes?content=selector"
+		hx-target="#chore-type-selector"
+		hx-trigger="load"
+	>
 		<thead>
 			<tr>
+				<th></th>
 				<th>ID</th>
 				<th>Name</th>
 				<th>Description</th>
 			</tr>
 		</thead>
-		<tbody id="search-results"></tbody>
+		<tbody id="chore-type-selector"></tbody>
 	</table>
 }
 
@@ -71,12 +80,14 @@ templ disabledChoreTypeInputs(choreType *models.ChoreType) {
 			type="text"
 			class="form-control"
 			id="name"
-			if choreType != nil {
-				value="choreType.Name"
-			}
 			name="name"
-			placeholder="no chore type selected"
+			if choreType != nil {
+				value={ choreType.Name }
+			} else {
+				placeholder="no chore type selected"
+			}
 			disabled
+			readonly
 		/>
 	</div>
 	<div class="mb-3">
@@ -86,12 +97,16 @@ templ disabledChoreTypeInputs(choreType *models.ChoreType) {
 			class="form-control"
 			id="description"
 			name="description"
-			if choreType != nil {
-				value="choreType.Description"
+			if choreType == nil {
+				placeholder="no chore type selected"
 			}
-			placeholder="no chore type selected"
 			disabled
-		></textarea>
+			readonly
+		>
+			if choreType != nil {
+				{ choreType.Description }
+			}
+		</textarea>
 	</div>
 }
 

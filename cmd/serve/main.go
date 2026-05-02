@@ -22,21 +22,22 @@ func main() {
 	if err != nil {
 		log.Fatal("could not connect to db", err)
 	}
-	chorePersister := choretypespersistence.NewChoreTypePersister(&choretypespersistence.PersisterDeps{
+	choreTypePersister := choretypespersistence.NewChoreTypePersister(&choretypespersistence.PersisterDeps{
 		Db: db,
 	})
 
 	choreTypesTemplater := choretypesview.NewTemplater()
 	choreTypesHandler := choretypesendpoint.NewHandler(&choretypesendpoint.HandlerDeps{
 		Templater:          choreTypesTemplater,
-		ChoreTypePersister: chorePersister,
+		ChoreTypePersister: choreTypePersister,
 	})
 
 	choresPersister := chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
 	choresTemplater := choresview.NewTemplater()
 	choresHandler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
-		Templater: choresTemplater,
-		Persister: choresPersister,
+		Templater:          choresTemplater,
+		Persister:          choresPersister,
+		ChoreTypePersister: choreTypePersister,
 	})
 
 	router := routing.NewRouter(&routing.RouterDeps{

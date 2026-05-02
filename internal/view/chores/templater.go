@@ -50,7 +50,7 @@ func (t *Templater) NewChorePage(
 	return layouts.Main().Render(
 		templ.WithChildren(
 			ctx,
-			newChorePage(nil, nil),
+			newChorePage(selectedChoreType),
 		),
 		w,
 	)

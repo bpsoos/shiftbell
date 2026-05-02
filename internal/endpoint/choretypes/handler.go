@@ -33,6 +33,13 @@ type Templater interface {
 		int,
 		*models.GetChoreTypeBatchResult,
 	) error
+	Selector(
+		context.Context,
+		io.Writer,
+		int,
+		int,
+		*models.GetChoreTypeBatchResult,
+	) error
 }
 
 type ChoreTypePersister interface {
@@ -80,6 +87,11 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 	}
 
 	switch content {
+	case "selector":
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+		ctx.Response().WriteHeader(http.StatusOK)
+
+		return h.templater.Selector(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
 	case "table":
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
 		ctx.Response().WriteHeader(http.StatusOK)

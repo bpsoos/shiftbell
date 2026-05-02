@@ -44,3 +44,13 @@ func (t *Templater) Table(
 ) error {
 	return table(offset, limit, chores).Render(ctx, w)
 }
+
+func (t *Templater) Selector(
+	ctx context.Context,
+	w io.Writer,
+	offset int,
+	limit int,
+	chores *models.GetChoreTypeBatchResult,
+) error {
+	return selector(offset, limit, chores).Render(ctx, w)
+}
