@@ -87,3 +87,11 @@ func (t *Templater) PageWithLayout(
 		w,
 	)
 }
+
+func (t *Templater) SelectedChoreType(
+	ctx context.Context,
+	w io.Writer,
+	choreType *models.ChoreType,
+) error {
+	return selectedChoreTypeFieldsetWithSubmitRow(choreType).Render(ctx, w)
+}

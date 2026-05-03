@@ -13,6 +13,7 @@ type ChoreHandler interface {
 	GetBatch(*echo.Context) error
 	Patch(*echo.Context) error
 	New(*echo.Context) error
+	Create(*echo.Context) error
 }
 
 type RouterDeps struct {

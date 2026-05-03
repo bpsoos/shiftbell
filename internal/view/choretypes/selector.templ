@@ -11,9 +11,8 @@ templ selector(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 			<td>
 				<a
 					class="btn btn-primary"
-					hx-get={ fmt.Sprintf("/chores/new?choreTypeId=%d", choreType.Id) }
-					hx-target="body"
-					hx-swap="outerHTML"
+					hx-get={ fmt.Sprintf("/chores/new?choreTypeId=%d&field=selectedChoreType", choreType.Id) }
+					hx-target="#selectedChoreType"
 				>
 					Select
 				</a>

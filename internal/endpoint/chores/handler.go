@@ -55,6 +55,11 @@ type Templater interface {
 		context.Context,
 		io.Writer,
 	) error
+	SelectedChoreType(
+		ctx context.Context,
+		w io.Writer,
+		choreType *models.ChoreType,
+	) error
 }
 
 type ChoreTypePersister interface {
@@ -235,6 +240,15 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 	return ctx.String(http.StatusOK, "OK")
 }
 
+func (h *Handler) Create(ctx *echo.Context) error {
+	name := ctx.FormValueOr("name", "")
+	description := ctx.FormValueOr("description", "")
+	deadline := ctx.FormValueOr("deadline", "")
+	slog.Info("parsed create chore inputs", "name", name, "description", description, "deadline", deadline)
+	ctx.Response().Header().Set("HX-Redirect", "/chores")
+	return ctx.String(http.StatusOK, "OK")
+}
+
 func (h *Handler) New(ctx *echo.Context) error {
 	var selectedChoreType *models.ChoreType
 	choreTypeIdStr := ctx.QueryParamOr("choreTypeId", "")
@@ -255,7 +269,17 @@ func (h *Handler) New(ctx *echo.Context) error {
 	slog.Info("new chore input type", "input_type", inputType)
 	switch inputType {
 	case "selectChoreType":
-		return h.templater.NewChoreByTypePage(ctx.Request().Context(), ctx.Response(), selectedChoreType)
+		field := ctx.QueryParamOr("field", "")
+		if field == "" {
+			return h.templater.NewChoreByTypePage(ctx.Request().Context(), ctx.Response(), selectedChoreType)
+		}
+		switch field {
+		case "selectedChoreType":
+			return h.templater.SelectedChoreType(ctx.Request().Context(), ctx.Response(), selectedChoreType)
+		default:
+			slog.Info("invalid field", "field", inputType)
+			return ctx.String(http.StatusUnprocessableEntity, "invalid field")
+		}
 	case "manual":
 		return h.templater.NewManualChorePage(ctx.Request().Context(), ctx.Response())
 	default:
