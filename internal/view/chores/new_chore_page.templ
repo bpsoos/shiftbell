@@ -6,23 +6,15 @@ import (
 	"time"
 )
 
-templ newChoreByTypePage(selectedChoreType *models.ChoreType) {
+templ newChorePage() {
 	@choreTypeSelector()
 	@layouts.Nav("chores")
 	<div class="container mt-3" style="min-width: fit-content">
-		@createForm(selectedChoreType, false)
+		@createForm()
 	</div>
 }
 
-templ newManualChorePage() {
-	@choreTypeSelector()
-	@layouts.Nav("chores")
-	<div class="container mt-3" style="min-width: fit-content">
-		@createForm(nil, true)
-	</div>
-}
-
-templ createForm(selectedChoreType *models.ChoreType, isManual bool) {
+templ createForm() {
 	<div class="container my-3 row justify-content-center">
 		<div class="card shadow-sm">
 			<style>
@@ -47,15 +39,9 @@ templ createForm(selectedChoreType *models.ChoreType, isManual bool) {
 				</style>
 					<fieldset class="mb-4">
 						<legend class="mb-2">Input Type</legend>
-						@selectInputTypeButtonGroup(isManual)
+						@selectInputTypeButtonGroup(nil)
 					</fieldset>
-					if !isManual {
-						<fieldset id="selectedChoreType" class="card p-4 mb-4">
-							@selectedChoreTypeFieldset(selectedChoreType)
-						</fieldset>
-					} else {
-						@manualChoreTypeInputs()
-					}
+					@baseInputs(nil)
 					<div class="mb-3">
 						<label for="deadline" class="form-label">Deadline</label>
 						<input
@@ -69,21 +55,19 @@ templ createForm(selectedChoreType *models.ChoreType, isManual bool) {
 							required
 						/>
 					</div>
-					@submitRow(false, selectedChoreType)
+					@submitRow(nil)
 				</form>
 			</div>
 		</div>
 	</div>
 }
 
-templ submitRow(isOob bool, selectedChoreType *models.ChoreType) {
+templ submitRow(attrs templ.Attributes) {
 	<div
 		id="submitRow"
-		if isOob {
-			hx-swap-oob="true"
-		}
+		{ attrs... }
 	>
-		if selectedChoreType == nil {
+		if selectedChoreType(ctx) == nil && !isManual(ctx) {
 			<div class="bg-info-subtle border-4 border-start border-info p-2 my-2">
 				<text>Select a chore type to continue</text>
 			</div>
@@ -99,7 +83,7 @@ templ submitRow(isOob bool, selectedChoreType *models.ChoreType) {
 			<button type="submit" class="ms-2 col btn btn-secondary">Cancel</button>
 			<button
 				type="submit"
-				if selectedChoreType == nil {
+				if !isManual(ctx) && models.GetSelectedChoreType(ctx) == nil {
 					disabled
 				}
 				class="me-2 col btn btn-primary"
@@ -133,7 +117,7 @@ templ choreTypeSelector() {
 		document.body.addEventListener("htmx:beforeSwap", function (evt) {
 			const target = evt.detail.target;
 
-			if (!target || target.id !== "selectedChoreType") return;
+			if (!target || target.id !== "baseInputs") return;
 
 			const modalElement = document.getElementById("choreTypeSelector");
 			if (!modalElement) return;
@@ -208,8 +192,8 @@ templ manualChoreTypeInputs() {
 	</div>
 }
 
-templ readonlyChoreTypeInputs(selectedChoreType *models.ChoreType) {
-	if selectedChoreType != nil {
+templ readonlyChoreTypeInputs() {
+	if selectedChoreType(ctx) != nil {
 		<div class="mb-2">
 			<label for="name" class="form-label">Name</label>
 			<input
@@ -217,7 +201,7 @@ templ readonlyChoreTypeInputs(selectedChoreType *models.ChoreType) {
 				class="form-control text-bg-secondary"
 				id="name"
 				name="name"
-				value={ selectedChoreType.Name }
+				value={ selectedChoreType(ctx).Name }
 				readonly
 			/>
 		</div>
@@ -230,7 +214,7 @@ templ readonlyChoreTypeInputs(selectedChoreType *models.ChoreType) {
 				name="description"
 				readonly
 			>
-				{ selectedChoreType.Description }
+				{ selectedChoreType(ctx).Description }
 			</textarea>
 		</div>
 		<div>
@@ -264,40 +248,37 @@ templ readonlyChoreTypeInputs(selectedChoreType *models.ChoreType) {
 	}
 }
 
-templ selectInputTypeButtonGroup(isManual bool) {
-	<div class="btn-group" role="group" aria-label="Chore input select button group">
+templ selectInputTypeButtonGroup(attrs templ.Attributes) {
+	<div
+		id="selectInputTypeButtonGroup"
+		{ attrs... }
+		class="btn-group"
+		role="group"
+		aria-label="Chore input select button group"
+	>
 		<input
-			if !isManual {
-				hx-get="/chores/new?inputType=manual"
-			} else {
-				hx-get="/chores/new?inputType=selectChoreType"
-			}
-			hx-target="body"
-			hx-swap="innerHTML"
+			hx-get="/chores/new?field=inputTypeSelector&field=baseInputs&inputType=selectChoreType"
+			hx-target="#selectInputTypeButtonGroup"
 			autocomplete="off"
 			type="radio"
 			class="btn-check"
 			id="selectChoreTypeBasedInput"
 			name="inputTypeSelector"
-			if !isManual {
+			if !isManual(ctx) {
 				checked
 			}
 		/>
 		<label class="btn btn-outline-secondary" for="selectChoreTypeBasedInput">Chore Type Based</label>
 		<input
-			if !isManual {
-				hx-get="/chores/new?inputType=manual"
-			} else {
-				hx-get="/chores/new?inputType=selectChoreType"
-			}
-			hx-target="body"
+			hx-get="/chores/new?field=inputTypeSelector&field=baseInputs&inputType=manual"
+			hx-target="#selectInputTypeButtonGroup"
 			hx-swap="innerHTML"
 			autocomplete="off"
 			type="radio"
 			class="btn-check"
 			id="selectManualInput"
 			name="inputTypeSelector"
-			if isManual {
+			if isManual(ctx) {
 				checked
 			}
 		/>
@@ -305,12 +286,22 @@ templ selectInputTypeButtonGroup(isManual bool) {
 	</div>
 }
 
-templ selectedChoreTypeFieldsetWithSubmitRow(selectedChoreType *models.ChoreType) {
-	@selectedChoreTypeFieldset(selectedChoreType)
-	@submitRow(true, selectedChoreType)
+templ baseInputs(attrs templ.Attributes) {
+	<div
+		id="baseInputs"
+		{ attrs... }
+	>
+		if !isManual(ctx) {
+			<fieldset id="selectedChoreType" class="card p-4 mb-4">
+				@selectedChoreTypeFieldset()
+			</fieldset>
+		} else {
+			@manualChoreTypeInputs()
+		}
+	</div>
 }
 
-templ selectedChoreTypeFieldset(selectedChoreType *models.ChoreType) {
+templ selectedChoreTypeFieldset() {
 	<legend class="mb-2">Chore Type</legend>
-	@readonlyChoreTypeInputs(selectedChoreType)
+	@readonlyChoreTypeInputs()
 }

@@ -1,11 +1,48 @@
 package models
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type GetChoreBatchResult struct {
 	Chores []Chore
 	More   bool
 }
+
+type NewChoreCtxValues struct {
+	SelectedChoreType *ChoreType
+	IsManual          bool
+}
+
+type contextKey string
+
+var newChoreCtxKey contextKey = "newChore"
+
+func WithNewChoreCtxValues(ctx context.Context, values *NewChoreCtxValues) context.Context {
+	return context.WithValue(ctx, newChoreCtxKey, values)
+}
+
+func GetSelectedChoreType(ctx context.Context) *ChoreType {
+	if newChoreCtxValues, ok := ctx.Value(newChoreCtxKey).(*NewChoreCtxValues); ok {
+		return newChoreCtxValues.SelectedChoreType
+	}
+	return nil
+}
+
+func GetIsManual(ctx context.Context) bool {
+	if newChoreCtxValues, ok := ctx.Value(newChoreCtxKey).(*NewChoreCtxValues); ok {
+		return newChoreCtxValues.IsManual
+	}
+	return false
+}
+
+type NewChoreTypeComponent string
+
+const (
+	NewChoreTypeComponentInputTypeSelector NewChoreTypeComponent = "inputTypeSelector"
+	NewChoreTypeComponentBaseInputs        NewChoreTypeComponent = "baseInputs"
+)
 
 type ChoreStatus string
 

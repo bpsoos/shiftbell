@@ -46,19 +46,14 @@ type Templater interface {
 		int,
 		*models.GetChoreBatchResult,
 	) error
-	NewChoreByTypePage(
-		context.Context,
-		io.Writer,
-		*models.ChoreType,
-	) error
-	NewManualChorePage(
+	NewChorePage(
 		context.Context,
 		io.Writer,
 	) error
-	SelectedChoreType(
+	JoinedComponents(
 		ctx context.Context,
 		w io.Writer,
-		choreType *models.ChoreType,
+		componentSpecifiers ...models.NewChoreTypeComponent,
 	) error
 }
 
@@ -249,41 +244,69 @@ func (h *Handler) Create(ctx *echo.Context) error {
 	return ctx.String(http.StatusOK, "OK")
 }
 
+type NewChoreParams struct {
+	Fields      []string `query:"field"`
+	ChoreTypeId int      `query:"choreTypeId"`
+	InputType   string   `query:"inputType"`
+}
+
 func (h *Handler) New(ctx *echo.Context) error {
-	var selectedChoreType *models.ChoreType
-	choreTypeIdStr := ctx.QueryParamOr("choreTypeId", "")
-	if choreTypeIdStr != "" {
-		selectedChoreTypeId, err := strconv.Atoi(choreTypeIdStr)
-		if err != nil {
-			slog.Info("chore type id parse error", "err", err)
-			return ctx.String(http.StatusUnprocessableEntity, "invalid chore type id")
+	ctxValues := &models.NewChoreCtxValues{
+		SelectedChoreType: nil,
+		IsManual:          false,
+	}
+	params := &NewChoreParams{
+		Fields:      nil,
+		ChoreTypeId: 0,
+		InputType:   "selectChoreType",
+	}
+	if err := ctx.Bind(params); err != nil {
+		return ctx.String(http.StatusUnprocessableEntity, "invalid query param(s)")
+	}
+
+	if ctx.QueryParams().Has("inputType") {
+		switch params.InputType {
+		case "selectChoreType":
+			ctxValues.IsManual = false
+		case "manual":
+			ctxValues.IsManual = true
+		default:
+			slog.Info("invalid input type", "input_type", params.InputType)
+			return ctx.String(http.StatusUnprocessableEntity, "invalid input type")
 		}
-		selectedChoreType, err = h.choreTypePersister.Get(selectedChoreTypeId)
+	}
+
+	if ctx.QueryParams().Has("choreTypeId") {
+		selectedChoreType, err := h.choreTypePersister.Get(params.ChoreTypeId)
 		if err != nil {
 			slog.Info("get chore type error", "err", err)
 			return ctx.String(http.StatusInternalServerError, "something went wrong")
 		}
+		slog.Info("fetched chore type successfully", "chore_type_id", params.ChoreTypeId)
+		ctxValues.SelectedChoreType = selectedChoreType
 	}
 
-	inputType := ctx.QueryParamOr("inputType", "selectChoreType")
-	slog.Info("new chore input type", "input_type", inputType)
-	switch inputType {
-	case "selectChoreType":
-		field := ctx.QueryParamOr("field", "")
-		if field == "" {
-			return h.templater.NewChoreByTypePage(ctx.Request().Context(), ctx.Response(), selectedChoreType)
+	if ctx.QueryParams().Has("field") {
+		componentSpecifiers := make([]models.NewChoreTypeComponent, 0)
+		for i := range params.Fields {
+			field := params.Fields[i]
+			switch field {
+			case string(models.NewChoreTypeComponentBaseInputs):
+				componentSpecifiers = append(componentSpecifiers, models.NewChoreTypeComponentBaseInputs)
+			case string(models.NewChoreTypeComponentInputTypeSelector):
+				componentSpecifiers = append(componentSpecifiers, models.NewChoreTypeComponentInputTypeSelector)
+			default:
+				slog.Info("invalid field specified", "field", field)
+				return ctx.String(http.StatusUnprocessableEntity, "invalid field specified")
+			}
 		}
-		switch field {
-		case "selectedChoreType":
-			return h.templater.SelectedChoreType(ctx.Request().Context(), ctx.Response(), selectedChoreType)
-		default:
-			slog.Info("invalid field", "field", inputType)
-			return ctx.String(http.StatusUnprocessableEntity, "invalid field")
-		}
-	case "manual":
-		return h.templater.NewManualChorePage(ctx.Request().Context(), ctx.Response())
-	default:
-		slog.Info("invalid input type", "input_type", inputType)
-		return ctx.String(http.StatusUnprocessableEntity, "invalid input type")
+
+		return h.templater.JoinedComponents(withNewChoreCtx(ctx, ctxValues), ctx.Response(), componentSpecifiers...)
 	}
+
+	return h.templater.NewChorePage(withNewChoreCtx(ctx, ctxValues), ctx.Response())
+}
+
+func withNewChoreCtx(ctx *echo.Context, values *models.NewChoreCtxValues) context.Context {
+	return models.WithNewChoreCtxValues(ctx.Request().Context(), values)
 }
