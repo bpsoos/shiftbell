@@ -3,8 +3,6 @@ package chores
 import (
 	"fmt"
 	"github.com/bpsoos/shiftbell/internal/models"
-	"github.com/bpsoos/shiftbell/internal/view/icons"
-	"math"
 	"time"
 )
 
@@ -20,66 +18,7 @@ templ choreCard(chore *models.Chore) {
 			<p class="card-title">
 				{ chore.Description }
 			</p>
-			<p class="card-text">
-				<small class="text-body-secondary">
-					@lastDoneText(chore)
-				</small>
-			</p>
-			<div class="row">
-				<div class="me-auto col-auto" style="width: fit-content">
-					@markCompleteButton(chore)
-				</div>
-				<div class="ms-auto col-auto" style="width: fit-content">
-					@choreCardMenuButton(chore)
-				</div>
-			</div>
-		</div>
-	</div>
-}
-
-templ choreForEdit(chore *models.Chore) {
-	<div class="card my-3">
-		<div class="card-header border-bottom-0 d-flex align-items-center py-1 ps-1">
-			<span class={ "m-0 p-1 badge text-bg-" + getDeadlineLevel(chore.Deadline) }>
-				Due: { chore.Deadline.Format("2006-01-02") }
-			</span>
-		</div>
-		<div class="card-body">
-			<label class="form-label" for="lastCompletedAt">Last completion date</label>
-			<input
-				type="date"
-				class="form-control mb-3"
-				id="lastCompletedAt"
-				name="lastCompletedAt"
-				min="1970.01.01"
-				max="2100.01.01"
-				value={ chore.LastCompletedAt.Format("2006-01-02") }
-				required
-			/>
-			<div class="row">
-				<div class="col-auto me-auto w-25" style="min-width: 8rem">
-					<button
-						type="submit"
-						class="btn btn-primary w-100"
-						hx-patch={ fmt.Sprintf("/chores/%d", chore.Id) }
-						hx-swap="outerHTML swap:0.5s"
-						hx-target="closest .card"
-						hx-include="closest .card"
-					>
-						save
-					</button>
-				</div>
-				<div class="col-auto ms-auto w-25" style="min-width: 8rem">
-					<button
-						class="btn btn-danger w-100"
-						hx-get={ fmt.Sprintf("/chores/%d?for=readonly", chore.Id) }
-						hx-swap="outerHTML"
-						hx-target="closest .card"
-					>
-						cancel
-					</button>
-				</div>
-			</div>
+			@markCompleteButton(chore)
 		</div>
 	</div>
 }
@@ -95,10 +34,6 @@ func getDeadlineLevel(deadline time.Time) string {
 	return "secondary"
 }
 
-templ lastDoneText(chore *models.Chore) {
-	Last done: { chore.LastCompletedAt.Format("2006-01-02") } ({ getDaysAgoText(getDaysAgoCount(chore.LastCompletedAt)) })
-}
-
 templ markCompleteButton(chore *models.Chore) {
 	<form
 		hx-patch={ fmt.Sprintf("/chores/%d", chore.Id) }
@@ -110,39 +45,4 @@ templ markCompleteButton(chore *models.Chore) {
 			Mark Complete
 		</button>
 	</form>
-}
-
-templ choreCardMenuButton(chore *models.Chore) {
-	<div class="btn-group">
-		<button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-			@icons.KebabMenu()
-		</button>
-		<ul class="dropdown-menu">
-			<li>
-				<a
-					type="button"
-					class="dropdown-item"
-					hx-get={ fmt.Sprintf("/chores/%d?for=edit", chore.Id) }
-					hx-swap="outerHTML"
-					hx-target="closest .card"
-				>
-					Edit last completion date
-				</a>
-			</li>
-		</ul>
-	</div>
-}
-
-func getDaysAgoCount(since time.Time) int {
-	return int(math.Floor(time.Now().Sub(since).Hours() / 24))
-}
-
-func getDaysAgoText(daysAgo int) string {
-	if daysAgo == 0 {
-		return "today"
-	}
-	if daysAgo == 1 {
-		return "1 day ago"
-	}
-	return fmt.Sprintf("%d days ago", daysAgo)
 }

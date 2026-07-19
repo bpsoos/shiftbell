@@ -25,11 +25,6 @@ type Templater interface {
 		io.Writer,
 		*models.Chore,
 	) error
-	ChoreForEdit(
-		context.Context,
-		io.Writer,
-		*models.Chore,
-	) error
 	Page(
 		context.Context,
 		io.Writer,
@@ -62,10 +57,10 @@ type ChoreTypePersister interface {
 }
 
 type Persister interface {
+	Create(params *models.CreateChoreParams) (*models.Chore, error)
 	GetBatch(offset int, limit int) (*models.GetChoreBatchResult, error)
 	Get(id int) (*models.Chore, error)
 	MarkComplete(id int, completedAt time.Time) error
-	SetLastCompletedAt(id int, lastCompletedAt time.Time) (*models.Chore, error)
 }
 
 type HandlerDeps struct {
@@ -112,11 +107,6 @@ func (h *Handler) Get(ctx *echo.Context) error {
 		ctx.Response().WriteHeader(http.StatusOK)
 
 		return h.templater.Chore(ctx.Request().Context(), ctx.Response(), chore)
-	case "edit":
-		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
-		ctx.Response().WriteHeader(http.StatusOK)
-
-		return h.templater.ChoreForEdit(ctx.Request().Context(), ctx.Response(), chore)
 	default:
 		logging.Default().Error("unknown get for cause", "get_for_type", getForType)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown get for type")
@@ -183,33 +173,7 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 	}
 	status := ctx.FormValueOr("status", "")
 	switch status {
-	case "":
 	case "complete":
-	case "incomplete":
-		return ctx.String(http.StatusConflict, "setting status to incomplete dissalowed")
-	default:
-		logging.Default().Info("unknown status", "status", status)
-		return ctx.String(http.StatusUnprocessableEntity, "unknown status")
-	}
-
-	lastCompletedAtStr := ctx.FormValueOr("lastCompletedAt", "")
-
-	if lastCompletedAtStr == "" && status == "" {
-		logging.Default().Info("patch request request content empty")
-		return ctx.String(http.StatusUnprocessableEntity, "patch content missing")
-	}
-	logging.Default().Info("updating lastCompletedAt", "last_completed_at", lastCompletedAtStr, "status", status)
-
-	var lastCompletedAt time.Time
-	if lastCompletedAtStr != "" {
-		lastCompletedAt, err = time.Parse("2006-01-02", lastCompletedAtStr)
-		if err != nil {
-			logging.Default().Info("invalid lastCompletedAt", "last_completed_at", lastCompletedAtStr)
-			return ctx.String(http.StatusUnprocessableEntity, "invalid lastCompletedAt")
-		}
-	}
-
-	if status != "" {
 		err = h.persister.MarkComplete(id, time.Now())
 		if err != nil {
 			logging.Default().Error("patch chore status error", "err", err)
@@ -217,29 +181,46 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 		}
 
 		ctx.Response().Header().Set("HX-Trigger", "load-chores")
+		return ctx.String(http.StatusOK, "OK")
+	case "incomplete":
+		return ctx.String(http.StatusConflict, "setting status to incomplete dissalowed")
+	case "":
+		logging.Default().Info("patch request request content empty")
+		return ctx.String(http.StatusUnprocessableEntity, "patch content missing")
+	default:
+		logging.Default().Info("unknown status", "status", status)
+		return ctx.String(http.StatusUnprocessableEntity, "unknown status")
 	}
-	if lastCompletedAtStr != "" {
-		logging.Default().Info("updating lastCompletedAt", "last_completed_at", lastCompletedAtStr)
-		chore, err := h.persister.SetLastCompletedAt(id, lastCompletedAt)
-		if err != nil {
-			logging.Default().Error("set last updated at error", "err", err)
-			return ctx.String(http.StatusInternalServerError, "something went wrong")
-		}
-		ctx.Response().Header().Set("HX-Trigger", "load-chores")
-		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
-		ctx.Response().WriteHeader(http.StatusOK)
-
-		return h.templater.Chore(ctx.Request().Context(), ctx.Response(), chore)
-	}
-
-	return ctx.String(http.StatusOK, "OK")
 }
 
 func (h *Handler) Create(ctx *echo.Context) error {
 	name := ctx.FormValueOr("name", "")
+	if name == "" {
+		logging.Default().Info("missing name for create chore")
+		return ctx.String(http.StatusUnprocessableEntity, "missing name")
+	}
 	description := ctx.FormValueOr("description", "")
-	deadline := ctx.FormValueOr("deadline", "")
-	logging.Default().Info("parsed create chore inputs", "name", name, "description", description, "deadline", deadline)
+	deadlineValue := ctx.FormValueOr("deadline", "")
+	if deadlineValue == "" {
+		logging.Default().Info("missing deadline for create chore")
+		return ctx.String(http.StatusUnprocessableEntity, "missing deadline")
+	}
+	deadline, err := time.Parse(time.DateOnly, deadlineValue)
+	if err != nil {
+		logging.Default().Info("invalid deadline for create chore", "deadline", deadlineValue, "err", err)
+		return ctx.String(http.StatusUnprocessableEntity, "invalid deadline")
+	}
+
+	_, err = h.persister.Create(&models.CreateChoreParams{
+		Name:        name,
+		Description: description,
+		Deadline:    deadline,
+	})
+	if err != nil {
+		logging.Default().Error("create chore error", "err", err)
+		return ctx.String(http.StatusInternalServerError, "something went wrong")
+	}
+
 	ctx.Response().Header().Set("HX-Redirect", "/chores")
 	return ctx.String(http.StatusOK, "OK")
 }

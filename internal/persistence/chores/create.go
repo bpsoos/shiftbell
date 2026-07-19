@@ -2,7 +2,7 @@ package chores
 
 import (
 	"database/sql"
-	"time"
+	"fmt"
 
 	"github.com/bpsoos/shiftbell/internal/models"
 )
@@ -16,13 +16,13 @@ func (p *Persister) Create(params *models.CreateChoreParams) (*models.Chore, err
 		}
 	}
 	var deadlineNullable sql.NullTime
-	if !time.Now().IsZero() {
+	if !params.Deadline.IsZero() {
 		deadlineNullable = sql.NullTime{
 			Time:  params.Deadline,
 			Valid: true,
 		}
 	}
-	p.db.NamedExec(
+	result, err := p.db.NamedExec(
 		`
 			insert into chores
 				(name, description, is_complete, deadline)
@@ -36,6 +36,18 @@ func (p *Persister) Create(params *models.CreateChoreParams) (*models.Chore, err
 			"deadline":    deadlineNullable,
 		},
 	)
+	if err != nil {
+		return nil, fmt.Errorf("db exec inserting chore: %w", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("last insert id for chore: %w", err)
+	}
 
-	return nil, nil
+	return &models.Chore{
+		Id:          int(id),
+		Status:      models.ChoreStatusIncomplete,
+		Description: params.Description,
+		Deadline:    params.Deadline,
+	}, nil
 }

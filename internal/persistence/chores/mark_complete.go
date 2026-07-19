@@ -8,19 +8,13 @@ import (
 func (p *Persister) MarkComplete(id int, completedAt time.Time) error {
 	_, err := p.db.Exec(
 		`
-			with candidate as (
-				select id
-				from chores
-				where id = $1 and is_complete = false
-			)
-			update chores c
+			update chores
 			set is_complete = true,
-				completed_at = $2
-			from candidate
-			where c.id = candidate.id
+				completed_at = ?
+			where id = ? and is_complete = false
 		`,
-		id,
 		completedAt,
+		id,
 	)
 	if err != nil {
 		return fmt.Errorf("update chores exec: %v", err)

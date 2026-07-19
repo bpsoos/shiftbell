@@ -52,12 +52,11 @@ const (
 )
 
 type Chore struct {
-	Id              int
-	Status          ChoreStatus
-	Description     string
-	Deadline        time.Time
-	LastCompletedAt time.Time
-	CompletedAt     time.Time
+	Id          int
+	Status      ChoreStatus
+	Description string
+	Deadline    time.Time
+	CompletedAt time.Time
 }
 
 type CreateChoreParams struct {

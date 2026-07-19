@@ -12,7 +12,6 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 	row := p.db.QueryRow(
 		`
 			select description,
-				last_completed_at,
 				completed_at,
 				deadline
 			from chores
@@ -23,13 +22,12 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 
 	var (
 		description         string
-		lastCompletedAt     time.Time
 		status              models.ChoreStatus
 		deadline            time.Time
 		completedAtNullable sql.NullTime
 		completedAt         time.Time
 	)
-	err := row.Scan(&description, &lastCompletedAt, &completedAtNullable, &deadline)
+	err := row.Scan(&description, &completedAtNullable, &deadline)
 	if err != nil {
 		return nil, fmt.Errorf("get chore query: %v", err)
 	}
@@ -41,11 +39,10 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 	status = models.ChoreStatusIncomplete
 
 	return &models.Chore{
-		Id:              id,
-		Status:          status,
-		Description:     description,
-		LastCompletedAt: lastCompletedAt,
-		CompletedAt:     completedAt,
-		Deadline:        deadline,
+		Id:          id,
+		Status:      status,
+		Description: description,
+		CompletedAt: completedAt,
+		Deadline:    deadline,
 	}, nil
 }

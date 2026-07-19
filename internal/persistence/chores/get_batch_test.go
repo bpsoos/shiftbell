@@ -12,15 +12,13 @@ import (
 
 var _ = Describe("GetBatch", func() {
 	var (
-		db              *sqlx.DB
-		persister       *chorespersistence.Persister
-		lastCompletedAt time.Time
+		db        *sqlx.DB
+		persister *chorespersistence.Persister
 	)
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
 		persister = chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
-		lastCompletedAt = time.Date(2026, time.January, 1, 8, 0, 0, 0, time.UTC)
 	})
 
 	Context("with no chores", func() {
@@ -36,10 +34,9 @@ var _ = Describe("GetBatch", func() {
 	Context("with one chore", func() {
 		BeforeEach(func() {
 			_, err := db.Exec(
-				`insert into chores (name, description, last_completed_at, is_complete, deadline) values (?, ?, ?, ?, ?)`,
+				`insert into chores (name, description, is_complete, deadline) values (?, ?, ?, ?)`,
 				"first",
 				"first",
-				lastCompletedAt,
 				false,
 				time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC),
 			)
@@ -59,23 +56,20 @@ var _ = Describe("GetBatch", func() {
 	Context("with many chores", func() {
 		BeforeEach(func() {
 			_, err := db.Exec(
-				`insert into chores (name, description, last_completed_at, is_complete, deadline) values
-					(?, ?, ?, ?, ?),
-					(?, ?, ?, ?, ?),
-					(?, ?, ?, ?, ?)`,
+				`insert into chores (name, description, is_complete, deadline) values
+					(?, ?, ?, ?),
+					(?, ?, ?, ?),
+					(?, ?, ?, ?)`,
 				"first",
 				"first",
-				lastCompletedAt,
 				false,
 				time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC),
 				"second",
 				"second",
-				lastCompletedAt,
 				false,
 				time.Date(2026, time.January, 2, 0, 0, 0, 0, time.UTC),
 				"third",
 				"third",
-				lastCompletedAt,
 				false,
 				time.Date(2026, time.January, 3, 0, 0, 0, 0, time.UTC),
 			)
