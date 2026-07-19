@@ -3,7 +3,6 @@ package chores
 import (
 	"context"
 	"io"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -96,13 +95,13 @@ func (h *Handler) Get(ctx *echo.Context) error {
 	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		slog.Info("invalid id received", "err", err)
+		logging.Default().Info("invalid id received", "err", err)
 		return ctx.String(http.StatusUnprocessableEntity, "invalid id")
 	}
 
 	chore, err := h.persister.Get(id)
 	if err != nil {
-		slog.Error("get batch error", "err", err)
+		logging.Default().Error("get batch error", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 
@@ -119,7 +118,7 @@ func (h *Handler) Get(ctx *echo.Context) error {
 
 		return h.templater.ChoreForEdit(ctx.Request().Context(), ctx.Response(), chore)
 	default:
-		slog.Error("unknown get for cause", "get_for_type", getForType)
+		logging.Default().Error("unknown get for cause", "get_for_type", getForType)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown get for type")
 	}
 
@@ -129,25 +128,25 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 	offsetStr := ctx.QueryParamOr("offset", "0")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		slog.Info("invalid offset", "err", err)
+		logging.Default().Info("invalid offset", "err", err)
 		return ctx.String(http.StatusUnprocessableEntity, "invalid offset")
 	}
 	limitStr := ctx.QueryParamOr("limit", "10")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		slog.Info("invalid limit", "err", err)
+		logging.Default().Info("invalid limit", "err", err)
 		return ctx.String(http.StatusUnprocessableEntity, "invalid limit")
 	}
 	statusFilter := ctx.QueryParamOr("status", "incomplete")
 	if statusFilter != "incomplete" {
-		slog.Info("unsupported status filter", "status_filter", statusFilter)
+		logging.Default().Info("unsupported status filter", "status_filter", statusFilter)
 		return ctx.String(http.StatusUnprocessableEntity, "unsupported status filter")
 	}
 	content := ctx.QueryParamOr("content", "all")
 
 	chores, err := h.persister.GetBatch(offset, limit)
 	if err != nil {
-		slog.Error("get batch error", "err", err)
+		logging.Default().Error("get batch error", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 
@@ -167,7 +166,7 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 
 		return h.templater.PageWithLayout(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
 	default:
-		slog.Error("unknown content", "content", content)
+		logging.Default().Error("unknown content", "content", content)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown content")
 	}
 }
@@ -179,7 +178,7 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		slog.Info("invalid id received", "err", err)
+		logging.Default().Info("invalid id received", "err", err)
 		return ctx.String(http.StatusUnprocessableEntity, "invalid id")
 	}
 	status := ctx.FormValueOr("status", "")
@@ -189,23 +188,23 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 	case "incomplete":
 		return ctx.String(http.StatusConflict, "setting status to incomplete dissalowed")
 	default:
-		slog.Info("unknown status", "status", status)
+		logging.Default().Info("unknown status", "status", status)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown status")
 	}
 
 	lastCompletedAtStr := ctx.FormValueOr("lastCompletedAt", "")
 
 	if lastCompletedAtStr == "" && status == "" {
-		slog.Info("patch request request content empty")
+		logging.Default().Info("patch request request content empty")
 		return ctx.String(http.StatusUnprocessableEntity, "patch content missing")
 	}
-	slog.Info("updating lastCompletedAt", "last_completed_at", lastCompletedAtStr, "status", status)
+	logging.Default().Info("updating lastCompletedAt", "last_completed_at", lastCompletedAtStr, "status", status)
 
 	var lastCompletedAt time.Time
 	if lastCompletedAtStr != "" {
 		lastCompletedAt, err = time.Parse("2006-01-02", lastCompletedAtStr)
 		if err != nil {
-			slog.Info("invalid lastCompletedAt", "last_completed_at", lastCompletedAtStr)
+			logging.Default().Info("invalid lastCompletedAt", "last_completed_at", lastCompletedAtStr)
 			return ctx.String(http.StatusUnprocessableEntity, "invalid lastCompletedAt")
 		}
 	}
@@ -213,17 +212,17 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 	if status != "" {
 		err = h.persister.MarkComplete(id, time.Now())
 		if err != nil {
-			slog.Error("patch chore status error", "err", err)
+			logging.Default().Error("patch chore status error", "err", err)
 			return ctx.String(http.StatusInternalServerError, "something went wrong")
 		}
 
 		ctx.Response().Header().Set("HX-Trigger", "load-chores")
 	}
 	if lastCompletedAtStr != "" {
-		slog.Info("updating lastCompletedAt", "last_completed_at", lastCompletedAtStr)
+		logging.Default().Info("updating lastCompletedAt", "last_completed_at", lastCompletedAtStr)
 		chore, err := h.persister.SetLastCompletedAt(id, lastCompletedAt)
 		if err != nil {
-			slog.Error("set last updated at error", "err", err)
+			logging.Default().Error("set last updated at error", "err", err)
 			return ctx.String(http.StatusInternalServerError, "something went wrong")
 		}
 		ctx.Response().Header().Set("HX-Trigger", "load-chores")
@@ -272,7 +271,7 @@ func (h *Handler) New(ctx *echo.Context) error {
 		case "manual":
 			ctxValues.IsManual = true
 		default:
-			slog.Info("invalid input type", "input_type", params.InputType)
+			logging.Default().Info("invalid input type", "input_type", params.InputType)
 			return ctx.String(http.StatusUnprocessableEntity, "invalid input type")
 		}
 	}
@@ -280,10 +279,10 @@ func (h *Handler) New(ctx *echo.Context) error {
 	if ctx.QueryParams().Has("choreTypeId") {
 		selectedChoreType, err := h.choreTypePersister.Get(params.ChoreTypeId)
 		if err != nil {
-			slog.Info("get chore type error", "err", err)
+			logging.Default().Info("get chore type error", "err", err)
 			return ctx.String(http.StatusInternalServerError, "something went wrong")
 		}
-		slog.Info("fetched chore type successfully", "chore_type_id", params.ChoreTypeId)
+		logging.Default().Info("fetched chore type successfully", "chore_type_id", params.ChoreTypeId)
 		ctxValues.SelectedChoreType = selectedChoreType
 	}
 
@@ -297,7 +296,7 @@ func (h *Handler) New(ctx *echo.Context) error {
 			case string(models.NewChoreTypeComponentInputTypeSelector):
 				componentSpecifiers = append(componentSpecifiers, models.NewChoreTypeComponentInputTypeSelector)
 			default:
-				slog.Info("invalid field specified", "field", field)
+				logging.Default().Info("invalid field specified", "field", field)
 				return ctx.String(http.StatusUnprocessableEntity, "invalid field specified")
 			}
 		}

@@ -67,7 +67,7 @@ func execute() int {
 	router.Setup(e)
 
 	if err := e.Start("0.0.0.0:80"); err != nil {
-		e.Logger.Error("fatal error", "error", err)
+		logging.Default().Error("fatal error", "error", err)
 		return 1
 	}
 	return 0

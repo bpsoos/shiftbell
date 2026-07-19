@@ -3,10 +3,10 @@ package choretypes
 import (
 	"context"
 	"io"
-	"log/slog"
 	"net/http"
 	"strconv"
 
+	"github.com/bpsoos/shiftbell/internal/logging"
 	"github.com/bpsoos/shiftbell/internal/models"
 	"github.com/labstack/echo/v5"
 )
@@ -69,20 +69,20 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 	offsetStr := ctx.QueryParamOr("offset", "0")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		slog.Info("invalid offset", "err", err)
+		logging.Default().Info("invalid offset", "err", err)
 		return ctx.String(http.StatusUnprocessableEntity, "invalid offset")
 	}
 	limitStr := ctx.QueryParamOr("limit", "10")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		slog.Info("invalid limit", "err", err)
+		logging.Default().Info("invalid limit", "err", err)
 		return ctx.String(http.StatusUnprocessableEntity, "invalid limit")
 	}
 	content := ctx.QueryParamOr("content", "all")
 
 	chores, err := h.choreTypePersister.GetBatch(offset, limit)
 	if err != nil {
-		slog.Error("get chore type batch error", "err", err)
+		logging.Default().Error("get chore type batch error", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 
@@ -108,7 +108,7 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 		return h.templater.PageWithLayout(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
 
 	default:
-		slog.Error("unknown content", "content", content)
+		logging.Default().Error("unknown content", "content", content)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown content")
 	}
 }
@@ -116,17 +116,17 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 func (h *Handler) Delete(ctx *echo.Context) error {
 	choreTypeIdStr := ctx.ParamOr("id", "")
 	if choreTypeIdStr == "" {
-		slog.Info("chore type id missing")
+		logging.Default().Info("chore type id missing")
 		return ctx.String(http.StatusUnprocessableEntity, "missing chore type id")
 	}
 	choreTypeId, err := strconv.Atoi(choreTypeIdStr)
 	if err != nil {
-		slog.Info("invalid chore type id")
+		logging.Default().Info("invalid chore type id")
 		return ctx.String(http.StatusUnprocessableEntity, "invalid chore type id")
 	}
 	err = h.choreTypePersister.Delete(choreTypeId)
 	if err != nil {
-		slog.Info("chore type delete: %v", "err", err)
+		logging.Default().Info("chore type delete", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 
@@ -138,7 +138,7 @@ func (h *Handler) Delete(ctx *echo.Context) error {
 func (h *Handler) Create(ctx *echo.Context) error {
 	name := ctx.FormValue("name")
 	if name == "" {
-		slog.Info("missing name for create chore type")
+		logging.Default().Info("missing name for create chore type")
 		return ctx.String(http.StatusUnprocessableEntity, "missing name")
 	}
 	description := ctx.FormValue("description")
@@ -147,7 +147,7 @@ func (h *Handler) Create(ctx *echo.Context) error {
 
 	err := h.choreTypePersister.Create(name, description)
 	if err != nil {
-		slog.Error("create chore type error", "err", err)
+		logging.Default().Error("create chore type error", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
 	}
 	ctx.Response().Header().Set("HX-Trigger", "load-chore-types")

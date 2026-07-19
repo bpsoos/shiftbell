@@ -3,9 +3,9 @@ package chores
 import (
 	"context"
 	"io"
-	"log/slog"
 
 	"github.com/a-h/templ"
+	"github.com/bpsoos/shiftbell/internal/logging"
 	"github.com/bpsoos/shiftbell/internal/models"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
@@ -100,7 +100,7 @@ func (t *Templater) JoinedComponents(
 		case models.NewChoreTypeComponentInputTypeSelector:
 			components = append(components, selectInputTypeButtonGroup(attrs))
 		default:
-			slog.Error("unknown new chore type component", "component", componentSpecifiers[i])
+			logging.Default().Error("unknown new chore type component", "component", componentSpecifiers[i])
 		}
 	}
 	components = append(components, submitRow(templ.Attributes{"hx-swap-oob": "true"}))

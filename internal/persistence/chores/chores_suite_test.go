@@ -1,7 +1,6 @@
 package chores_test
 
 import (
-	"log/slog"
 	"testing"
 
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -16,7 +15,6 @@ func TestChores(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	logging.Configure(logging.Config{
-		Level:   slog.LevelInfo,
 		Handler: logging.HandlerDiscard,
 	})
 })

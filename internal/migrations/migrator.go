@@ -4,7 +4,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/bpsoos/shiftbell/internal/database"
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -42,7 +41,7 @@ func (*Migrator) Migrate(sqliteFilepath string) error {
 		}
 	}()
 
-	m.Log = MigrationLogger{logger: logger}
+	m.Log = MigrationLogger{}
 
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
@@ -55,12 +54,10 @@ func (*Migrator) Migrate(sqliteFilepath string) error {
 	return nil
 }
 
-type MigrationLogger struct {
-	logger *slog.Logger
-}
+type MigrationLogger struct{}
 
-func (ml MigrationLogger) Printf(format string, v ...any) {
-	ml.logger.Info("migrating", "msg", fmt.Sprintf(format, v...))
+func (MigrationLogger) Printf(format string, v ...any) {
+	logging.Default().Info("migrating", "msg", fmt.Sprintf(format, v...))
 }
 
 func (MigrationLogger) Verbose() bool {
