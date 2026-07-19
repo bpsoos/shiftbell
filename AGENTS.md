@@ -5,4 +5,3 @@ Prefer the recipes in `justfile` for common development tasks. They run mostly D
 # Tests
 
 Use Ginkgo and Gomega for unit tests.
-Select test cases using the zero-one-many pattern.
