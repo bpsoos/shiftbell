@@ -1,0 +1,55 @@
+package choretypes
+
+import (
+	"database/sql"
+	"fmt"
+
+	"github.com/bpsoos/shiftbell/internal/models"
+)
+
+func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchResult, error) {
+	rows, err := p.db.Query(
+		`
+			select *
+			from chore_types
+			order by id desc
+			limit ?
+			offset ?
+		`,
+		limit+1,
+		offset,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("db query selecting chores: %v", err)
+	}
+	var (
+		id          int
+		name        string
+		description sql.NullString
+	)
+	results := make([]models.ChoreType, 0)
+	for rows.Next() {
+		err := rows.Scan(&id, &name, &description)
+		if err != nil {
+			return nil, fmt.Errorf("reading fetched rows: %v", err)
+		}
+		desc := ""
+		if description.Valid {
+			desc = description.String
+		}
+		results = append(results, models.ChoreType{
+			Id:          id,
+			Name:        name,
+			Description: desc,
+		})
+	}
+	more := len(results) > limit
+	if more {
+		results = results[:limit]
+	}
+
+	return &models.GetChoreTypeBatchResult{
+		ChoreTypes: results,
+		More:       more,
+	}, nil
+}

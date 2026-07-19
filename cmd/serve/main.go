@@ -38,6 +38,7 @@ func execute() int {
 		return 1
 	}
 	defer db.Close()
+	db.SetMaxOpenConns(1)
 	choreTypePersister := choretypespersistence.NewChoreTypePersister(&choretypespersistence.PersisterDeps{
 		Db: db,
 	})

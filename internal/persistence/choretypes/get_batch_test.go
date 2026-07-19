@@ -1,0 +1,101 @@
+package choretypes_test
+
+import (
+	"github.com/bpsoos/shiftbell/internal/models"
+	choretypespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretypes"
+	"github.com/bpsoos/shiftbell/internal/testsupport/sqlitetest"
+	"github.com/jmoiron/sqlx"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("GetBatch", func() {
+	var (
+		db        *sqlx.DB
+		persister *choretypespersistence.Persister
+	)
+
+	BeforeEach(func() {
+		db = sqlitetest.NewMigratedDB()
+		persister = choretypespersistence.NewChoreTypePersister(&choretypespersistence.PersisterDeps{Db: db})
+	})
+
+	Context("with no chore types", func() {
+		It("returns an empty batch", func() {
+			result, err := persister.GetBatch(0, 1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ChoreTypes).To(BeEmpty())
+			Expect(result.More).To(BeFalse())
+		})
+	})
+
+	Context("with one chore type", func() {
+		BeforeEach(func() {
+			_, err := db.Exec(`insert into chore_types (id, name, description) values (?, ?, ?)`, 1, "Laundry", "Wash and fold clothes")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns the chore type with more false", func() {
+			result, err := persister.GetBatch(0, 1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ChoreTypes).To(HaveLen(1))
+			Expect(result.ChoreTypes[0]).To(Equal(models.ChoreType{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}))
+			Expect(result.More).To(BeFalse())
+		})
+	})
+
+	Context("with many chore types", func() {
+		BeforeEach(func() {
+			_, err := db.Exec(
+				`insert into chore_types (id, name, description) values
+					(?, ?, ?),
+					(?, ?, ?),
+					(?, ?, ?)`,
+				1, "Laundry", "Wash and fold clothes",
+				2, "Dishes", "Load the dishwasher",
+				3, "Floors", "Vacuum the floors",
+			)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns the requested page with more true", func() {
+			result, err := persister.GetBatch(1, 1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ChoreTypes).To(HaveLen(1))
+			Expect(result.ChoreTypes[0]).To(Equal(models.ChoreType{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}))
+			Expect(result.More).To(BeTrue())
+		})
+
+		It("returns the first page with more true", func() {
+			result, err := persister.GetBatch(0, 2)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ChoreTypes).To(Equal([]models.ChoreType{
+				{Id: 3, Name: "Floors", Description: "Vacuum the floors"},
+				{Id: 2, Name: "Dishes", Description: "Load the dishwasher"},
+			}))
+			Expect(result.More).To(BeTrue())
+		})
+
+		It("returns the final page with more false", func() {
+			result, err := persister.GetBatch(2, 2)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ChoreTypes).To(Equal([]models.ChoreType{
+				{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"},
+			}))
+			Expect(result.More).To(BeFalse())
+		})
+
+		It("returns an empty page beyond the end", func() {
+			result, err := persister.GetBatch(3, 2)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ChoreTypes).To(BeEmpty())
+			Expect(result.More).To(BeFalse())
+		})
+	})
+})

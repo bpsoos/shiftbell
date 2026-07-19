@@ -90,5 +90,32 @@ var _ = Describe("GetBatch", func() {
 			Expect(result.Chores[0].Description).To(Equal("second"))
 			Expect(result.More).To(BeTrue())
 		})
+
+		It("returns the first page with more=true", func() {
+			result, err := persister.GetBatch(0, 2)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Chores).To(HaveLen(2))
+			Expect(result.Chores[0].Description).To(Equal("first"))
+			Expect(result.Chores[1].Description).To(Equal("second"))
+			Expect(result.More).To(BeTrue())
+		})
+
+		It("returns the final page with more=false", func() {
+			result, err := persister.GetBatch(2, 2)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Chores).To(HaveLen(1))
+			Expect(result.Chores[0].Description).To(Equal("third"))
+			Expect(result.More).To(BeFalse())
+		})
+
+		It("returns an empty page beyond the end", func() {
+			result, err := persister.GetBatch(3, 2)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Chores).To(BeEmpty())
+			Expect(result.More).To(BeFalse())
+		})
 	})
 })

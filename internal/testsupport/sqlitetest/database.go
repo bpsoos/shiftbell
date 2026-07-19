@@ -19,6 +19,7 @@ func NewMigratedDB() *sqlx.DB {
 
 	db, err := sqlx.Connect("sqlite", database.SQLiteDSN(databaseFilepath))
 	Expect(err).NotTo(HaveOccurred())
+	db.SetMaxOpenConns(1)
 
 	DeferCleanup(func() {
 		Expect(db.Close()).To(Succeed())
