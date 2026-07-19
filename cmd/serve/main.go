@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	"github.com/bpsoos/shiftbell/internal/appcfg"
@@ -25,12 +24,12 @@ func main() {
 }
 
 func execute() int {
-	logger := logging.Default()
-	appConfig, err := appcfg.Load(context.Background())
+	appConfig, err := appcfg.Load()
 	if err != nil {
-		logger.Error("loading app config", "err", err)
+		logging.Default().Error("loading app config", "err", err)
 		return 1
 	}
+	logger := logging.Configure(logging.Config{Handler: appConfig.LogHandler})
 
 	db, err := sqlx.Connect("sqlite", database.SQLiteDSN(appConfig.DatabaseFilepath))
 	if err != nil {
@@ -62,6 +61,7 @@ func execute() int {
 		ChoreTypeHandler: choreTypesHandler,
 	})
 	e := echo.New()
+	e.Logger = logger
 	e.Use(middleware.RequestLogger())
 
 	router.Setup(e)

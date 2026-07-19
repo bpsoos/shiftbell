@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bpsoos/shiftbell/internal/logging"
 	"github.com/bpsoos/shiftbell/internal/models"
 	"github.com/labstack/echo/v5"
 )
@@ -239,7 +240,7 @@ func (h *Handler) Create(ctx *echo.Context) error {
 	name := ctx.FormValueOr("name", "")
 	description := ctx.FormValueOr("description", "")
 	deadline := ctx.FormValueOr("deadline", "")
-	slog.Info("parsed create chore inputs", "name", name, "description", description, "deadline", deadline)
+	logging.Default().Info("parsed create chore inputs", "name", name, "description", description, "deadline", deadline)
 	ctx.Response().Header().Set("HX-Redirect", "/chores")
 	return ctx.String(http.StatusOK, "OK")
 }

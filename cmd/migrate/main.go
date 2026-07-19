@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	"github.com/bpsoos/shiftbell/internal/appcfg"
@@ -14,12 +13,12 @@ func main() {
 }
 
 func execute() int {
-	logger := logging.Default()
-	cfg, err := appcfg.Load(context.Background())
+	cfg, err := appcfg.Load()
 	if err != nil {
-		logger.Error("loading app config", "err", err)
+		logging.Default().Error("loading app config", "err", err)
 		return 1
 	}
+	logger := logging.Configure(logging.Config{Handler: cfg.LogHandler})
 
 	err = migrations.NewMigrator().Migrate(cfg.DatabaseFilepath)
 	if err != nil {

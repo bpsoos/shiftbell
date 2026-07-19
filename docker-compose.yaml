@@ -6,6 +6,7 @@ services:
       - "8080:80"
     environment:
       DATABASE_FILEPATH: "/data/app.db"
+      LOG_FORMAT: "text"
     volumes:
       - "./:/src"
       - "go_build_cache:/root/.cache/go-build"

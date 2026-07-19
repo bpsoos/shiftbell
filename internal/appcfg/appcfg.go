@@ -1,30 +1,56 @@
 package appcfg
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/bpsoos/shiftbell/internal/logging"
 )
 
 type AppCfg struct {
 	DatabaseFilepath string
+	LogHandler       logging.Handler
 }
 
-func Load(ctx context.Context) (*AppCfg, error) {
-	if err := ctx.Err(); err != nil {
+func Load() (*AppCfg, error) {
+	dbFilepath, err := loadDatabaseFilepath()
+	if err != nil {
+		return nil, err
+	}
+	logHandler, err := loadLogHandler()
+	if err != nil {
 		return nil, err
 	}
 
+	return &AppCfg{
+		DatabaseFilepath: dbFilepath,
+		LogHandler:       logHandler,
+	}, nil
+}
+
+func loadDatabaseFilepath() (string, error) {
 	databaseFilepath := os.Getenv("DATABASE_FILEPATH")
 	if databaseFilepath == "" {
-		return nil, fmt.Errorf("DATABASE_FILEPATH is required")
+		return "", fmt.Errorf("DATABASE_FILEPATH is required")
 	}
 	if err := validateDatabaseFilepath(databaseFilepath); err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return &AppCfg{DatabaseFilepath: databaseFilepath}, nil
+	return databaseFilepath, nil
+}
+
+func loadLogHandler() (logging.Handler, error) {
+	logFormat := os.Getenv("LOG_FORMAT")
+	switch logFormat {
+	case "", "json":
+		return logging.HandlerJSON, nil
+	case "text":
+		return logging.HandlerConsole, nil
+	default:
+		return logging.HandlerJSON, fmt.Errorf("invalid LOG_FORMAT %q: expected text or json", logFormat)
+	}
 }
 
 func validateDatabaseFilepath(databaseFilepath string) error {

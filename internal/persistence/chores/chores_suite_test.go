@@ -14,9 +14,9 @@ func TestChores(t *testing.T) {
 	RunSpecs(t, "Chores Persistence Suite")
 }
 
-var _ = BeforeSuite(func (){
+var _ = BeforeSuite(func() {
 	logging.Configure(logging.Config{
-		Level: slog.LevelInfo,
+		Level:   slog.LevelInfo,
 		Handler: logging.HandlerDiscard,
 	})
 })
