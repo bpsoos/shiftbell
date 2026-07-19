@@ -23,6 +23,8 @@ V4 would add permissions and read-only users.
 
 A single-binary go application with embedded sqlite and an htmx and bootstrap-based ui.
 
+The application runs its embedded database migrations on startup before serving requests. A migration failure prevents startup.
+
 ## Application time
 
 Deadlines and completion dates are calendar dates rather than timestamps. Date calculations use the configured application timezone.
@@ -37,6 +39,7 @@ Changing the configured timezone only affects subsequent calculations of dates.
 
 - `id`
 - `schedule_id`, nullable
+- `predecessor_id`, nullable internal recurrence link
 - `name`, required and limited to 200 characters
 - `description`, nullable and limited to 2,000 characters
 - `deadline`, required calendar date
@@ -48,6 +51,8 @@ A chore is active when `completed_on` is null and completed otherwise.
 A one-off chore has no schedule.
 
 A scheduled chore references exactly one schedule.
+
+The first chore in a schedule has no predecessor. Each successor references the completed chore in the same schedule whose completion created it. At most one chore may reference a given predecessor.
 
 
 Chores store name and description snapshots. One-off chores created from a chore template do not retain a `chore_template_id`. Scheduled chores reach their chore template through their schedule.
@@ -166,11 +171,13 @@ func normalizeSearch(value string) (string, bool) {
 
 Active chores are displayed by default. Users may switch between `active` and `completed`; v1 does not provide a combined `all` filter.
 
-Active chores are ordered by deadline ascending and then ID ascending. Completed chores are ordered by completion date descending.
+Active chores are ordered by deadline ascending and then ID ascending. Completed chores are ordered by completion date descending and then ID descending.
 
 Completed chores are removed from the default active list immediately after completion.
 
 Schedules and chore templates are reverse ordered by id and searchable.
+
+Schedule search is a case-insensitive substring match across the schedule name and linked chore-template name.
 
 Deactivated schedules and chore templates are excluded from normal lists and selectors. They remain available through a read-only `deactivated` filter.
 
@@ -185,6 +192,8 @@ Completing a scheduled chore creates exactly one successor with:
 The calculation intentionally uses the actual completion date rather than the previous deadline. Repeated completion requests are successful no-ops and never create duplicate successors.
 
 Each schedule has at most one active chore. Completing a scheduled chore and creating its successor occur in the same transaction, so a successful completion immediately leaves the schedule with its next active chore.
+
+The immediate successor is the chore whose `predecessor_id` references the corrected chore.
 
 Correcting the completion date of a scheduled chore recalculates the deadline of its immediate successor in the same transaction while that successor is still active. Corrections do not cascade once the successor has been completed.
 

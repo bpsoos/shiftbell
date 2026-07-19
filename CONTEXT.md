@@ -30,7 +30,11 @@ A recurring plan associated with one chore template and an interval. An active s
 
 ## Successor
 
-The next active chore in a schedule, based on the completed chore's completion date and the schedule's interval.
+The scheduled chore created directly by completing another scheduled chore.
+
+## Predecessor
+
+The scheduled chore whose completion directly created a successor.
 
 ## Permanent deactivation
 
