@@ -43,10 +43,24 @@ build-prod:
     docker save -o out/{{prod_image}}.tar {{prod_image}}:latest
     gzip -f out/{{prod_image}}.tar
 
+go *args: build
+    docker run --rm \
+        -v {{justfile_dir()}}:/src \
+        --entrypoint go \
+        --workdir /src \
+        {{dev_image}} \
+        {{args}}
+
 fmt:
-    docker run --rm -it \
+    docker run --rm \
         -v {{justfile_dir()}}:/src \
         --entrypoint /bin/sh \
         --workdir /src \
         {{dev_image}} \
         -c "go fmt ./... && go tool templ fmt ."
+
+test:
+    just go tool ginkgo run -r -p --randomize-all --randomize-suites
+
+test-ci:
+    just go tool ginkgo run -r -v -p --randomize-all --randomize-suites --fail-on-pending --fail-on-empty --keep-going

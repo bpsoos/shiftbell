@@ -1,11 +1,14 @@
 package main
 
 import (
-	"log"
+	"context"
 	"os"
 
+	"github.com/bpsoos/shiftbell/internal/appcfg"
+	"github.com/bpsoos/shiftbell/internal/database"
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	choretypesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretypes"
+	"github.com/bpsoos/shiftbell/internal/logging"
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
 	choretypespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretypes"
 	"github.com/bpsoos/shiftbell/internal/routing"
@@ -14,14 +17,27 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
-	_ "github.com/lib/pq"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
-	db, err := sqlx.Connect("postgres", os.Getenv("DATABASE_URL"))
+	os.Exit(execute())
+}
+
+func execute() int {
+	logger := logging.Default()
+	appConfig, err := appcfg.Load(context.Background())
 	if err != nil {
-		log.Fatal("could not connect to db", err)
+		logger.Error("loading app config", "err", err)
+		return 1
 	}
+
+	db, err := sqlx.Connect("sqlite", database.SQLiteDSN(appConfig.DatabaseFilepath))
+	if err != nil {
+		logger.Error("could not connect to db", "err", err)
+		return 1
+	}
+	defer db.Close()
 	choreTypePersister := choretypespersistence.NewChoreTypePersister(&choretypespersistence.PersisterDeps{
 		Db: db,
 	})
@@ -50,6 +66,8 @@ func main() {
 	router.Setup(e)
 
 	if err := e.Start("0.0.0.0:80"); err != nil {
-		e.Logger.Error("failed to start server", "error", err)
+		e.Logger.Error("fatal error", "error", err)
+		return 1
 	}
+	return 0
 }

@@ -5,63 +5,16 @@ services:
     ports:
       - "8080:80"
     environment:
-      DATABASE_URL: "postgres://testuser:testpassword@postgres:5432/testdb?sslmode=disable"
+      DATABASE_FILEPATH: "/data/app.db"
     volumes:
       - "./:/src"
       - "go_build_cache:/root/.cache/go-build"
       - "go_module_cache:/go/pkg/mod"
+      - "appdata:/data"
     entrypoint: ["go"]
     command: ["tool", "air"]
-    depends_on:
-      migrator:
-        condition: service_completed_successfully
-      testdata-loader:
-        condition: service_completed_successfully
-
-  postgres:
-    image: postgres:18
-    environment:
-      POSTGRES_USER: testuser
-      POSTGRES_PASSWORD: testpassword
-      POSTGRES_DB: testdb
-    healthcheck:
-      test: "pg_isready -d testdb -U testuser"
-      interval: 2s
-      timeout: 5s
-      retries: 10
-      start_period: 1s
-
-  migrator:
-    image: ${DEV_IMAGE}
-    environment:
-      DATABASE_URL: "postgres://testuser:testpassword@postgres:5432/testdb?sslmode=disable"
-    volumes:
-      - ./:/src
-      - go_build_cache:/root/.cache/go-build
-      - go_module_cache:/go/pkg/mod
-    entrypoint: ["go"]
-    command: ["run", "cmd/migrate/main.go"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  testdata-loader:
-    image: postgres:18
-    entrypoint: ["psql"]
-    environment:
-      POSTGRES_USER: testuser
-      POSTGRES_PASSWORD: testpassword
-      POSTGRES_DB: testdb
-    command:
-      - postgres://testuser:testpassword@postgres:5432/testdb?sslmode=disable
-      - -f
-      - /src/testdata/testdb.dump
-    volumes:
-      - ./:/src
-    depends_on:
-      migrator:
-        condition: service_completed_successfully
 
 volumes:
   go_build_cache:
   go_module_cache:
+  appdata:

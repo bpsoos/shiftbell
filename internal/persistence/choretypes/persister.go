@@ -24,7 +24,7 @@ func NewChoreTypePersister(deps *PersisterDeps) *Persister {
 
 func (p *Persister) Delete(id int) error {
 	_, err := p.db.Exec(`
-		delete from chore_types where id = $1
+		delete from chore_types where id = ?
 	`,
 		id,
 	)
@@ -62,7 +62,7 @@ func (p *Persister) Get(id int) (*models.ChoreType, error) {
 		`
 			select name, description
 			from chore_types
-			where id=$1
+			where id = ?
 		`,
 		id,
 	)
@@ -88,11 +88,11 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchRe
 			select *
 			from chore_types
 			order by id desc
-			offset $1
-			limit $2 + 1
+			limit ?
+			offset ?
 		`,
+		limit+1,
 		offset,
-		limit,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("db query selecting chores: %v", err)

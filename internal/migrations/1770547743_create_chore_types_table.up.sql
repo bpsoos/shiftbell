@@ -1,5 +1,5 @@
 CREATE TABLE chore_types (
-    id serial primary key,
+    id integer primary key,
     name text not null,
     description text
 );

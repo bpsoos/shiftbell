@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/bpsoos/shiftbell/internal/database"
+	"github.com/bpsoos/shiftbell/internal/logging"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
@@ -20,31 +22,45 @@ func NewMigrator() *Migrator {
 //go:embed *.sql
 var fs embed.FS
 
-func (*Migrator) Migrate(postgresURL string) {
+func (*Migrator) Migrate(sqliteFilepath string) error {
+	logger := logging.Default()
 	driver, err := iofs.New(fs, ".")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("new iofs: %v", err)
 	}
-	m, err := migrate.NewWithSourceInstance("iofs", driver, postgresURL)
+	m, err := migrate.NewWithSourceInstance("iofs", driver, database.SQLiteMigrationURL(sqliteFilepath))
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("new source instance: %v", err)
 	}
-	m.Log = MigrationLogger{}
+	defer func() {
+		errSource, errDb := m.Close()
+		if errSource != nil {
+			logger.Error("closing source", "err", errSource)
+		}
+		if errDb != nil {
+			logger.Error("closing database", "err", errDb)
+		}
+	}()
+
+	m.Log = MigrationLogger{logger: logger}
 
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
-			slog.Info("no change")
+			logger.Info("no change")
 
-			return
+			return nil
 		}
-		panic(err)
+		return fmt.Errorf("migrate up: %v", err)
 	}
+	return nil
 }
 
-type MigrationLogger struct{}
+type MigrationLogger struct {
+	logger *slog.Logger
+}
 
-func (MigrationLogger) Printf(format string, v ...any) {
-	slog.Info("migrating", "msg", fmt.Sprintf(format, v...))
+func (ml MigrationLogger) Printf(format string, v ...any) {
+	ml.logger.Info("migrating", "msg", fmt.Sprintf(format, v...))
 }
 
 func (MigrationLogger) Verbose() bool {
