@@ -40,9 +40,9 @@ Changing the configured timezone only affects subsequent calculations of dates.
 - `name`, required and limited to 200 characters
 - `description`, nullable and limited to 2,000 characters
 - `deadline`, required calendar date
-- `completed_at`, nullable calendar date
+- `completed_on`, nullable calendar date
 
-A chore is active when `completed_at` is null and completed otherwise.
+A chore is active when `completed_on` is null and completed otherwise.
 
 
 A one-off chore has no schedule.
@@ -79,7 +79,7 @@ One chore template may have multiple active schedules. A schedule may have many 
 ## Validation
 
 - Names are trimmed and must not be empty.
-- Descriptions are stored as null when empty.
+- Descriptions are trimmed and stored as null when empty.
 - Deadlines are required, default to the application-local current date, and may be in the past.
 - Completion dates may be in the past or present but never in the future.
 - `interval_days` must be a whole number from 1 through 3,650 and has no default.
@@ -112,7 +112,7 @@ func normalizeName(value string) (string, bool) {
 }
 ```
 
-Descriptions allow characters accepted by `unicode.IsPrint` plus tabs and line breaks. Line endings are normalized to `\n`.
+Descriptions allow characters accepted by `unicode.IsPrint` plus tabs and line breaks. Line endings are normalized to `\n`. Leading and trailing whitespace is trimmed while internal whitespace and formatting are preserved.
 
 ```go
 func normalizeDescription(value string) (string, bool) {
@@ -123,6 +123,7 @@ func normalizeDescription(value string) (string, bool) {
 	value = strings.ReplaceAll(value, "\r\n", "\n")
 	value = strings.ReplaceAll(value, "\r", "\n")
 	value = norm.NFC.String(value)
+	value = strings.TrimSpace(value)
 	if utf8.RuneCountInString(value) > 2000 {
 		return "", false
 	}
@@ -179,7 +180,7 @@ The first deadline of a schedule is required and defaults to the application-loc
 
 Completing a scheduled chore creates exactly one successor with:
 
-`deadline = completed_at + interval_days`
+`deadline = completed_on + interval_days`
 
 The calculation intentionally uses the actual completion date rather than the previous deadline. Repeated completion requests are successful no-ops and never create duplicate successors.
 
@@ -187,7 +188,7 @@ Each schedule has at most one active chore. Completing a scheduled chore and cre
 
 Correcting the completion date of a scheduled chore recalculates the deadline of its immediate successor in the same transaction while that successor is still active. Corrections do not cascade once the successor has been completed.
 
-Changing `interval_days` does not modify the current active chore. The new interval applies when calculating the next successor. The current chore deadline may be edited directly.
+Changing `interval_days` does not modify the current active chore. The new interval applies when calculating the next successor. Scheduled chore deadlines cannot be edited manually after creation. An active scheduled chore's deadline changes only when correction of its predecessor's completion date causes the application to recalculate it.
 
 
 ## Transactional behavior
@@ -264,10 +265,11 @@ One-off chore creation persists the new chore immediately. When `Save as chore t
 ### Active chore update
 
 1. The user opens an active chore and clicks `Edit`.
-2. The user may update name, description, or deadline.
-3. For a scheduled chore, the user may explicitly choose `Also update chore template`, which defaults off.
-4. The UI warns that updating a shared chore template affects future instances of every schedule using it.
-5. The user clicks `Update` and sees the updated chore.
+2. The user may update the name and description.
+3. For a one-off chore, the user may also update the deadline.
+4. For a scheduled chore, the deadline remains read-only and the user may explicitly choose `Also update chore template`, which defaults off.
+5. The UI warns that updating a shared chore template affects future instances of every schedule using it.
+6. The user clicks `Update` and sees the updated chore.
 
 Recurrence settings are not edited from the chore form. They belong to the schedule page.
 
