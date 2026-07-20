@@ -18,7 +18,7 @@ Go+htmx and sqlite, packaged as a single binary.
 
 ## quick start
 
-TODO: See [Development](#development) for now.
+TODO: See [development](#development) for now.
 
 ## development
 
