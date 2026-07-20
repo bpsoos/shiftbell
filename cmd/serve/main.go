@@ -9,7 +9,7 @@ import (
 	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
-	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretypes"
+	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/routing"
 	choresview "github.com/bpsoos/shiftbell/internal/view/chores"
 	choretemplatesview "github.com/bpsoos/shiftbell/internal/view/choretemplates"
@@ -38,7 +38,7 @@ func execute() int {
 	}
 	defer db.Close()
 	db.SetMaxOpenConns(1)
-	choreTemplatePersister := choretemplatespersistence.NewChoreTypePersister(&choretemplatespersistence.PersisterDeps{
+	choreTemplatePersister := choretemplatespersistence.NewChoreTemplatePersister(&choretemplatespersistence.PersisterDeps{
 		Db: db,
 	})
 

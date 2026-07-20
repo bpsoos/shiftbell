@@ -1,4 +1,4 @@
-package choretypes
+package choretemplates
 
 import "github.com/jmoiron/sqlx"
 
@@ -10,7 +10,7 @@ type PersisterDeps struct {
 	Db *sqlx.DB
 }
 
-func NewChoreTypePersister(deps *PersisterDeps) *Persister {
+func NewChoreTemplatePersister(deps *PersisterDeps) *Persister {
 	return &Persister{
 		db: deps.Db,
 	}

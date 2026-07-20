@@ -1,4 +1,4 @@
-package choretypes
+package choretemplates
 
 import (
 	"database/sql"
@@ -14,7 +14,7 @@ func (p *Persister) Create(name string, description string) error {
 		}
 	}
 	_, err := p.db.NamedExec(`
-		insert into chore_types (name, description)
+		insert into chore_templates (name, description)
 		values (:name, :description)
 	`, map[string]any{
 		"description": sqlDesc,
@@ -22,7 +22,7 @@ func (p *Persister) Create(name string, description string) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("db exec inserting chores: %v", err)
+		return fmt.Errorf("db exec inserting chore templates: %v", err)
 	}
 
 	return nil

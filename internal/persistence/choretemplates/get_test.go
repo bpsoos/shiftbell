@@ -1,8 +1,8 @@
-package choretypes_test
+package choretemplates_test
 
 import (
 	"github.com/bpsoos/shiftbell/internal/models"
-	choretypespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretypes"
+	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/testsupport/sqlitetest"
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo/v2"
@@ -12,15 +12,15 @@ import (
 var _ = Describe("Get", func() {
 	var (
 		db        *sqlx.DB
-		persister *choretypespersistence.Persister
+		persister *choretemplatespersistence.Persister
 	)
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = choretypespersistence.NewChoreTypePersister(&choretypespersistence.PersisterDeps{Db: db})
+		persister = choretemplatespersistence.NewChoreTemplatePersister(&choretemplatespersistence.PersisterDeps{Db: db})
 	})
 
-	Context("with no chore types", func() {
+	Context("with no chore templates", func() {
 		It("returns an error", func() {
 			result, err := persister.Get(1)
 
@@ -29,13 +29,13 @@ var _ = Describe("Get", func() {
 		})
 	})
 
-	Context("with one chore type", func() {
+	Context("with one chore template", func() {
 		BeforeEach(func() {
-			_, err := db.Exec(`insert into chore_types (id, name, description) values (?, ?, ?)`, 1, "Laundry", "Wash and fold clothes")
+			_, err := db.Exec(`insert into chore_templates (id, name, description) values (?, ?, ?)`, 1, "Laundry", "Wash and fold clothes")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("returns the chore type", func() {
+		It("returns the chore template", func() {
 			result, err := persister.Get(1)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -43,10 +43,10 @@ var _ = Describe("Get", func() {
 		})
 	})
 
-	Context("with many chore types", func() {
+	Context("with many chore templates", func() {
 		BeforeEach(func() {
 			_, err := db.Exec(
-				`insert into chore_types (id, name, description) values
+				`insert into chore_templates (id, name, description) values
 					(?, ?, ?),
 					(?, ?, ?)`,
 				1, "Laundry", "Wash and fold clothes",
@@ -55,7 +55,7 @@ var _ = Describe("Get", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("returns the requested chore type", func() {
+		It("returns the requested chore template", func() {
 			result, err := persister.Get(2)
 
 			Expect(err).NotTo(HaveOccurred())

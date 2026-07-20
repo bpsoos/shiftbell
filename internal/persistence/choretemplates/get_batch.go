@@ -1,4 +1,4 @@
-package choretypes
+package choretemplates
 
 import (
 	"database/sql"
@@ -11,7 +11,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTemplateBat
 	rows, err := p.db.Query(
 		`
 			select *
-			from chore_types
+			from chore_templates
 			order by id desc
 			limit ?
 			offset ?
@@ -20,7 +20,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTemplateBat
 		offset,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("db query selecting chores: %v", err)
+		return nil, fmt.Errorf("db query selecting chore templates: %v", err)
 	}
 	var (
 		id          int

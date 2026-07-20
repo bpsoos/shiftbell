@@ -1,4 +1,4 @@
-package choretypes_test
+package choretemplates_test
 
 import (
 	"testing"
@@ -8,9 +8,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestChoretypes(t *testing.T) {
+func TestChoreTemplates(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Choretypes Suite")
+	RunSpecs(t, "Chore Templates Persistence Suite")
 }
 
 var _ = BeforeSuite(func() {

@@ -1,9 +1,9 @@
-package choretypes_test
+package choretemplates_test
 
 import (
 	"database/sql"
 
-	choretypespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretypes"
+	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/testsupport/sqlitetest"
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo/v2"
@@ -13,12 +13,12 @@ import (
 var _ = Describe("Create", func() {
 	var (
 		db        *sqlx.DB
-		persister *choretypespersistence.Persister
+		persister *choretemplatespersistence.Persister
 	)
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = choretypespersistence.NewChoreTypePersister(&choretypespersistence.PersisterDeps{Db: db})
+		persister = choretemplatespersistence.NewChoreTemplatePersister(&choretemplatespersistence.PersisterDeps{Db: db})
 	})
 
 	Context("with no description", func() {
@@ -27,7 +27,7 @@ var _ = Describe("Create", func() {
 
 			var name string
 			var description sql.NullString
-			Expect(db.QueryRow(`select name, description from chore_types`).Scan(&name, &description)).To(Succeed())
+			Expect(db.QueryRow(`select name, description from chore_templates`).Scan(&name, &description)).To(Succeed())
 			Expect(name).To(Equal("Laundry"))
 			Expect(description.Valid).To(BeFalse())
 		})
@@ -39,19 +39,19 @@ var _ = Describe("Create", func() {
 
 			var name string
 			var description string
-			Expect(db.QueryRow(`select name, description from chore_types`).Scan(&name, &description)).To(Succeed())
+			Expect(db.QueryRow(`select name, description from chore_templates`).Scan(&name, &description)).To(Succeed())
 			Expect(name).To(Equal("Laundry"))
 			Expect(description).To(Equal("Wash and fold clothes"))
 		})
 	})
 
-	Context("with many chore types", func() {
-		It("persists every chore type", func() {
+	Context("with many chore templates", func() {
+		It("persists every chore template", func() {
 			Expect(persister.Create("Laundry", "Wash and fold clothes")).To(Succeed())
 			Expect(persister.Create("Dishes", "Load the dishwasher")).To(Succeed())
 
 			var count int
-			Expect(db.QueryRow(`select count(*) from chore_types where name in (?, ?)`, "Laundry", "Dishes").Scan(&count)).To(Succeed())
+			Expect(db.QueryRow(`select count(*) from chore_templates where name in (?, ?)`, "Laundry", "Dishes").Scan(&count)).To(Succeed())
 			Expect(count).To(Equal(2))
 		})
 	})

@@ -16,7 +16,10 @@ up: build
     docker compose up
 
 down:
-    docker compose down
+    docker compose down -t 1 --remove-orphans
+
+destroy:
+    docker compose down -v -t 1 --remove-orphans
 
 db-shell:
     docker compose exec -ti postgres /bin/bash

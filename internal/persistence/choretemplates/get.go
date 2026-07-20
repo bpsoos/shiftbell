@@ -1,4 +1,4 @@
-package choretypes
+package choretemplates
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ func (p *Persister) Get(id int) (*models.ChoreTemplate, error) {
 	row := p.db.QueryRow(
 		`
 			select name, description
-			from chore_types
+			from chore_templates
 			where id = ?
 		`,
 		id,
@@ -21,7 +21,7 @@ func (p *Persister) Get(id int) (*models.ChoreTemplate, error) {
 	)
 	err := row.Scan(&name, &description)
 	if err != nil {
-		return nil, fmt.Errorf("db query selecting chores: %v", err)
+		return nil, fmt.Errorf("db query selecting chore templates: %v", err)
 	}
 
 	return &models.ChoreTemplate{
