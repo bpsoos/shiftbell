@@ -45,7 +45,7 @@
 11. add predecessor links and conditional completion and correction primitives
 12. cover schema constraints, query behavior, and name reuse with Ginkgo specs
 13. integration-test creation, completion, correction, and deactivation transactions
-14. run embedded migrations before serving and remove the migrate entrypoint
+14. DONE run embedded migrations before serving and remove the migrate entrypoint
 
 ## phase 4 - endpoint and view layer
 

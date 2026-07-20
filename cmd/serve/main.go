@@ -8,6 +8,7 @@ import (
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/logging"
+	"github.com/bpsoos/shiftbell/internal/migrations"
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
 	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/routing"
@@ -30,6 +31,11 @@ func execute() int {
 		return 1
 	}
 	logger := logging.Configure(logging.Config{Handler: appConfig.LogHandler})
+
+	if err := migrations.NewMigrator().Migrate(appConfig.DatabaseFilepath); err != nil {
+		logger.Error("error running migrations", "err", err)
+		return 1
+	}
 
 	db, err := sqlx.Connect("sqlite", database.SQLiteDSN(appConfig.DatabaseFilepath))
 	if err != nil {
