@@ -50,5 +50,5 @@ templ table(offset int, limit int, result *models.GetChoreBatchResult) {
 }
 
 func getBatchUrlWithQuery(offset int, limit int, content string) string {
-	return fmt.Sprintf("/chores?status=incomplete&offset=%d&limit=%d&content=%s", offset, limit, content)
+	return fmt.Sprintf("/chores?status=active&offset=%d&limit=%d&content=%s", offset, limit, content)
 }

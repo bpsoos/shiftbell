@@ -35,22 +35,23 @@ var _ = Describe("Create", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(&models.Chore{
 				Id:          1,
-				Status:      models.ChoreStatusIncomplete,
+				Name:        "Laundry",
+				Status:      models.ChoreStatusActive,
 				Description: "",
 				Deadline:    deadline,
 			}))
 
 			var name string
 			var description sql.NullString
-			var isComplete bool
+			var isCompleted bool
 			var persistedDeadline time.Time
 			Expect(db.QueryRow(
 				`select name, description, is_complete, deadline from chores where id = ?`,
 				result.Id,
-			).Scan(&name, &description, &isComplete, &persistedDeadline)).To(Succeed())
+			).Scan(&name, &description, &isCompleted, &persistedDeadline)).To(Succeed())
 			Expect(name).To(Equal("Laundry"))
 			Expect(description.Valid).To(BeFalse())
-			Expect(isComplete).To(BeFalse())
+			Expect(isCompleted).To(BeFalse())
 			Expect(persistedDeadline).To(Equal(deadline))
 		})
 	})

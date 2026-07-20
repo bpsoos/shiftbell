@@ -15,7 +15,10 @@ templ choreCard(chore *models.Chore) {
 			<span class="col-auto ms-auto">{ fmt.Sprintf("#%d",chore.Id) }</span>
 		</div>
 		<div class="card-body">
-			<p class="card-title">
+			<h5 class="card-title">
+				{ chore.Name }
+			</h5>
+			<p class="card-text">
 				{ chore.Description }
 			</p>
 			@markCompleteButton(chore)
@@ -40,7 +43,7 @@ templ markCompleteButton(chore *models.Chore) {
 		hx-swap="none"
 		hx-target="closest .card"
 	>
-		<input type="hidden" value="complete" name="status" id="status"/>
+		<input type="hidden" value="completed" name="status" id="status"/>
 		<button type="submit" class="btn btn-success">
 			Mark Complete
 		</button>

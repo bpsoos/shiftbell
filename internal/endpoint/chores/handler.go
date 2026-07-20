@@ -60,7 +60,7 @@ type Persister interface {
 	Create(params *models.CreateChoreParams) (*models.Chore, error)
 	GetBatch(offset int, limit int) (*models.GetChoreBatchResult, error)
 	Get(id int) (*models.Chore, error)
-	MarkComplete(id int, completedAt time.Time) error
+	MarkComplete(id int, completedOn time.Time) error
 }
 
 type HandlerDeps struct {
@@ -127,8 +127,8 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 		logging.Default().Info("invalid limit", "err", err)
 		return ctx.String(http.StatusUnprocessableEntity, "invalid limit")
 	}
-	statusFilter := ctx.QueryParamOr("status", "incomplete")
-	if statusFilter != "incomplete" {
+	statusFilter := ctx.QueryParamOr("status", "active")
+	if statusFilter != "active" {
 		logging.Default().Info("unsupported status filter", "status_filter", statusFilter)
 		return ctx.String(http.StatusUnprocessableEntity, "unsupported status filter")
 	}
@@ -173,7 +173,7 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 	}
 	status := ctx.FormValueOr("status", "")
 	switch status {
-	case "complete":
+	case "completed":
 		err = h.persister.MarkComplete(id, time.Now())
 		if err != nil {
 			logging.Default().Error("patch chore status error", "err", err)
@@ -182,8 +182,8 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 
 		ctx.Response().Header().Set("HX-Trigger", "load-chores")
 		return ctx.String(http.StatusOK, "OK")
-	case "incomplete":
-		return ctx.String(http.StatusConflict, "setting status to incomplete dissalowed")
+	case "active":
+		return ctx.String(http.StatusConflict, "setting status to active dissalowed")
 	case "":
 		logging.Default().Info("patch request request content empty")
 		return ctx.String(http.StatusUnprocessableEntity, "patch content missing")

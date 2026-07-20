@@ -47,16 +47,17 @@ const (
 type ChoreStatus string
 
 const (
-	ChoreStatusComplete   ChoreStatus = "complete"
-	ChoreStatusIncomplete ChoreStatus = "incomplete"
+	ChoreStatusActive    ChoreStatus = "active"
+	ChoreStatusCompleted ChoreStatus = "completed"
 )
 
 type Chore struct {
 	Id          int
+	Name        string
 	Status      ChoreStatus
 	Description string
 	Deadline    time.Time
-	CompletedAt time.Time
+	CompletedOn time.Time
 }
 
 type CreateChoreParams struct {

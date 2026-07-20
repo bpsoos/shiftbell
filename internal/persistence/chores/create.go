@@ -46,7 +46,8 @@ func (p *Persister) Create(params *models.CreateChoreParams) (*models.Chore, err
 
 	return &models.Chore{
 		Id:          int(id),
-		Status:      models.ChoreStatusIncomplete,
+		Name:        params.Name,
+		Status:      models.ChoreStatusActive,
 		Description: params.Description,
 		Deadline:    params.Deadline,
 	}, nil

@@ -11,8 +11,9 @@ import (
 func (p *Persister) Get(id int) (*models.Chore, error) {
 	row := p.db.QueryRow(
 		`
-			select description,
-				completed_at,
+			select name,
+				description,
+				completed_on,
 				deadline
 			from chores
 			where id = $1
@@ -21,28 +22,30 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 	)
 
 	var (
+		name                string
 		description         string
 		status              models.ChoreStatus
 		deadline            time.Time
-		completedAtNullable sql.NullTime
-		completedAt         time.Time
+		completedOnNullable sql.NullTime
+		completedOn         time.Time
 	)
-	err := row.Scan(&description, &completedAtNullable, &deadline)
+	err := row.Scan(&name, &description, &completedOnNullable, &deadline)
 	if err != nil {
 		return nil, fmt.Errorf("get chore query: %v", err)
 	}
 
-	if completedAtNullable.Valid {
-		completedAt = completedAtNullable.Time
-		status = models.ChoreStatusComplete
+	if completedOnNullable.Valid {
+		completedOn = completedOnNullable.Time
+		status = models.ChoreStatusCompleted
 	}
-	status = models.ChoreStatusIncomplete
+	status = models.ChoreStatusActive
 
 	return &models.Chore{
 		Id:          id,
+		Name:        name,
 		Status:      status,
 		Description: description,
-		CompletedAt: completedAt,
+		CompletedOn: completedOn,
 		Deadline:    deadline,
 	}, nil
 }

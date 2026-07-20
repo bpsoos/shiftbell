@@ -12,6 +12,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 		`
 			select
 				id,
+				name,
 				description,
 				deadline
 			from chores
@@ -28,18 +29,20 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 	}
 	var (
 		id          int
+		name        string
 		description string
 		deadline    time.Time
 	)
 	results := make([]models.Chore, 0)
 	for rows.Next() {
-		err := rows.Scan(&id, &description, &deadline)
+		err := rows.Scan(&id, &name, &description, &deadline)
 		if err != nil {
 			return nil, fmt.Errorf("reading fetched rows: %v", err)
 		}
 		results = append(results, models.Chore{
 			Id:          id,
-			Status:      models.ChoreStatusIncomplete,
+			Name:        name,
+			Status:      models.ChoreStatusActive,
 			Description: description,
 			Deadline:    deadline,
 		})

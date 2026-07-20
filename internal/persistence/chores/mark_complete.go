@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-func (p *Persister) MarkComplete(id int, completedAt time.Time) error {
+func (p *Persister) MarkComplete(id int, completedOn time.Time) error {
 	_, err := p.db.Exec(
 		`
 			update chores
 			set is_complete = true,
-				completed_at = ?
+				completed_on = ?
 			where id = ? and is_complete = false
 		`,
-		completedAt,
+		completedOn,
 		id,
 	)
 	if err != nil {

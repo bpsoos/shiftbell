@@ -35,8 +35,8 @@ var _ = Describe("GetBatch", func() {
 		BeforeEach(func() {
 			_, err := db.Exec(
 				`insert into chores (name, description, is_complete, deadline) values (?, ?, ?, ?)`,
-				"first",
-				"first",
+				"First chore",
+				"first description",
 				false,
 				time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC),
 			)
@@ -48,7 +48,8 @@ var _ = Describe("GetBatch", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Chores).To(HaveLen(1))
-			Expect(result.Chores[0].Description).To(Equal("first"))
+			Expect(result.Chores[0].Name).To(Equal("First chore"))
+			Expect(result.Chores[0].Description).To(Equal("first description"))
 			Expect(result.More).To(BeFalse())
 		})
 	})
@@ -60,16 +61,16 @@ var _ = Describe("GetBatch", func() {
 					(?, ?, ?, ?),
 					(?, ?, ?, ?),
 					(?, ?, ?, ?)`,
-				"first",
-				"first",
+				"First chore",
+				"first description",
 				false,
 				time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC),
-				"second",
-				"second",
+				"Second chore",
+				"second description",
 				false,
 				time.Date(2026, time.January, 2, 0, 0, 0, 0, time.UTC),
-				"third",
-				"third",
+				"Third chore",
+				"third description",
 				false,
 				time.Date(2026, time.January, 3, 0, 0, 0, 0, time.UTC),
 			)
@@ -81,7 +82,8 @@ var _ = Describe("GetBatch", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Chores).To(HaveLen(1))
-			Expect(result.Chores[0].Description).To(Equal("second"))
+			Expect(result.Chores[0].Name).To(Equal("Second chore"))
+			Expect(result.Chores[0].Description).To(Equal("second description"))
 			Expect(result.More).To(BeTrue())
 		})
 
@@ -90,8 +92,10 @@ var _ = Describe("GetBatch", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Chores).To(HaveLen(2))
-			Expect(result.Chores[0].Description).To(Equal("first"))
-			Expect(result.Chores[1].Description).To(Equal("second"))
+			Expect(result.Chores[0].Name).To(Equal("First chore"))
+			Expect(result.Chores[1].Name).To(Equal("Second chore"))
+			Expect(result.Chores[0].Description).To(Equal("first description"))
+			Expect(result.Chores[1].Description).To(Equal("second description"))
 			Expect(result.More).To(BeTrue())
 		})
 
@@ -100,7 +104,8 @@ var _ = Describe("GetBatch", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Chores).To(HaveLen(1))
-			Expect(result.Chores[0].Description).To(Equal("third"))
+			Expect(result.Chores[0].Name).To(Equal("Third chore"))
+			Expect(result.Chores[0].Description).To(Equal("third description"))
 			Expect(result.More).To(BeFalse())
 		})
 

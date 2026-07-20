@@ -14,18 +14,18 @@ var _ = Describe("MarkComplete", func() {
 	var (
 		db          *sqlx.DB
 		persister   *chorespersistence.Persister
-		completedAt time.Time
+		completedOn time.Time
 		deadline    time.Time
 	)
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
 		persister = chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
-		completedAt = time.Date(2026, time.July, 19, 12, 0, 0, 0, time.UTC)
+		completedOn = time.Date(2026, time.July, 19, 0, 0, 0, 0, time.UTC)
 		deadline = time.Date(2026, time.July, 20, 0, 0, 0, 0, time.UTC)
 	})
 
-	Context("with an incomplete chore", func() {
+	Context("with an active chore", func() {
 		BeforeEach(func() {
 			_, err := db.Exec(
 				`insert into chores (id, name, description, is_complete, deadline) values (?, ?, ?, ?, ?)`,
@@ -38,52 +38,52 @@ var _ = Describe("MarkComplete", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("persists the completed status and timestamp", func() {
-			Expect(persister.MarkComplete(1, completedAt)).To(Succeed())
+		It("persists the completed status and completion date", func() {
+			Expect(persister.MarkComplete(1, completedOn)).To(Succeed())
 
-			var isComplete bool
-			var persistedCompletedAt time.Time
+			var isCompleted bool
+			var persistedCompletedOn time.Time
 			Expect(db.QueryRow(
-				`select is_complete, completed_at from chores where id = ?`,
+				`select is_complete, completed_on from chores where id = ?`,
 				1,
-			).Scan(&isComplete, &persistedCompletedAt)).To(Succeed())
-			Expect(isComplete).To(BeTrue())
-			Expect(persistedCompletedAt).To(Equal(completedAt))
+			).Scan(&isCompleted, &persistedCompletedOn)).To(Succeed())
+			Expect(isCompleted).To(BeTrue())
+			Expect(persistedCompletedOn).To(Equal(completedOn))
 		})
 	})
 
-	Context("with an already complete chore", func() {
-		var originalCompletedAt time.Time
+	Context("with an already completed chore", func() {
+		var originalCompletedOn time.Time
 
 		BeforeEach(func() {
-			originalCompletedAt = time.Date(2026, time.July, 18, 12, 0, 0, 0, time.UTC)
+			originalCompletedOn = time.Date(2026, time.July, 18, 0, 0, 0, 0, time.UTC)
 			_, err := db.Exec(
-				`insert into chores (id, name, description, is_complete, completed_at, deadline) values (?, ?, ?, ?, ?, ?)`,
+				`insert into chores (id, name, description, is_complete, completed_on, deadline) values (?, ?, ?, ?, ?, ?)`,
 				1,
 				"Laundry",
 				"Wash and fold clothes",
 				true,
-				originalCompletedAt,
+				originalCompletedOn,
 				deadline,
 			)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("keeps the original completion timestamp", func() {
-			Expect(persister.MarkComplete(1, completedAt)).To(Succeed())
+		It("keeps the original completion date", func() {
+			Expect(persister.MarkComplete(1, completedOn)).To(Succeed())
 
-			var persistedCompletedAt time.Time
+			var persistedCompletedOn time.Time
 			Expect(db.QueryRow(
-				`select completed_at from chores where id = ?`,
+				`select completed_on from chores where id = ?`,
 				1,
-			).Scan(&persistedCompletedAt)).To(Succeed())
-			Expect(persistedCompletedAt).To(Equal(originalCompletedAt))
+			).Scan(&persistedCompletedOn)).To(Succeed())
+			Expect(persistedCompletedOn).To(Equal(originalCompletedOn))
 		})
 	})
 
 	Context("with an unknown chore", func() {
 		It("succeeds without changing any rows", func() {
-			Expect(persister.MarkComplete(99, completedAt)).To(Succeed())
+			Expect(persister.MarkComplete(99, completedOn)).To(Succeed())
 
 			var count int
 			Expect(db.QueryRow(`select count(*) from chores where is_complete = true`).Scan(&count)).To(Succeed())
@@ -95,7 +95,7 @@ var _ = Describe("MarkComplete", func() {
 		It("returns an error", func() {
 			Expect(db.Close()).To(Succeed())
 
-			err := persister.MarkComplete(1, completedAt)
+			err := persister.MarkComplete(1, completedOn)
 
 			Expect(err).To(MatchError(ContainSubstring("update chores exec")))
 		})
