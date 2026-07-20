@@ -25,7 +25,7 @@ var _ = Describe("GetBatch", func() {
 			result, err := persister.GetBatch(0, 1)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ChoreTypes).To(BeEmpty())
+			Expect(result.ChoreTemplates).To(BeEmpty())
 			Expect(result.More).To(BeFalse())
 		})
 	})
@@ -40,8 +40,8 @@ var _ = Describe("GetBatch", func() {
 			result, err := persister.GetBatch(0, 1)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ChoreTypes).To(HaveLen(1))
-			Expect(result.ChoreTypes[0]).To(Equal(models.ChoreType{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}))
+			Expect(result.ChoreTemplates).To(HaveLen(1))
+			Expect(result.ChoreTemplates[0]).To(Equal(models.ChoreTemplate{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}))
 			Expect(result.More).To(BeFalse())
 		})
 	})
@@ -64,8 +64,8 @@ var _ = Describe("GetBatch", func() {
 			result, err := persister.GetBatch(1, 1)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ChoreTypes).To(HaveLen(1))
-			Expect(result.ChoreTypes[0]).To(Equal(models.ChoreType{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}))
+			Expect(result.ChoreTemplates).To(HaveLen(1))
+			Expect(result.ChoreTemplates[0]).To(Equal(models.ChoreTemplate{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}))
 			Expect(result.More).To(BeTrue())
 		})
 
@@ -73,7 +73,7 @@ var _ = Describe("GetBatch", func() {
 			result, err := persister.GetBatch(0, 2)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ChoreTypes).To(Equal([]models.ChoreType{
+			Expect(result.ChoreTemplates).To(Equal([]models.ChoreTemplate{
 				{Id: 3, Name: "Floors", Description: "Vacuum the floors"},
 				{Id: 2, Name: "Dishes", Description: "Load the dishwasher"},
 			}))
@@ -84,7 +84,7 @@ var _ = Describe("GetBatch", func() {
 			result, err := persister.GetBatch(2, 2)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ChoreTypes).To(Equal([]models.ChoreType{
+			Expect(result.ChoreTemplates).To(Equal([]models.ChoreTemplate{
 				{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"},
 			}))
 			Expect(result.More).To(BeFalse())
@@ -94,7 +94,7 @@ var _ = Describe("GetBatch", func() {
 			result, err := persister.GetBatch(3, 2)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.ChoreTypes).To(BeEmpty())
+			Expect(result.ChoreTemplates).To(BeEmpty())
 			Expect(result.More).To(BeFalse())
 		})
 	})

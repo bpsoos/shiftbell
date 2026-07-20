@@ -9,10 +9,10 @@ templ page(
 	offset int,
 	limit int,
 	results *models.GetChoreBatchResult,
-	choreTypes *models.GetChoreTypeBatchResult,
-	selectedChoreType *models.ChoreType,
+	choreTemplates *models.GetChoreTemplateBatchResult,
+	selectedChoreTemplate *models.ChoreTemplate,
 ) {
-	@choreTypeSelector()
+	@choreTemplateSelector()
 	@layouts.Nav("chores")
 	<div class="container mt-3" style="min-width: fit-content">
 		<div class="row justify-content-between px-0">

@@ -1,13 +1,12 @@
 package chores
 
 import (
-	"github.com/bpsoos/shiftbell/internal/models"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 	"time"
 )
 
 templ newChorePage() {
-	@choreTypeSelector()
+	@choreTemplateSelector()
 	@layouts.Nav("chores")
 	<div class="container mt-3" style="min-width: fit-content">
 		@createForm()
@@ -67,9 +66,9 @@ templ submitRow(attrs templ.Attributes) {
 		id="submitRow"
 		{ attrs... }
 	>
-		if selectedChoreType(ctx) == nil && !isManual(ctx) {
+		if selectedChoreTemplate(ctx) == nil && !isManual(ctx) {
 			<div class="bg-info-subtle border-4 border-start border-info p-2 my-2">
-				<text>Select a chore type to continue</text>
+				<text>Select a chore template to continue</text>
 			</div>
 		}
 		<div
@@ -83,7 +82,7 @@ templ submitRow(attrs templ.Attributes) {
 			<button type="submit" class="ms-2 col btn btn-secondary">Cancel</button>
 			<button
 				type="submit"
-				if !isManual(ctx) && models.GetSelectedChoreType(ctx) == nil {
+				if !isManual(ctx) && selectedChoreTemplate(ctx) == nil {
 					disabled
 				}
 				class="me-2 col btn btn-primary"
@@ -94,21 +93,21 @@ templ submitRow(attrs templ.Attributes) {
 	</div>
 }
 
-templ choreTypeSelector() {
+templ choreTemplateSelector() {
 	<div
 		class="modal fade"
-		id="choreTypeSelector"
+		id="choreTemplateSelector"
 		tabindex="-1"
 	>
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="exampleModalLabel">Select a chore type</h1>
+					<h1 class="modal-title fs-5" id="exampleModalLabel">Select a chore template</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
-				<div class="modal-body" id="choreTypeList">
-					@searchChoreTypes()
-					@choreTypesSelectionTable()
+				<div class="modal-body" id="choreTemplateList">
+					@searchChoreTemplates()
+					@choreTemplatesSelectionTable()
 				</div>
 			</div>
 		</div>
@@ -119,7 +118,7 @@ templ choreTypeSelector() {
 
 			if (!target || target.id !== "baseInputs") return;
 
-			const modalElement = document.getElementById("choreTypeSelector");
+			const modalElement = document.getElementById("choreTemplateSelector");
 			if (!modalElement) return;
 
 			const modal = bootstrap.Modal.getInstance(modalElement);
@@ -129,7 +128,7 @@ templ choreTypeSelector() {
 			}
 		});
 
-		document.getElementById("choreTypeSelector")?.addEventListener("hidden.bs.modal", function () {
+		document.getElementById("choreTemplateSelector")?.addEventListener("hidden.bs.modal", function () {
 			document.body.classList.remove("modal-open");
 			document.body.style.removeProperty("overflow");
 			document.body.style.removeProperty("padding-right");
@@ -138,23 +137,23 @@ templ choreTypeSelector() {
 	</script>
 }
 
-templ searchChoreTypes() {
+templ searchChoreTemplates() {
 	<input
 		class="form-control"
 		type="search"
 		name="search"
-		placeholder="Begin typing to search chore types..."
-		hx-get="/choretypes?content=selector&searchquery=placeholder"
-		hx-target="#chore-type-selector"
+		placeholder="Begin typing to search chore templates..."
+		hx-get="/choretemplates?content=selector&searchquery=placeholder"
+		hx-target="#chore-template-selector"
 		hx-indicator=".htmx-indicator"
 	/>
 }
 
-templ choreTypesSelectionTable() {
+templ choreTemplatesSelectionTable() {
 	<table
 		class="table"
-		hx-get="/choretypes?content=selector"
-		hx-target="#chore-type-selector"
+		hx-get="/choretemplates?content=selector"
+		hx-target="#chore-template-selector"
 		hx-trigger="load"
 	>
 		<thead>
@@ -165,11 +164,11 @@ templ choreTypesSelectionTable() {
 				<th>Description</th>
 			</tr>
 		</thead>
-		<tbody id="chore-type-selector"></tbody>
+		<tbody id="chore-template-selector"></tbody>
 	</table>
 }
 
-templ manualChoreTypeInputs() {
+templ manualChoreInputs() {
 	<div class="mb-3">
 		<label for="name" class="form-label">Name</label>
 		<input
@@ -192,8 +191,8 @@ templ manualChoreTypeInputs() {
 	</div>
 }
 
-templ readonlyChoreTypeInputs() {
-	if selectedChoreType(ctx) != nil {
+templ readonlyChoreTemplateInputs() {
+	if selectedChoreTemplate(ctx) != nil {
 		<div class="mb-2">
 			<label for="name" class="form-label">Name</label>
 			<input
@@ -201,7 +200,7 @@ templ readonlyChoreTypeInputs() {
 				class="form-control text-bg-secondary"
 				id="name"
 				name="name"
-				value={ selectedChoreType(ctx).Name }
+				value={ selectedChoreTemplate(ctx).Name }
 				readonly
 			/>
 		</div>
@@ -214,17 +213,17 @@ templ readonlyChoreTypeInputs() {
 				name="description"
 				readonly
 			>
-				{ selectedChoreType(ctx).Description }
+				{ selectedChoreTemplate(ctx).Description }
 			</textarea>
 		</div>
 		<div>
-			<label for="selectChoreTypeButton" class="form-label">Change Chore Type</label>
+			<label for="selectChoreTemplateButton" class="form-label">Change Chore Template</label>
 			<button
-				id="selectChoreTypeButton"
+				id="selectChoreTemplateButton"
 				type="button"
 				class="btn btn-outline-info w-100"
 				data-bs-toggle="modal"
-				data-bs-target="#choreTypeSelector"
+				data-bs-target="#choreTemplateSelector"
 			>
 				Change
 			</button>
@@ -232,15 +231,15 @@ templ readonlyChoreTypeInputs() {
 	} else {
 		<div class="mb-4">
 			<div class="bg-info-subtle border-4 border-start border-info p-2 mb-2">
-				<text>No chore type selected yet</text>
+				<text>No chore template selected yet</text>
 			</div>
-			<label for="selectChoreTypeButton" class="form-label" hidden>No chore type selected yet</label>
+			<label for="selectChoreTemplateButton" class="form-label" hidden>No chore template selected yet</label>
 			<button
-				id="selectChoreTypeButton"
+				id="selectChoreTemplateButton"
 				type="button"
 				class="btn btn-outline-secondary w-100"
 				data-bs-toggle="modal"
-				data-bs-target="#choreTypeSelector"
+				data-bs-target="#choreTemplateSelector"
 			>
 				Select
 			</button>
@@ -257,18 +256,18 @@ templ selectInputTypeButtonGroup(attrs templ.Attributes) {
 		aria-label="Chore input select button group"
 	>
 		<input
-			hx-get="/chores/new?field=inputTypeSelector&field=baseInputs&inputType=selectChoreType"
+			hx-get="/chores/new?field=inputTypeSelector&field=baseInputs&inputType=selectChoreTemplate"
 			hx-target="#selectInputTypeButtonGroup"
 			autocomplete="off"
 			type="radio"
 			class="btn-check"
-			id="selectChoreTypeBasedInput"
+			id="selectChoreTemplateBasedInput"
 			name="inputTypeSelector"
 			if !isManual(ctx) {
 				checked
 			}
 		/>
-		<label class="btn btn-outline-secondary" for="selectChoreTypeBasedInput">Chore Type Based</label>
+		<label class="btn btn-outline-secondary" for="selectChoreTemplateBasedInput">Chore Template Based</label>
 		<input
 			hx-get="/chores/new?field=inputTypeSelector&field=baseInputs&inputType=manual"
 			hx-target="#selectInputTypeButtonGroup"
@@ -292,16 +291,16 @@ templ baseInputs(attrs templ.Attributes) {
 		{ attrs... }
 	>
 		if !isManual(ctx) {
-			<fieldset id="selectedChoreType" class="card p-4 mb-4">
-				@selectedChoreTypeFieldset()
+			<fieldset id="selectedChoreTemplate" class="card p-4 mb-4">
+				@selectedChoreTemplateFieldset()
 			</fieldset>
 		} else {
-			@manualChoreTypeInputs()
+			@manualChoreInputs()
 		}
 	</div>
 }
 
-templ selectedChoreTypeFieldset() {
-	<legend class="mb-2">Chore Type</legend>
-	@readonlyChoreTypeInputs()
+templ selectedChoreTemplateFieldset() {
+	<legend class="mb-2">Chore Template</legend>
+	@readonlyChoreTemplateInputs()
 }

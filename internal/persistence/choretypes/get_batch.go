@@ -7,7 +7,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/models"
 )
 
-func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchResult, error) {
+func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTemplateBatchResult, error) {
 	rows, err := p.db.Query(
 		`
 			select *
@@ -27,7 +27,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchRe
 		name        string
 		description sql.NullString
 	)
-	results := make([]models.ChoreType, 0)
+	results := make([]models.ChoreTemplate, 0)
 	for rows.Next() {
 		err := rows.Scan(&id, &name, &description)
 		if err != nil {
@@ -37,7 +37,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchRe
 		if description.Valid {
 			desc = description.String
 		}
-		results = append(results, models.ChoreType{
+		results = append(results, models.ChoreTemplate{
 			Id:          id,
 			Name:        name,
 			Description: desc,
@@ -48,8 +48,8 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTypeBatchRe
 		results = results[:limit]
 	}
 
-	return &models.GetChoreTypeBatchResult{
-		ChoreTypes: results,
-		More:       more,
+	return &models.GetChoreTemplateBatchResult{
+		ChoreTemplates: results,
+		More:           more,
 	}, nil
 }

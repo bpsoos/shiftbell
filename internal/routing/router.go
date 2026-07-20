@@ -2,7 +2,7 @@ package routing
 
 import "github.com/labstack/echo/v5"
 
-type ChoreTypeHandler interface {
+type ChoreTemplateHandler interface {
 	GetBatch(*echo.Context) error
 	Create(ctx *echo.Context) error
 	Delete(ctx *echo.Context) error
@@ -17,18 +17,18 @@ type ChoreHandler interface {
 }
 
 type RouterDeps struct {
-	ChoreTypeHandler ChoreTypeHandler
-	ChoreHandler     ChoreHandler
+	ChoreTemplateHandler ChoreTemplateHandler
+	ChoreHandler         ChoreHandler
 }
 
 type Router struct {
-	choreTypeHandler ChoreTypeHandler
-	choreHandler     ChoreHandler
+	choreTemplateHandler ChoreTemplateHandler
+	choreHandler         ChoreHandler
 }
 
 func NewRouter(deps *RouterDeps) *Router {
 	return &Router{
-		choreTypeHandler: deps.ChoreTypeHandler,
-		choreHandler:     deps.ChoreHandler,
+		choreTemplateHandler: deps.ChoreTemplateHandler,
+		choreHandler:         deps.ChoreHandler,
 	}
 }

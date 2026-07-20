@@ -32,10 +32,10 @@ func (t *Templater) Page(
 	offset int,
 	limit int,
 	chores *models.GetChoreBatchResult,
-	choreTypes *models.GetChoreTypeBatchResult,
-	selectedChoreType *models.ChoreType,
+	choreTemplates *models.GetChoreTemplateBatchResult,
+	selectedChoreTemplate *models.ChoreTemplate,
 ) error {
-	return page(offset, limit, chores, choreTypes, selectedChoreType).Render(ctx, w)
+	return page(offset, limit, chores, choreTemplates, selectedChoreTemplate).Render(ctx, w)
 }
 
 func (t *Templater) Chore(
@@ -78,7 +78,7 @@ func (t *Templater) PageWithLayout(
 func (t *Templater) JoinedComponents(
 	ctx context.Context,
 	w io.Writer,
-	componentSpecifiers ...models.NewChoreTypeComponent,
+	componentSpecifiers ...models.NewChoreTemplateComponent,
 ) error {
 	components := make([]templ.Component, 0)
 	for i := range componentSpecifiers {
@@ -87,12 +87,12 @@ func (t *Templater) JoinedComponents(
 			attrs["hx-swap-oob"] = "true"
 		}
 		switch componentSpecifiers[i] {
-		case models.NewChoreTypeComponentBaseInputs:
+		case models.NewChoreTemplateComponentBaseInputs:
 			components = append(components, baseInputs(attrs))
-		case models.NewChoreTypeComponentInputTypeSelector:
+		case models.NewChoreTemplateComponentInputTypeSelector:
 			components = append(components, selectInputTypeButtonGroup(attrs))
 		default:
-			logging.Default().Error("unknown new chore type component", "component", componentSpecifiers[i])
+			logging.Default().Error("unknown new chore template component", "component", componentSpecifiers[i])
 		}
 	}
 	components = append(components, submitRow(templ.Attributes{"hx-swap-oob": "true"}))
@@ -104,6 +104,6 @@ func isManual(ctx context.Context) bool {
 	return models.GetIsManual(ctx)
 }
 
-func selectedChoreType(ctx context.Context) *models.ChoreType {
-	return models.GetSelectedChoreType(ctx)
+func selectedChoreTemplate(ctx context.Context) *models.ChoreTemplate {
+	return models.GetSelectedChoreTemplate(ctx)
 }

@@ -11,8 +11,8 @@ type GetChoreBatchResult struct {
 }
 
 type NewChoreCtxValues struct {
-	SelectedChoreType *ChoreType
-	IsManual          bool
+	SelectedChoreTemplate *ChoreTemplate
+	IsManual              bool
 }
 
 type contextKey string
@@ -23,9 +23,9 @@ func WithNewChoreCtxValues(ctx context.Context, values *NewChoreCtxValues) conte
 	return context.WithValue(ctx, newChoreCtxKey, values)
 }
 
-func GetSelectedChoreType(ctx context.Context) *ChoreType {
+func GetSelectedChoreTemplate(ctx context.Context) *ChoreTemplate {
 	if newChoreCtxValues, ok := ctx.Value(newChoreCtxKey).(*NewChoreCtxValues); ok {
-		return newChoreCtxValues.SelectedChoreType
+		return newChoreCtxValues.SelectedChoreTemplate
 	}
 	return nil
 }
@@ -37,11 +37,11 @@ func GetIsManual(ctx context.Context) bool {
 	return false
 }
 
-type NewChoreTypeComponent string
+type NewChoreTemplateComponent string
 
 const (
-	NewChoreTypeComponentInputTypeSelector NewChoreTypeComponent = "inputTypeSelector"
-	NewChoreTypeComponentBaseInputs        NewChoreTypeComponent = "baseInputs"
+	NewChoreTemplateComponentInputTypeSelector NewChoreTemplateComponent = "inputTypeSelector"
+	NewChoreTemplateComponentBaseInputs        NewChoreTemplateComponent = "baseInputs"
 )
 
 type ChoreStatus string
@@ -65,13 +65,13 @@ type CreateChoreParams struct {
 	Deadline    time.Time
 }
 
-type ChoreType struct {
+type ChoreTemplate struct {
 	Id          int
 	Description string
 	Name        string
 }
 
-type GetChoreTypeBatchResult struct {
-	ChoreTypes []ChoreType
-	More       bool
+type GetChoreTemplateBatchResult struct {
+	ChoreTemplates []ChoreTemplate
+	More           bool
 }

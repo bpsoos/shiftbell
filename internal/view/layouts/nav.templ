@@ -34,16 +34,16 @@ templ Nav(active string) {
 					</li>
 					<li class="nav-item">
 						<a
-							if active == "choretypes" {
+							if active == "choretemplates" {
 								class="nav-link active"
 							} else {
 								class="nav-link"
 							}
 							hx-target="body"
 							hx-push-url="true"
-							hx-get="/choretypes"
-							href="/choretypes"
-						>Chore Types</a>
+							hx-get="/choretemplates"
+							href="/choretemplates"
+						>Chore Templates</a>
 					</li>
 				</ul>
 			</div>

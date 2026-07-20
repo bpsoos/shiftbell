@@ -21,8 +21,8 @@ func (r *Router) Setup(app *echo.Echo) error {
 	app.GET("/chores/:id", r.choreHandler.Get)
 	app.PATCH("/chores/:id", r.choreHandler.Patch)
 
-	app.GET("/choretypes", r.choreTypeHandler.GetBatch)
-	app.POST("/choretypes", r.choreTypeHandler.Create)
-	app.DELETE("/choretypes/:id", r.choreTypeHandler.Delete)
+	app.GET("/choretemplates", r.choreTemplateHandler.GetBatch)
+	app.POST("/choretemplates", r.choreTemplateHandler.Create)
+	app.DELETE("/choretemplates/:id", r.choreTemplateHandler.Delete)
 	return nil
 }

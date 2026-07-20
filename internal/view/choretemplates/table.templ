@@ -1,16 +1,16 @@
-package choretypes
+package choretemplates
 
 import (
 	"fmt"
 	"github.com/bpsoos/shiftbell/internal/models"
 )
 
-templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
+templ table(offset int, limit int, choreTemplates *models.GetChoreTemplateBatchResult) {
 	<div
-		id="chore-types-table-container"
+		id="chore-templates-table-container"
 		hx-get={ getBatchUrlWithQuery(offset, limit, "table") }
 		hx-push-url={ getBatchUrlWithQuery(offset, limit, "all") }
-		hx-trigger="load-chore-types from:body delay:0.5s"
+		hx-trigger="load-chore-templates from:body delay:0.5s"
 		hx-swap="outerHTML"
 	>
 		<table class="table table-striped">
@@ -27,16 +27,16 @@ templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 					<th scope="col text-center" style="width: 20%"></th>
 				</tr>
 			</thead>
-			for _, choreType := range result.ChoreTypes {
+			for _, choreTemplate := range choreTemplates.ChoreTemplates {
 				<tr>
-					<td>{ choreType.Name }</td>
-					<td>{ choreType.Description }</td>
+					<td>{ choreTemplate.Name }</td>
+					<td>{ choreTemplate.Description }</td>
 					<td>
 						<button
 							class="btn btn-outline-danger px-3 py-0"
 							type="button"
-							hx-delete={ fmt.Sprintf("/choretypes/%d", choreType.Id) }
-							hx-confirm="Are you sure you want to delete this chore type?"
+							hx-delete={ fmt.Sprintf("/choretemplates/%d", choreTemplate.Id) }
+							hx-confirm="Are you sure you want to delete this chore template?"
 							hx-swap="outerHTML swap:0.5s"
 							hx-target="closest tr"
 						>
@@ -53,7 +53,7 @@ templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 					class="col text-center btn btn-secondary"
 					hx-get={ getBatchUrlWithQuery(offset-limit, limit, "table") }
 					hx-push-url={ getBatchUrlWithQuery(offset-limit, limit, "all") }
-					hx-target="#chore-types-table-container"
+					hx-target="#chore-templates-table-container"
 					if offset == 0 {
 						disabled
 					}
@@ -66,8 +66,8 @@ templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 					class="col text-center btn btn-secondary"
 					hx-get={ getBatchUrlWithQuery(offset+limit, limit, "table") }
 					hx-push-url={ getBatchUrlWithQuery(offset+limit, limit, "all") }
-					hx-target="#chore-types-table-container"
-					if !result.More {
+					hx-target="#chore-templates-table-container"
+					if !choreTemplates.More {
 						disabled
 					}
 				>
@@ -79,7 +79,7 @@ templ table(offset int, limit int, result *models.GetChoreTypeBatchResult) {
 }
 
 func getBatchUrlWithQuery(offset int, limit int, content string) string {
-	return fmt.Sprintf("/choretypes?offset=%d&limit=%d&content=%s", offset, limit, content)
+	return fmt.Sprintf("/choretemplates?offset=%d&limit=%d&content=%s", offset, limit, content)
 }
 
 templ wasteBasketIcon() {

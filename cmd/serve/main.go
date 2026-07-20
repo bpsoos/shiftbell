@@ -6,13 +6,13 @@ import (
 	"github.com/bpsoos/shiftbell/internal/appcfg"
 	"github.com/bpsoos/shiftbell/internal/database"
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
-	choretypesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretypes"
+	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
-	choretypespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretypes"
+	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretypes"
 	"github.com/bpsoos/shiftbell/internal/routing"
 	choresview "github.com/bpsoos/shiftbell/internal/view/chores"
-	choretypesview "github.com/bpsoos/shiftbell/internal/view/choretypes"
+	choretemplatesview "github.com/bpsoos/shiftbell/internal/view/choretemplates"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -38,27 +38,27 @@ func execute() int {
 	}
 	defer db.Close()
 	db.SetMaxOpenConns(1)
-	choreTypePersister := choretypespersistence.NewChoreTypePersister(&choretypespersistence.PersisterDeps{
+	choreTemplatePersister := choretemplatespersistence.NewChoreTypePersister(&choretemplatespersistence.PersisterDeps{
 		Db: db,
 	})
 
-	choreTypesTemplater := choretypesview.NewTemplater()
-	choreTypesHandler := choretypesendpoint.NewHandler(&choretypesendpoint.HandlerDeps{
-		Templater:          choreTypesTemplater,
-		ChoreTypePersister: choreTypePersister,
+	choreTemplatesTemplater := choretemplatesview.NewTemplater()
+	choreTemplatesHandler := choretemplatesendpoint.NewHandler(&choretemplatesendpoint.HandlerDeps{
+		Templater:              choreTemplatesTemplater,
+		ChoreTemplatePersister: choreTemplatePersister,
 	})
 
 	choresPersister := chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
 	choresTemplater := choresview.NewTemplater()
 	choresHandler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
-		Templater:          choresTemplater,
-		Persister:          choresPersister,
-		ChoreTypePersister: choreTypePersister,
+		Templater:              choresTemplater,
+		Persister:              choresPersister,
+		ChoreTemplatePersister: choreTemplatePersister,
 	})
 
 	router := routing.NewRouter(&routing.RouterDeps{
-		ChoreHandler:     choresHandler,
-		ChoreTypeHandler: choreTypesHandler,
+		ChoreHandler:         choresHandler,
+		ChoreTemplateHandler: choreTemplatesHandler,
 	})
 	e := echo.New()
 	e.Logger = logger

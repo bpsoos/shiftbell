@@ -31,8 +31,8 @@ type Templater interface {
 		int,
 		int,
 		*models.GetChoreBatchResult,
-		*models.GetChoreTypeBatchResult,
-		*models.ChoreType,
+		*models.GetChoreTemplateBatchResult,
+		*models.ChoreTemplate,
 	) error
 	PageWithLayout(
 		context.Context,
@@ -48,12 +48,12 @@ type Templater interface {
 	JoinedComponents(
 		ctx context.Context,
 		w io.Writer,
-		componentSpecifiers ...models.NewChoreTypeComponent,
+		componentSpecifiers ...models.NewChoreTemplateComponent,
 	) error
 }
 
-type ChoreTypePersister interface {
-	Get(id int) (*models.ChoreType, error)
+type ChoreTemplatePersister interface {
+	Get(id int) (*models.ChoreTemplate, error)
 }
 
 type Persister interface {
@@ -64,22 +64,22 @@ type Persister interface {
 }
 
 type HandlerDeps struct {
-	Templater          Templater
-	Persister          Persister
-	ChoreTypePersister ChoreTypePersister
+	Templater              Templater
+	Persister              Persister
+	ChoreTemplatePersister ChoreTemplatePersister
 }
 
 type Handler struct {
-	templater          Templater
-	persister          Persister
-	choreTypePersister ChoreTypePersister
+	templater              Templater
+	persister              Persister
+	choreTemplatePersister ChoreTemplatePersister
 }
 
 func NewHandler(deps *HandlerDeps) *Handler {
 	return &Handler{
-		templater:          deps.Templater,
-		persister:          deps.Persister,
-		choreTypePersister: deps.ChoreTypePersister,
+		templater:              deps.Templater,
+		persister:              deps.Persister,
+		choreTemplatePersister: deps.ChoreTemplatePersister,
 	}
 }
 
@@ -226,20 +226,20 @@ func (h *Handler) Create(ctx *echo.Context) error {
 }
 
 type NewChoreParams struct {
-	Fields      []string `query:"field"`
-	ChoreTypeId int      `query:"choreTypeId"`
-	InputType   string   `query:"inputType"`
+	Fields          []string `query:"field"`
+	ChoreTemplateId int      `query:"choreTemplateId"`
+	InputType       string   `query:"inputType"`
 }
 
 func (h *Handler) New(ctx *echo.Context) error {
 	ctxValues := &models.NewChoreCtxValues{
-		SelectedChoreType: nil,
-		IsManual:          false,
+		SelectedChoreTemplate: nil,
+		IsManual:              false,
 	}
 	params := &NewChoreParams{
-		Fields:      nil,
-		ChoreTypeId: 0,
-		InputType:   "selectChoreType",
+		Fields:          nil,
+		ChoreTemplateId: 0,
+		InputType:       "selectChoreTemplate",
 	}
 	if err := ctx.Bind(params); err != nil {
 		return ctx.String(http.StatusUnprocessableEntity, "invalid query param(s)")
@@ -247,7 +247,7 @@ func (h *Handler) New(ctx *echo.Context) error {
 
 	if ctx.QueryParams().Has("inputType") {
 		switch params.InputType {
-		case "selectChoreType":
+		case "selectChoreTemplate":
 			ctxValues.IsManual = false
 		case "manual":
 			ctxValues.IsManual = true
@@ -257,25 +257,25 @@ func (h *Handler) New(ctx *echo.Context) error {
 		}
 	}
 
-	if ctx.QueryParams().Has("choreTypeId") {
-		selectedChoreType, err := h.choreTypePersister.Get(params.ChoreTypeId)
+	if ctx.QueryParams().Has("choreTemplateId") {
+		selectedChoreTemplate, err := h.choreTemplatePersister.Get(params.ChoreTemplateId)
 		if err != nil {
-			logging.Default().Info("get chore type error", "err", err)
+			logging.Default().Info("get chore template error", "err", err)
 			return ctx.String(http.StatusInternalServerError, "something went wrong")
 		}
-		logging.Default().Info("fetched chore type successfully", "chore_type_id", params.ChoreTypeId)
-		ctxValues.SelectedChoreType = selectedChoreType
+		logging.Default().Info("fetched chore template successfully", "chore_template_id", params.ChoreTemplateId)
+		ctxValues.SelectedChoreTemplate = selectedChoreTemplate
 	}
 
 	if ctx.QueryParams().Has("field") {
-		componentSpecifiers := make([]models.NewChoreTypeComponent, 0)
+		componentSpecifiers := make([]models.NewChoreTemplateComponent, 0)
 		for i := range params.Fields {
 			field := params.Fields[i]
 			switch field {
-			case string(models.NewChoreTypeComponentBaseInputs):
-				componentSpecifiers = append(componentSpecifiers, models.NewChoreTypeComponentBaseInputs)
-			case string(models.NewChoreTypeComponentInputTypeSelector):
-				componentSpecifiers = append(componentSpecifiers, models.NewChoreTypeComponentInputTypeSelector)
+			case string(models.NewChoreTemplateComponentBaseInputs):
+				componentSpecifiers = append(componentSpecifiers, models.NewChoreTemplateComponentBaseInputs)
+			case string(models.NewChoreTemplateComponentInputTypeSelector):
+				componentSpecifiers = append(componentSpecifiers, models.NewChoreTemplateComponentInputTypeSelector)
 			default:
 				logging.Default().Info("invalid field specified", "field", field)
 				return ctx.String(http.StatusUnprocessableEntity, "invalid field specified")

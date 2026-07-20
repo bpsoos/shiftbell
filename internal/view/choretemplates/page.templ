@@ -1,12 +1,12 @@
-package choretypes
+package choretemplates
 
 import (
 	"github.com/bpsoos/shiftbell/internal/models"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
 
-templ page(offset int, limit int, results *models.GetChoreTypeBatchResult) {
-	@layouts.Nav("choretypes")
+templ page(offset int, limit int, choreTemplates *models.GetChoreTemplateBatchResult) {
+	@layouts.Nav("choretemplates")
 	<div class="container">
 		<div class="row">
 			<div class="container col-lg-3">
@@ -27,7 +27,7 @@ templ page(offset int, limit int, results *models.GetChoreTypeBatchResult) {
 						}
 					}
 				</style>
-				@table(offset, limit, results)
+				@table(offset, limit, choreTemplates)
 			</div>
 		</div>
 	</div>
@@ -37,10 +37,10 @@ templ createForm() {
 	<div class="container my-3">
 		<div class="card shadow-sm">
 			<div class="card-header bg-body">
-				Add chore type
+				Add chore template
 			</div>
 			<div class="card-body">
-				<form hx-post="/choretypes" hx-swap="none">
+				<form hx-post="/choretemplates" hx-swap="none">
 					<style>
 					me input::placeholder {
 						opacity: 0.55;

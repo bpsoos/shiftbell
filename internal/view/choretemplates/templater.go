@@ -1,4 +1,4 @@
-package choretypes
+package choretemplates
 
 import (
 	"context"
@@ -20,9 +20,9 @@ func (t *Templater) Page(
 	w io.Writer,
 	offset int,
 	limit int,
-	chores *models.GetChoreTypeBatchResult,
+	choreTemplates *models.GetChoreTemplateBatchResult,
 ) error {
-	return page(offset, limit, chores).Render(ctx, w)
+	return page(offset, limit, choreTemplates).Render(ctx, w)
 }
 
 func (t *Templater) PageWithLayout(
@@ -30,9 +30,9 @@ func (t *Templater) PageWithLayout(
 	w io.Writer,
 	offset int,
 	limit int,
-	chores *models.GetChoreTypeBatchResult,
+	choreTemplates *models.GetChoreTemplateBatchResult,
 ) error {
-	return layouts.Main().Render(templ.WithChildren(ctx, page(offset, limit, chores)), w)
+	return layouts.Main().Render(templ.WithChildren(ctx, page(offset, limit, choreTemplates)), w)
 }
 
 func (t *Templater) Table(
@@ -40,9 +40,9 @@ func (t *Templater) Table(
 	w io.Writer,
 	offset int,
 	limit int,
-	chores *models.GetChoreTypeBatchResult,
+	choreTemplates *models.GetChoreTemplateBatchResult,
 ) error {
-	return table(offset, limit, chores).Render(ctx, w)
+	return table(offset, limit, choreTemplates).Render(ctx, w)
 }
 
 func (t *Templater) Selector(
@@ -50,7 +50,7 @@ func (t *Templater) Selector(
 	w io.Writer,
 	offset int,
 	limit int,
-	chores *models.GetChoreTypeBatchResult,
+	choreTemplates *models.GetChoreTemplateBatchResult,
 ) error {
-	return selector(offset, limit, chores).Render(ctx, w)
+	return selector(offset, limit, choreTemplates).Render(ctx, w)
 }

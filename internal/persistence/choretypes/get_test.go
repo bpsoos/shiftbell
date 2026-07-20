@@ -39,7 +39,7 @@ var _ = Describe("Get", func() {
 			result, err := persister.Get(1)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(&models.ChoreType{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}))
+			Expect(result).To(Equal(&models.ChoreTemplate{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}))
 		})
 	})
 
@@ -59,7 +59,7 @@ var _ = Describe("Get", func() {
 			result, err := persister.Get(2)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(&models.ChoreType{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}))
+			Expect(result).To(Equal(&models.ChoreTemplate{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}))
 		})
 	})
 })

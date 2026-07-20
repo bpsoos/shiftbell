@@ -6,7 +6,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/models"
 )
 
-func (p *Persister) Get(id int) (*models.ChoreType, error) {
+func (p *Persister) Get(id int) (*models.ChoreTemplate, error) {
 	row := p.db.QueryRow(
 		`
 			select name, description
@@ -24,7 +24,7 @@ func (p *Persister) Get(id int) (*models.ChoreType, error) {
 		return nil, fmt.Errorf("db query selecting chores: %v", err)
 	}
 
-	return &models.ChoreType{
+	return &models.ChoreTemplate{
 		Id:          id,
 		Name:        name,
 		Description: description,
