@@ -2,6 +2,8 @@
 
 Self-hosted chore tracker for a homelab.
 
+Currently pre-v1 and under development.
+
 ## features
 
 - Create and complete one-off chores.
