@@ -23,8 +23,8 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 
 	var (
 		name                string
-		description         string
-		status              models.ChoreStatus
+		description         sql.NullString
+		status              = models.ChoreStatusActive
 		deadline            time.Time
 		completedOnNullable sql.NullTime
 		completedOn         time.Time
@@ -38,13 +38,12 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 		completedOn = completedOnNullable.Time
 		status = models.ChoreStatusCompleted
 	}
-	status = models.ChoreStatusActive
 
 	return &models.Chore{
 		Id:          id,
 		Name:        name,
 		Status:      status,
-		Description: description,
+		Description: description.String,
 		CompletedOn: completedOn,
 		Deadline:    deadline,
 	}, nil

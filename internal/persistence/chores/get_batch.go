@@ -1,6 +1,7 @@
 package chores
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -17,7 +18,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 				deadline
 			from chores
 			where is_complete = false
-			order by deadline asc
+			order by deadline asc, id asc
 			limit ?
 			offset ?
 		`,
@@ -30,7 +31,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 	var (
 		id          int
 		name        string
-		description string
+		description sql.NullString
 		deadline    time.Time
 	)
 	results := make([]models.Chore, 0)
@@ -43,7 +44,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 			Id:          id,
 			Name:        name,
 			Status:      models.ChoreStatusActive,
-			Description: description,
+			Description: description.String,
 			Deadline:    deadline,
 		})
 	}

@@ -32,7 +32,7 @@ var _ = Describe("GetBatch", func() {
 
 	Context("with one chore template", func() {
 		BeforeEach(func() {
-			_, err := db.Exec(`insert into chore_templates (id, name, description) values (?, ?, ?)`, 1, "Laundry", "Wash and fold clothes")
+			_, err := db.Exec(`insert into chore_templates (id, name, description) values (?, ?, ?)`, 1, "Laundry", nil)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -41,7 +41,7 @@ var _ = Describe("GetBatch", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.ChoreTemplates).To(HaveLen(1))
-			Expect(result.ChoreTemplates[0]).To(Equal(models.ChoreTemplate{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}))
+			Expect(result.ChoreTemplates[0]).To(Equal(models.ChoreTemplate{Id: 1, Name: "Laundry", Description: ""}))
 			Expect(result.More).To(BeFalse())
 		})
 	})

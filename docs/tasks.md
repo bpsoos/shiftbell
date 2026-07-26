@@ -6,7 +6,7 @@
 2. DONE rename chore types to chore templates in models, routing, and application wiring
 3. DONE rename chore types to chore templates in persistence APIs, fixtures, and tests
 4. DONE add missing chore names and align completion terminology with active, completed, and `completed_on`
-5. fix nullable-description reads, completion-state loading, and active ordering by deadline and ID
+5. DONE fix nullable-description reads, completion-state loading, and active ordering by deadline and ID
 6. load and validate `APP_TIMEZONE` with a UTC default
 7. cover unset, valid, and invalid `APP_TIMEZONE` values with Ginkgo specs
 

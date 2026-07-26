@@ -1,6 +1,7 @@
 package choretemplates
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/bpsoos/shiftbell/internal/models"
@@ -17,7 +18,7 @@ func (p *Persister) Get(id int) (*models.ChoreTemplate, error) {
 	)
 	var (
 		name        string
-		description string
+		description sql.NullString
 	)
 	err := row.Scan(&name, &description)
 	if err != nil {
@@ -27,6 +28,6 @@ func (p *Persister) Get(id int) (*models.ChoreTemplate, error) {
 	return &models.ChoreTemplate{
 		Id:          id,
 		Name:        name,
-		Description: description,
+		Description: description.String,
 	}, nil
 }

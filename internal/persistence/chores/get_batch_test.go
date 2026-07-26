@@ -36,7 +36,7 @@ var _ = Describe("GetBatch", func() {
 			_, err := db.Exec(
 				`insert into chores (name, description, is_complete, deadline) values (?, ?, ?, ?)`,
 				"First chore",
-				"first description",
+				nil,
 				false,
 				time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC),
 			)
@@ -49,7 +49,7 @@ var _ = Describe("GetBatch", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Chores).To(HaveLen(1))
 			Expect(result.Chores[0].Name).To(Equal("First chore"))
-			Expect(result.Chores[0].Description).To(Equal("first description"))
+			Expect(result.Chores[0].Description).To(BeEmpty())
 			Expect(result.More).To(BeFalse())
 		})
 	})
@@ -115,6 +115,35 @@ var _ = Describe("GetBatch", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Chores).To(BeEmpty())
 			Expect(result.More).To(BeFalse())
+		})
+	})
+
+	Context("with chores sharing a deadline", func() {
+		BeforeEach(func() {
+			_, err := db.Exec(`create index chores_active_deadline_id_desc on chores(is_complete, deadline asc, id desc)`)
+			Expect(err).NotTo(HaveOccurred())
+
+			deadline := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+			_, err = db.Exec(
+				`insert into chores (id, name, is_complete, deadline) values
+					(?, ?, ?, ?),
+					(?, ?, ?, ?),
+					(?, ?, ?, ?)`,
+				1, "First chore", false, deadline,
+				2, "Second chore", false, deadline,
+				3, "Third chore", false, deadline,
+			)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("orders equal deadlines by ascending ID", func() {
+			result, err := persister.GetBatch(0, 2)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Chores).To(HaveLen(2))
+			Expect(result.Chores[0].Id).To(Equal(1))
+			Expect(result.Chores[1].Id).To(Equal(2))
+			Expect(result.More).To(BeTrue())
 		})
 	})
 })

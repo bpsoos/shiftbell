@@ -43,6 +43,20 @@ var _ = Describe("Get", func() {
 		})
 	})
 
+	Context("with a chore template without a description", func() {
+		BeforeEach(func() {
+			_, err := db.Exec(`insert into chore_templates (id, name, description) values (?, ?, ?)`, 1, "Laundry", nil)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns an empty description", func() {
+			result, err := persister.Get(1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(&models.ChoreTemplate{Id: 1, Name: "Laundry", Description: ""}))
+		})
+	})
+
 	Context("with many chore templates", func() {
 		BeforeEach(func() {
 			_, err := db.Exec(
