@@ -7,6 +7,7 @@ services:
     environment:
       DATABASE_FILEPATH: "/data/app.db"
       LOG_FORMAT: "text"
+      APP_TIMEZONE: "Europe/Budapest"
     volumes:
       - "./:/src"
       - "go_build_cache:/root/.cache/go-build"
