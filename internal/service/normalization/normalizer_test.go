@@ -13,6 +13,7 @@ var _ = Describe("Normalizer", func() {
 		normalizer = normalization.New(normalization.Config{
 			NameLimit:        3,
 			DescriptionLimit: 5,
+			SearchLimit:      3,
 		})
 	})
 
@@ -92,6 +93,48 @@ var _ = Describe("Normalizer", func() {
 			Entry("when invalid UTF-8", string([]byte{0xff})),
 			Entry("when over the configured limit", "abcdef"),
 			Entry("when containing a control character", "a\x00b"),
+		)
+	})
+
+	Describe("NormalizeSearch", func() {
+		It("normalizes whitespace and Unicode composition", func() {
+			value, valid := normalizer.NormalizeSearch("  e\u0301  ")
+
+			Expect(valid).To(BeTrue())
+			Expect(value).To(Equal("é"))
+		})
+
+		It("accepts an empty search", func() {
+			value, valid := normalizer.NormalizeSearch("   ")
+
+			Expect(valid).To(BeTrue())
+			Expect(value).To(BeEmpty())
+		})
+
+		It("accepts a search at the configured character limit", func() {
+			value, valid := normalizer.NormalizeSearch("abc")
+
+			Expect(valid).To(BeTrue())
+			Expect(value).To(Equal("abc"))
+		})
+
+		It("counts multibyte UTF-8 values as single characters", func() {
+			value, valid := normalizer.NormalizeSearch("ééé")
+
+			Expect(valid).To(BeTrue())
+			Expect(value).To(Equal("ééé"))
+		})
+
+		DescribeTable("rejects an invalid search",
+			func(value string) {
+				normalized, valid := normalizer.NormalizeSearch(value)
+
+				Expect(valid).To(BeFalse())
+				Expect(normalized).To(BeEmpty())
+			},
+			Entry("when invalid UTF-8", string([]byte{0xff})),
+			Entry("when over the configured limit", "abcd"),
+			Entry("when containing a line break", "a\nb"),
 		)
 	})
 })
