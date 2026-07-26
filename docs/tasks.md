@@ -39,22 +39,15 @@
 
 ## phase 4 - endpoint and view layer
 
-1. route handlers through services and map domain errors to HTTP and validation feedback
-2. add schedule routes and navigation plus active chore-template selectors
-3. build active and completed chore lists with filter-preserving pagination
-4. build chore details and active editing with optional template updates and a shared-template warning
-5. build the four-variant chore creation flow and template-selection modal
-6. direct duplicate-template creation to the existing active template
-7. add completion confirmation with an application-local date default
-8. add completion-date correction with all other fields read-only
-9. add permanent chore deletion flows
-10. keep scheduled deadlines and schedule template links read-only
-11. build paginated template search, filters, selection, detail, create, and edit flows
-12. show active and deactivated schedule counts on chore-template details
-13. add template deactivation and link to schedules that block it
-14. build schedule search, filters, details, editing, and permanent-deactivation flows
-15. link schedule views to their template and current active chore and show the current deadline
-16. exclude deactivated resources from normal lists and show read-only deactivated filters
-17. label irreversible actions `Deactivate permanently` and require confirmation
-18. display the resolved application timezone and use it for UI date defaults
-19. cover handlers and rendered user flows with Ginkgo specs
+1. display the application timezone and use local date defaults
+2. build searchable chore template browsing and details
+3. build chore template creation and editing
+4. build searchable schedule browsing, details, and editing
+5. build active and completed chore browsing and details
+6. build four-variant chore creation and template selection
+7. build active chore editing and optional template updates
+8. build chore completion confirmation
+9. build completed chore date correction
+10. build confirmed permanent chore deletion
+11. build confirmed chore template deactivation with blocking schedule links
+12. build confirmed schedule deactivation
