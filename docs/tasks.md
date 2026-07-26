@@ -12,40 +12,30 @@
 
 ## phase 2 - service layer
 
-1. add service inputs, results, repository ports, transaction ports, and domain errors
-2. normalize and validate names, descriptions, searches, dates, and intervals
-3. inject the application clock and timezone into date-dependent services
-4. implement active and completed chore browsing and detail services
-5. implement all four creation variants with atomic template, schedule, and first-chore writes
-6. keep template-based one-offs unlinked and apply schedule-name and first-deadline defaults
-7. implement active chore updates with immutable scheduled deadlines and optional template updates
-8. complete chores idempotently and atomically create successors from the current template
-9. calculate successor deadlines as `completed_on + interval_days`
-10. implement completion correction and linked active-successor recalculation in one transaction
-11. allow one-off and completed scheduled chore deletion and reject active scheduled deletion
-12. implement template browsing, search, counts, creation, updates, and permanent deactivation
-13. reject template deactivation with its referencing active schedules
-14. implement schedule browsing, search, details, and name and interval updates
-15. keep schedule templates immutable and leave active chores unchanged by interval updates
-16. deactivate schedules atomically while removing active chores and preserving completed chores
-17. cover validation, transaction orchestration, recurrence, and lifecycle rules with Ginkgo specs
+1. add chore template creation and editing
+2. add chore template browsing and details
+3. add one-off chore creation
+4. add scheduled chore creation
+5. add active and completed chore browsing and details
+6. add active chore editing
+7. add chore completion and scheduled successors
+8. add completed chore date correction
+9. add chore deletion
+10. add schedule browsing and details
+11. add schedule editing
+12. add chore template deactivation
+13. add schedule deactivation
 
 ## phase 3 - persistence layer
 
-1. replace the provisional migrations with the exact v1 fields and relationships
-2. remove direct chore-template links, `is_complete`, and `completed_at`
-3. enforce canonical calendar dates, required deadlines, nullability, and interval bounds
-4. add case-insensitive partial unique indexes for active template and schedule names
-5. enforce at most one active chore per schedule
-6. enforce at most one successor per predecessor
-7. make every persister usable through a shared SQLite transaction
-8. implement chore create, detail, ordered active/completed list, permitted edit, and delete queries
-9. implement reverse-ID template search, filters, details, counts, writes, and deactivation
-10. implement reverse-ID schedule search, filters, details, active-chore reads, writes, and deactivation
-11. add predecessor links and conditional completion and correction primitives
-12. cover schema constraints, query behavior, and name reuse with Ginkgo specs
-13. integration-test creation, completion, correction, and deactivation transactions
-14. DONE run embedded migrations before serving and remove the migrate entrypoint
+1. DONE run database migrations on startup
+2. replace the provisional schema with the v1 schema
+3. extend chore template creation, browsing, details, and editing persistence
+4. add schedule browsing, details, and editing persistence
+5. extend chore browsing, details, editing, and deletion persistence
+6. add atomic chore creation persistence
+7. extend atomic completion persistence with successors and corrections
+8. add atomic template and schedule deactivation persistence
 
 ## phase 4 - endpoint and view layer
 

@@ -362,3 +362,107 @@ An interval change does not modify the current active chore. It applies when the
 5. The schedule remains available through the deactivated filter with its completed history preserved.
 
 Deactivation records the schedule deactivation and removes its active chore in the same transaction.
+
+
+## Service-facing persistence interfaces
+
+```go
+type ChoreTemplatePersister interface {
+	Create(context.Context, ChoreTemplateValues) (*ChoreTemplate, error)
+	Browse(context.Context, ChoreTemplateListInput) (*ChoreTemplatePage, error)
+	Get(context.Context, int) (*ChoreTemplateDetails, error)
+	Edit(context.Context, EditChoreTemplateInput) (*ChoreTemplate, error)
+	Deactivate(context.Context, DeactivateChoreTemplateInput) (*ChoreTemplate, error)
+}
+
+type SchedulePersister interface {
+	Browse(context.Context, ScheduleListInput) (*SchedulePage, error)
+	Get(context.Context, int) (*ScheduleDetails, error)
+	Edit(context.Context, EditScheduleInput) (*Schedule, error)
+	Deactivate(context.Context, DeactivateScheduleInput) (*Schedule, error)
+}
+
+type ChorePersister interface {
+	Browse(context.Context, ChoreListInput) (*ChorePage, error)
+	Get(context.Context, int) (*ChoreDetails, error)
+
+	CreateManualOneOff(context.Context, CreateManualOneOffInput) (*CreateChoreResult, error)
+	CreateTemplateOneOff(context.Context, CreateTemplateOneOffInput) (*CreateChoreResult, error)
+	CreateManualScheduled(context.Context, CreateManualScheduledInput) (*CreateChoreResult, error)
+	CreateTemplateScheduled(context.Context, CreateTemplateScheduledInput) (*CreateChoreResult, error)
+
+	EditOneOff(context.Context, EditOneOffChoreInput) (*EditChoreResult, error)
+	EditScheduled(context.Context, EditScheduledChoreInput) (*EditChoreResult, error)
+
+	CompleteOneOff(context.Context, CompleteChoreInput) (*CompleteChoreResult, error)
+	CompleteScheduled(context.Context, CompleteScheduledChoreInput) (*CompleteChoreResult, error)
+	CorrectOneOffCompletion(context.Context, CorrectCompletionInput) (*CorrectCompletionResult, error)
+	CorrectScheduledCompletion(context.Context, CorrectScheduledCompletionInput) (*CorrectCompletionResult, error)
+
+	DeleteOneOff(context.Context, int) error
+	DeleteCompletedScheduled(context.Context, int) error
+}
+```
+
+## persister and service interfaces
+
+```go
+type ChoreTemplateService interface {
+	Create(context.Context, *CreateChoreTemplateInput) (*ChoreTemplate, error)
+	Browse(context.Context, *BrowseChoreTemplatesInput) (*ChoreTemplatePage, error)
+	Get(context.Context, int) (*ChoreTemplateDetails, error)
+	Edit(context.Context, *EditChoreTemplateInput) (*ChoreTemplate, error)
+	Deactivate(context.Context, int) (*ChoreTemplate, error)
+}
+
+type ScheduleService interface {
+	Browse(context.Context, *BrowseSchedulesInput) (*SchedulePage, error)
+	Get(context.Context, int) (*ScheduleDetails, error)
+	Edit(context.Context, *EditScheduleInput) (*Schedule, error)
+	Deactivate(context.Context, int) (*Schedule, error)
+}
+
+type ChoreService interface {
+	Browse(context.Context, *BrowseChoresInput) (*ChorePage, error)
+	Get(context.Context, int) (*ChoreDetails, error)
+	Create(context.Context, *CreateChoreInput) (*CreateChoreResult, error)
+	Edit(context.Context, *EditChoreInput) (*ChoreDetails, error)
+	Complete(context.Context, *CompleteChoreInput) (*CompleteChoreResult, error)
+	CorrectCompletion(context.Context, *CorrectCompletionInput) (*ChoreDetails, error)
+	Delete(context.Context, int) error
+}
+```
+
+## endpoints
+
+### chore templates
+
+- `GET /chore-templates` calls `ChoreTemplateService.Browse`.
+- `POST /chore-templates` calls `ChoreTemplateService.Create`.
+- `GET /chore-templates/{id}` calls `ChoreTemplateService.Get`.
+- `PATCH /chore-templates/{id}` calls `ChoreTemplateService.Edit`.
+- `PUT /chore-templates/{id}/deactivation` calls `ChoreTemplateService.Deactivate`.
+
+### schedules
+
+- `GET /schedules` calls `ScheduleService.Browse`.
+- `GET /schedules/{id}` calls `ScheduleService.Get`.
+- `PATCH /schedules/{id}` calls `ScheduleService.Edit`.
+- `PUT /schedules/{id}/deactivation` calls `ScheduleService.Deactivate`.
+
+### chores
+
+- `GET /chores` calls `ChoreService.Browse`.
+- `POST /chores` calls `ChoreService.Create`.
+- `GET /chores/{id}` calls `ChoreService.Get`.
+- `PATCH /chores/{id}` calls `ChoreService.Edit`.
+- `DELETE /chores/{id}` calls `ChoreService.Delete`.
+- `PUT /chores/{id}/completion` calls `ChoreService.Complete`.
+- `PATCH /chores/{id}/completion` calls `ChoreService.CorrectCompletion`.
+
+### query parameters
+
+```text
+GET /chores?status=active|completed&offset=0&limit=20
+GET /chore-templates?state=active|deactivated&search=...&offset=0&limit=20
+GET /schedules?state=active|deactivated&search=...&offset=0&limit=20

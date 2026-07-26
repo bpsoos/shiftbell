@@ -66,6 +66,17 @@ type CreateChoreParams struct {
 	Deadline    time.Time
 }
 
+type CreateChoreTemplateParams struct {
+	Name        string
+	Description string
+}
+
+type EditChoreTemplateParams struct {
+	Id          int
+	Name        string
+	Description string
+}
+
 type ChoreTemplate struct {
 	Id          int
 	Description string

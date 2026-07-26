@@ -58,3 +58,18 @@ test:
 
 test-ci:
     just go tool ginkgo run -r -v -p --randomize-all --randomize-suites --fail-on-pending --fail-on-empty --keep-going
+
+mockery *args:
+    docker run --rm \
+        -v {{justfile_dir()}}:/src \
+        --workdir /src \
+        vektra/mockery:v3.7.2 {{args}}
+
+@regenerate-mocks:
+    docker run --rm -v {{justfile_dir()}}:/src \
+            --entrypoint /bin/sh \
+            --workdir /src \
+            alpine \
+            -c "find /src -name mocks_test.go -type f -delete"
+    just mockery
+
