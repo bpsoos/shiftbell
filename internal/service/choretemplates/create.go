@@ -2,10 +2,33 @@ package choretemplates
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bpsoos/shiftbell/internal/models"
+	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
 )
 
 func (s *Service) Create(ctx context.Context, params *models.CreateChoreTemplateParams) (*models.ChoreTemplate, error) {
-	return nil, nil
+	if params == nil {
+		return nil, serviceerrors.ErrInvalidName
+	}
+
+	name, valid := s.normalizer.NormalizeName(params.Name)
+	if !valid {
+		return nil, serviceerrors.ErrInvalidName
+	}
+	description, valid := s.normalizer.NormalizeDescription(params.Description)
+	if !valid {
+		return nil, serviceerrors.ErrInvalidDescription
+	}
+
+	choreTemplate, err := s.persister.Create(ctx, &models.CreateChoreTemplateParams{
+		Name:        name,
+		Description: description,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create chore template: %w", err)
+	}
+
+	return choreTemplate, nil
 }
