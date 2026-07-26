@@ -12,7 +12,7 @@
 
 ## phase 2 - service layer
 
-1. add chore template creation and editing
+1. DONE add chore template creation and editing
 2. add chore template browsing and details
 3. add one-off chore creation
 4. add scheduled chore creation
