@@ -1,8 +1,10 @@
 package appcfg
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/bpsoos/shiftbell/internal/logging"
 	. "github.com/onsi/ginkgo/v2"
@@ -21,6 +23,7 @@ var _ = Describe("Load", func() {
 		databaseFilepath = filepath.Join(GinkgoT().TempDir(), "shiftbell.db")
 		GinkgoT().Setenv("DATABASE_FILEPATH", databaseFilepath)
 		GinkgoT().Setenv("LOG_FORMAT", "")
+		GinkgoT().Setenv("APP_TIMEZONE", "")
 	})
 
 	It("loads the database filepath", func() {
@@ -29,6 +32,58 @@ var _ = Describe("Load", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(cfg.DatabaseFilepath).To(Equal(databaseFilepath))
 		Expect(cfg.LogHandler).To(Equal(logging.HandlerJSON))
+	})
+
+	Context("without an app timezone", func() {
+		BeforeEach(func() {
+			Expect(os.Unsetenv("APP_TIMEZONE")).To(Succeed())
+		})
+
+		It("defaults to UTC", func() {
+			cfg, err := Load()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg.AppTimezone).To(Equal(time.UTC))
+		})
+	})
+
+	Context("with an empty app timezone", func() {
+		BeforeEach(func() {
+			GinkgoT().Setenv("APP_TIMEZONE", "")
+		})
+
+		It("defaults to UTC", func() {
+			cfg, err := Load()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg.AppTimezone).To(Equal(time.UTC))
+		})
+	})
+
+	Context("with an app timezone", func() {
+		BeforeEach(func() {
+			GinkgoT().Setenv("APP_TIMEZONE", "Europe/Budapest")
+		})
+
+		It("loads the timezone", func() {
+			cfg, err := Load()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg.AppTimezone).To(Equal(mustLoadLocation("Europe/Budapest")))
+		})
+	})
+
+	Context("with an invalid app timezone", func() {
+		BeforeEach(func() {
+			GinkgoT().Setenv("APP_TIMEZONE", "invalid")
+		})
+
+		It("returns an error", func() {
+			cfg, err := Load()
+
+			Expect(cfg).To(BeNil())
+			Expect(err).To(HaveOccurred())
+		})
 	})
 
 	Context("with text log format", func() {
@@ -70,3 +125,12 @@ var _ = Describe("Load", func() {
 		})
 	})
 })
+
+func mustLoadLocation(name string) *time.Location {
+	GinkgoHelper()
+
+	location, err := time.LoadLocation(name)
+	Expect(err).NotTo(HaveOccurred())
+
+	return location
+}
