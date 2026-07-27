@@ -13,11 +13,11 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*
 		return nil, serviceerrors.ErrInvalidDeadline
 	}
 
-	if input.IntervalDays != nil && (*input.IntervalDays < 1 || *input.IntervalDays > 3650) {
+	if s.hasInvalidInterval(input) {
 		return nil, serviceerrors.ErrInvalidInterval
 	}
 
-	if input.ChoreTemplateId != nil && input.IntervalDays != nil {
+	if s.isTemplateScheduled(input) {
 		scheduleName, valid := s.normalizer.NormalizeName(input.ScheduleName)
 		if !valid {
 			return nil, serviceerrors.ErrInvalidName
@@ -44,7 +44,7 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*
 	if !valid {
 		return nil, serviceerrors.ErrInvalidDescription
 	}
-	if input.IntervalDays != nil {
+	if s.isScheduled(input) {
 		scheduleName, valid := s.normalizer.NormalizeName(input.ScheduleName)
 		if !valid {
 			return nil, serviceerrors.ErrInvalidName
@@ -75,4 +75,16 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*
 	}
 
 	return result, nil
+}
+
+func (s *Service) hasInvalidInterval(input *models.CreateChoreInput) bool {
+	return input.IntervalDays != nil && (*input.IntervalDays < 1 || *input.IntervalDays > 3650)
+}
+
+func (s *Service) isTemplateScheduled(input *models.CreateChoreInput) bool {
+	return input.ChoreTemplateId != nil && s.isScheduled(input)
+}
+
+func (s *Service) isScheduled(input *models.CreateChoreInput) bool {
+	return input.IntervalDays != nil
 }
