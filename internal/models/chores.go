@@ -66,6 +66,25 @@ type CreateChoreParams struct {
 	Deadline    time.Time
 }
 
+type CreateChoreInput struct {
+	Name                string
+	Description         string
+	Deadline            time.Time
+	SaveAsChoreTemplate bool
+}
+
+type CreateManualOneOffInput struct {
+	Name                string
+	Description         string
+	Deadline            time.Time
+	SaveAsChoreTemplate bool
+}
+
+type CreateChoreResult struct {
+	Chore         *Chore
+	ChoreTemplate *ChoreTemplate
+}
+
 type CreateChoreTemplateParams struct {
 	Name        string
 	Description string

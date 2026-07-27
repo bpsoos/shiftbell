@@ -1,0 +1,35 @@
+package chores
+
+import (
+	"context"
+
+	"github.com/bpsoos/shiftbell/internal/models"
+)
+
+type Service struct {
+	persister  Persister
+	normalizer Normalizer
+}
+
+type Config struct{}
+
+type Deps struct {
+	Persister  Persister
+	Normalizer Normalizer
+}
+
+func NewService(deps *Deps, config *Config) *Service {
+	return &Service{
+		persister:  deps.Persister,
+		normalizer: deps.Normalizer,
+	}
+}
+
+type Persister interface {
+	CreateManualOneOff(context.Context, *models.CreateManualOneOffInput) (*models.CreateChoreResult, error)
+}
+
+type Normalizer interface {
+	NormalizeName(string) (string, bool)
+	NormalizeDescription(string) (string, bool)
+}
