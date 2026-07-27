@@ -10,4 +10,5 @@ var (
 	ErrInvalidOffset      = errors.New("invalid offset")
 	ErrInvalidLimit       = errors.New("invalid limit")
 	ErrInvalidInterval    = errors.New("invalid interval")
+	ErrInvalidDeadline    = errors.New("invalid deadline")
 )

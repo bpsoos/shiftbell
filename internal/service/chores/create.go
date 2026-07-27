@@ -9,6 +9,10 @@ import (
 )
 
 func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*models.CreateChoreResult, error) {
+	if input.Deadline.IsZero() {
+		return nil, serviceerrors.ErrInvalidDeadline
+	}
+
 	if input.IntervalDays != nil && (*input.IntervalDays < 1 || *input.IntervalDays > 3650) {
 		return nil, serviceerrors.ErrInvalidInterval
 	}

@@ -330,4 +330,124 @@ var _ = Describe("Create", func() {
 		Entry("above the maximum", 3651),
 	)
 
+	DescribeTable(
+		"rejects an invalid template-based schedule interval without persisting",
+		func(intervalDays int) {
+			choreTemplateId := 42
+			result, err := service.Create(context.Background(), &models.CreateChoreInput{
+				Name:                "",
+				Description:         "",
+				Deadline:            time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC),
+				ChoreTemplateId:     &choreTemplateId,
+				ScheduleName:        "schedule name",
+				IntervalDays:        &intervalDays,
+				SaveAsChoreTemplate: false,
+			})
+
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError(serviceerrors.ErrInvalidInterval))
+		},
+		Entry("below the minimum", 0),
+		Entry("above the maximum", 3651),
+	)
+
+	It("rejects a scheduled chore without a deadline before persisting", func() {
+		intervalDays := 14
+
+		result, err := service.Create(context.Background(), &models.CreateChoreInput{
+			Name:                "chore name",
+			Description:         "description",
+			Deadline:            time.Time{},
+			ChoreTemplateId:     nil,
+			ScheduleName:        "schedule name",
+			IntervalDays:        &intervalDays,
+			SaveAsChoreTemplate: false,
+		})
+
+		Expect(result).To(BeNil())
+		Expect(err).To(MatchError(serviceerrors.ErrInvalidDeadline))
+	})
+
+	It("rejects a template-based scheduled chore without a deadline before persisting", func() {
+		choreTemplateId := 42
+		intervalDays := 14
+
+		result, err := service.Create(context.Background(), &models.CreateChoreInput{
+			Name:                "",
+			Description:         "",
+			Deadline:            time.Time{},
+			ChoreTemplateId:     &choreTemplateId,
+			ScheduleName:        "schedule name",
+			IntervalDays:        &intervalDays,
+			SaveAsChoreTemplate: false,
+		})
+
+		Expect(result).To(BeNil())
+		Expect(err).To(MatchError(serviceerrors.ErrInvalidDeadline))
+	})
+
+	It("preserves manual scheduled persistence errors", func(ctx SpecContext) {
+		deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
+		intervalDays := 14
+		persistErr := errors.New("persistence failed")
+		normalizer.EXPECT().NormalizeName("chore name").Return("Chore name", true).Once()
+		normalizer.EXPECT().NormalizeDescription("description").Return("Description", true).Once()
+		normalizer.EXPECT().NormalizeName("schedule name").Return("Schedule name", true).Once()
+		persister.EXPECT().
+			CreateManualScheduled(ctx, &models.CreateManualScheduledInput{
+				Name:         "Chore name",
+				Description:  "Description",
+				Deadline:     deadline,
+				ScheduleName: "Schedule name",
+				IntervalDays: intervalDays,
+			}).
+			Return(nil, persistErr).
+			Once()
+
+		result, err := service.Create(ctx, &models.CreateChoreInput{
+			Name:                "chore name",
+			Description:         "description",
+			Deadline:            deadline,
+			ChoreTemplateId:     nil,
+			ScheduleName:        "schedule name",
+			IntervalDays:        &intervalDays,
+			SaveAsChoreTemplate: false,
+		})
+
+		Expect(result).To(BeNil())
+		Expect(err).To(MatchError("create manual scheduled chore: persistence failed"))
+		Expect(errors.Is(err, persistErr)).To(BeTrue())
+	})
+
+	It("preserves template-based scheduled persistence errors", func(ctx SpecContext) {
+		choreTemplateId := 42
+		deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
+		intervalDays := 14
+		persistErr := errors.New("persistence failed")
+		normalizer.EXPECT().NormalizeName("schedule name").Return("Schedule name", true).Once()
+		persister.EXPECT().
+			CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledInput{
+				ChoreTemplateId: choreTemplateId,
+				Deadline:        deadline,
+				ScheduleName:    "Schedule name",
+				IntervalDays:    intervalDays,
+			}).
+			Return(nil, persistErr).
+			Once()
+
+		result, err := service.Create(ctx, &models.CreateChoreInput{
+			Name:                "",
+			Description:         "",
+			Deadline:            deadline,
+			ChoreTemplateId:     &choreTemplateId,
+			ScheduleName:        "schedule name",
+			IntervalDays:        &intervalDays,
+			SaveAsChoreTemplate: false,
+		})
+
+		Expect(result).To(BeNil())
+		Expect(err).To(MatchError("create template scheduled chore: persistence failed"))
+		Expect(errors.Is(err, persistErr)).To(BeTrue())
+	})
+
 })
