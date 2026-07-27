@@ -310,4 +310,24 @@ var _ = Describe("Create", func() {
 		Expect(err).To(MatchError(serviceerrors.ErrInvalidName))
 	})
 
+	DescribeTable(
+		"rejects an invalid schedule interval without persisting",
+		func(intervalDays int) {
+			result, err := service.Create(context.Background(), &models.CreateChoreInput{
+				Name:                "chore name",
+				Description:         "description",
+				Deadline:            time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC),
+				ChoreTemplateId:     nil,
+				ScheduleName:        "schedule name",
+				IntervalDays:        &intervalDays,
+				SaveAsChoreTemplate: false,
+			})
+
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError(serviceerrors.ErrInvalidInterval))
+		},
+		Entry("below the minimum", 0),
+		Entry("above the maximum", 3651),
+	)
+
 })

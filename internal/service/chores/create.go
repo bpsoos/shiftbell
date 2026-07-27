@@ -9,6 +9,10 @@ import (
 )
 
 func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*models.CreateChoreResult, error) {
+	if input.IntervalDays != nil && (*input.IntervalDays < 1 || *input.IntervalDays > 3650) {
+		return nil, serviceerrors.ErrInvalidInterval
+	}
+
 	if input.ChoreTemplateId != nil && input.IntervalDays != nil {
 		scheduleName, valid := s.normalizer.NormalizeName(input.ScheduleName)
 		if !valid {

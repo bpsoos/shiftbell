@@ -9,4 +9,5 @@ var (
 	ErrInvalidFilter      = errors.New("invalid filter")
 	ErrInvalidOffset      = errors.New("invalid offset")
 	ErrInvalidLimit       = errors.New("invalid limit")
+	ErrInvalidInterval    = errors.New("invalid interval")
 )
