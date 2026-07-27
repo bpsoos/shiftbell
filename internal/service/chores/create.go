@@ -9,6 +9,25 @@ import (
 )
 
 func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*models.CreateChoreResult, error) {
+	if input.ChoreTemplateId != nil && input.IntervalDays != nil {
+		scheduleName, valid := s.normalizer.NormalizeName(input.ScheduleName)
+		if !valid {
+			return nil, serviceerrors.ErrInvalidName
+		}
+
+		result, err := s.persister.CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledInput{
+			ChoreTemplateId: *input.ChoreTemplateId,
+			Deadline:        input.Deadline,
+			ScheduleName:    scheduleName,
+			IntervalDays:    *input.IntervalDays,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("create template scheduled chore: %w", err)
+		}
+
+		return result, nil
+	}
+
 	name, valid := s.normalizer.NormalizeName(input.Name)
 	if !valid {
 		return nil, serviceerrors.ErrInvalidName
@@ -16,6 +35,25 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*
 	description, valid := s.normalizer.NormalizeDescription(input.Description)
 	if !valid {
 		return nil, serviceerrors.ErrInvalidDescription
+	}
+	if input.IntervalDays != nil {
+		scheduleName, valid := s.normalizer.NormalizeName(input.ScheduleName)
+		if !valid {
+			return nil, serviceerrors.ErrInvalidName
+		}
+
+		result, err := s.persister.CreateManualScheduled(ctx, &models.CreateManualScheduledInput{
+			Name:         name,
+			Description:  description,
+			Deadline:     input.Deadline,
+			ScheduleName: scheduleName,
+			IntervalDays: *input.IntervalDays,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("create manual scheduled chore: %w", err)
+		}
+
+		return result, nil
 	}
 
 	result, err := s.persister.CreateManualOneOff(ctx, &models.CreateManualOneOffInput{

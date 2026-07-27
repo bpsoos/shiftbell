@@ -70,6 +70,9 @@ type CreateChoreInput struct {
 	Name                string
 	Description         string
 	Deadline            time.Time
+	ChoreTemplateId     *int
+	ScheduleName        string
+	IntervalDays        *int
 	SaveAsChoreTemplate bool
 }
 
@@ -78,6 +81,21 @@ type CreateManualOneOffInput struct {
 	Description         string
 	Deadline            time.Time
 	SaveAsChoreTemplate bool
+}
+
+type CreateManualScheduledInput struct {
+	Name         string
+	Description  string
+	Deadline     time.Time
+	ScheduleName string
+	IntervalDays int
+}
+
+type CreateTemplateScheduledInput struct {
+	ChoreTemplateId int
+	Deadline        time.Time
+	ScheduleName    string
+	IntervalDays    int
 }
 
 type CreateChoreResult struct {
