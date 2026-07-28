@@ -36,6 +36,7 @@ var _ = Describe("Browse", func() {
 			Chores: []models.Chore{{Id: 4}},
 			More:   true,
 		}
+		normalizer.EXPECT().NormalizeSearch("").Return("", true).Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoresParams{
 				Status: models.ChoreStatusActive,
@@ -65,6 +66,7 @@ var _ = Describe("Browse", func() {
 		persisted := &models.ChorePage{
 			Chores: []models.Chore{{Id: 4, Status: models.ChoreStatusCompleted}},
 		}
+		normalizer.EXPECT().NormalizeSearch("").Return("", true).Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoresParams{
 				Status: models.ChoreStatusCompleted,
@@ -85,8 +87,40 @@ var _ = Describe("Browse", func() {
 		}))
 	})
 
+	It("normalizes search before browsing chores", func(ctx SpecContext) {
+		params := &models.BrowseChoresParams{
+			Status: models.ChoreStatusActive,
+			Search: " raw search ",
+			Offset: 0,
+			Limit:  10,
+		}
+		persisted := &models.ChorePage{}
+		normalizer.EXPECT().NormalizeSearch(" raw search ").Return("Normalized search", true).Once()
+		persister.EXPECT().
+			Browse(ctx, &models.BrowseChoresParams{
+				Status: models.ChoreStatusActive,
+				Search: "Normalized search",
+				Offset: 0,
+				Limit:  10,
+			}).
+			Return(persisted, nil).
+			Once()
+
+		result, err := service.Browse(ctx, params)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result).To(BeIdenticalTo(persisted))
+		Expect(params).To(Equal(&models.BrowseChoresParams{
+			Status: models.ChoreStatusActive,
+			Search: " raw search ",
+			Offset: 0,
+			Limit:  10,
+		}))
+	})
+
 	It("preserves persistence errors", func(ctx SpecContext) {
 		persistErr := errors.New("persistence failed")
+		normalizer.EXPECT().NormalizeSearch("").Return("", true).Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoresParams{
 				Status: models.ChoreStatusActive,
@@ -138,5 +172,19 @@ var _ = Describe("Browse", func() {
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(serviceerrors.ErrInvalidLimit))
+	})
+
+	It("rejects an invalid search without browsing chores", func() {
+		normalizer.EXPECT().NormalizeSearch("invalid search").Return("", false).Once()
+
+		result, err := service.Browse(context.Background(), &models.BrowseChoresParams{
+			Status: models.ChoreStatusActive,
+			Search: "invalid search",
+			Offset: 0,
+			Limit:  10,
+		})
+
+		Expect(result).To(BeNil())
+		Expect(err).To(MatchError(serviceerrors.ErrInvalidSearch))
 	})
 })

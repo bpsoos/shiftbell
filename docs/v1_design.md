@@ -271,6 +271,16 @@ The backend treats a non-empty `interval_days` as the scheduling request. The re
 
 One-off chore creation persists the new chore immediately. When `Save as chore template` is selected, the chore and template are created atomically. Scheduled creation creates the template when needed, the schedule, and the first active chore atomically. A duplicate active chore-template name produces validation feedback and directs the user to select the existing template. A failed request creates no partial records.
 
+### Chore browsing and search
+
+1. The user navigates to the chores page.
+2. The page displays active chores ordered by deadline ascending and then ID ascending.
+3. The user may enter a case-insensitive substring search across chore names and descriptions.
+4. Search applies within the selected `active` or `completed` status, before ordering and pagination.
+5. An empty search returns the normal list for the selected status.
+6. The user may switch to completed chores, which are ordered by completion date descending and then ID descending.
+7. The user opens a chore to view its details.
+
 ### Active chore update
 
 1. The user opens an active chore and clicks `Edit`.
@@ -463,6 +473,6 @@ type ChoreService interface {
 ### query parameters
 
 ```text
-GET /chores?status=active|completed&offset=0&limit=20
+GET /chores?status=active|completed&search=...&offset=0&limit=20
 GET /chore-templates?state=active|deactivated&search=...&offset=0&limit=20
 GET /schedules?state=active|deactivated&search=...&offset=0&limit=20

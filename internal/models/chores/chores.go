@@ -55,6 +55,7 @@ const (
 
 type BrowseChoresParams struct {
 	Status ChoreStatus
+	Search string
 	Offset int
 	Limit  int
 }

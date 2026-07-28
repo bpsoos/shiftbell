@@ -22,9 +22,14 @@ func (s *Service) Browse(ctx context.Context, params *models.BrowseChoresParams)
 	if params.Limit <= 0 {
 		return nil, serviceerrors.ErrInvalidLimit
 	}
+	search, valid := s.normalizer.NormalizeSearch(params.Search)
+	if !valid {
+		return nil, serviceerrors.ErrInvalidSearch
+	}
 
 	page, err := s.persister.Browse(ctx, &models.BrowseChoresParams{
 		Status: status,
+		Search: search,
 		Offset: params.Offset,
 		Limit:  params.Limit,
 	})
