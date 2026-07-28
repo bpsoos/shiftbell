@@ -18,13 +18,13 @@
 4. DONE add scheduled chore creation
 5. DONE add active and completed chore browsing and details
 6. DONE add active chore editing
-7. add chore completion and scheduled successors
-8. add completed chore date correction
-9. add chore deletion
-10. add schedule browsing and details
-11. add schedule editing
-12. add chore template deactivation
-13. add schedule deactivation
+7. DONE add chore completion and scheduled successors
+8. DONE add completed chore date correction
+9. DONE add chore deletion
+10. DONE add schedule browsing and details
+11. DONE add schedule editing
+12. DONE add chore template deactivation
+13. DONE add schedule deactivation
 
 ## phase 3 - persistence layer
 
