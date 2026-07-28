@@ -27,7 +27,7 @@ var _ = Describe("Create", func() {
 
 	Context("with no description", func() {
 		It("persists a chore with a null description", func() {
-			result, err := persister.Create(&models.CreateChoreParams{
+			result, err := persister.Create(&models.CreateOneOffChoreParams{
 				Name:     "Laundry",
 				Deadline: deadline,
 			})
@@ -58,7 +58,7 @@ var _ = Describe("Create", func() {
 
 	Context("with one description", func() {
 		It("persists the description", func() {
-			result, err := persister.Create(&models.CreateChoreParams{
+			result, err := persister.Create(&models.CreateOneOffChoreParams{
 				Name:        "Laundry",
 				Description: "Wash and fold clothes",
 				Deadline:    deadline,
@@ -75,14 +75,14 @@ var _ = Describe("Create", func() {
 
 	Context("with many chores", func() {
 		It("persists every chore", func() {
-			first, err := persister.Create(&models.CreateChoreParams{
+			first, err := persister.Create(&models.CreateOneOffChoreParams{
 				Name:        "Laundry",
 				Description: "Wash and fold clothes",
 				Deadline:    deadline,
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			second, err := persister.Create(&models.CreateChoreParams{
+			second, err := persister.Create(&models.CreateOneOffChoreParams{
 				Name:        "Dishes",
 				Description: "Load the dishwasher",
 				Deadline:    deadline.Add(24 * time.Hour),
@@ -101,7 +101,7 @@ var _ = Describe("Create", func() {
 		It("returns an error", func() {
 			Expect(db.Close()).To(Succeed())
 
-			result, err := persister.Create(&models.CreateChoreParams{
+			result, err := persister.Create(&models.CreateOneOffChoreParams{
 				Name:     "Laundry",
 				Deadline: deadline,
 			})

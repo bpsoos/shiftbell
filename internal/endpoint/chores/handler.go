@@ -58,7 +58,7 @@ type ChoreTemplatePersister interface {
 }
 
 type Persister interface {
-	Create(params *choremodels.CreateChoreParams) (*choremodels.Chore, error)
+	Create(params *choremodels.CreateOneOffChoreParams) (*choremodels.Chore, error)
 	GetBatch(offset int, limit int) (*choremodels.GetChoreBatchResult, error)
 	Get(id int) (*choremodels.Chore, error)
 	MarkComplete(id int, completedOn time.Time) error
@@ -212,7 +212,7 @@ func (h *Handler) Create(ctx *echo.Context) error {
 		return ctx.String(http.StatusUnprocessableEntity, "invalid deadline")
 	}
 
-	_, err = h.persister.Create(&choremodels.CreateChoreParams{
+	_, err = h.persister.Create(&choremodels.CreateOneOffChoreParams{
 		Name:        name,
 		Description: description,
 		Deadline:    deadline,

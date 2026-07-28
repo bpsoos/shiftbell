@@ -61,6 +61,7 @@ type BrowseChoresParams struct {
 
 type Chore struct {
 	Id          int
+	ScheduleId  *int
 	Name        string
 	Status      ChoreStatus
 	Description string
@@ -70,13 +71,15 @@ type Chore struct {
 
 type ChorePage = GetChoreBatchResult
 
-type CreateChoreParams struct {
+type ChoreDetails = Chore
+
+type CreateOneOffChoreParams struct {
 	Name        string
 	Description string
 	Deadline    time.Time
 }
 
-type CreateChoreInput struct {
+type CreateChoreParams struct {
 	Name                string
 	Description         string
 	Deadline            time.Time
@@ -86,14 +89,14 @@ type CreateChoreInput struct {
 	SaveAsChoreTemplate bool
 }
 
-type CreateManualOneOffInput struct {
+type CreateManualOneOffParams struct {
 	Name                string
 	Description         string
 	Deadline            time.Time
 	SaveAsChoreTemplate bool
 }
 
-type CreateManualScheduledInput struct {
+type CreateManualScheduledParams struct {
 	Name         string
 	Description  string
 	Deadline     time.Time
@@ -101,7 +104,7 @@ type CreateManualScheduledInput struct {
 	IntervalDays int
 }
 
-type CreateTemplateScheduledInput struct {
+type CreateTemplateScheduledParams struct {
 	ChoreTemplateId int
 	Deadline        time.Time
 	ScheduleName    string
@@ -112,3 +115,28 @@ type CreateChoreResult struct {
 	Chore         *Chore
 	ChoreTemplate *choretemplatemodels.ChoreTemplate
 }
+
+type EditChoreParams struct {
+	Id                      int
+	ScheduleId              *int
+	Name                    string
+	Description             string
+	Deadline                time.Time
+	AlsoUpdateChoreTemplate bool
+}
+
+type EditOneOffChoreParams struct {
+	Id          int
+	Name        string
+	Description string
+	Deadline    time.Time
+}
+
+type EditScheduledChoreParams struct {
+	Id                      int
+	Name                    string
+	Description             string
+	AlsoUpdateChoreTemplate bool
+}
+
+type EditChoreResult = ChoreDetails

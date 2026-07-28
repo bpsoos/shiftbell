@@ -16,8 +16,8 @@
 2. DONE add chore template browsing and details
 3. DONE add one-off chore creation
 4. DONE add scheduled chore creation
-5. add active and completed chore browsing and details
-6. add active chore editing
+5. DONE add active and completed chore browsing and details
+6. DONE add active chore editing
 7. add chore completion and scheduled successors
 8. add completed chore date correction
 9. add chore deletion

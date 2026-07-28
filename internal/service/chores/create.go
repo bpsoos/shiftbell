@@ -8,7 +8,7 @@ import (
 	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
 )
 
-func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*models.CreateChoreResult, error) {
+func (s *Service) Create(ctx context.Context, input *models.CreateChoreParams) (*models.CreateChoreResult, error) {
 	if input.Deadline.IsZero() {
 		return nil, serviceerrors.ErrInvalidDeadline
 	}
@@ -23,7 +23,7 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*
 			return nil, serviceerrors.ErrInvalidName
 		}
 
-		result, err := s.persister.CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledInput{
+		result, err := s.persister.CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledParams{
 			ChoreTemplateId: *input.ChoreTemplateId,
 			Deadline:        input.Deadline,
 			ScheduleName:    scheduleName,
@@ -50,7 +50,7 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*
 			return nil, serviceerrors.ErrInvalidName
 		}
 
-		result, err := s.persister.CreateManualScheduled(ctx, &models.CreateManualScheduledInput{
+		result, err := s.persister.CreateManualScheduled(ctx, &models.CreateManualScheduledParams{
 			Name:         name,
 			Description:  description,
 			Deadline:     input.Deadline,
@@ -64,7 +64,7 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*
 		return result, nil
 	}
 
-	result, err := s.persister.CreateManualOneOff(ctx, &models.CreateManualOneOffInput{
+	result, err := s.persister.CreateManualOneOff(ctx, &models.CreateManualOneOffParams{
 		Name:                name,
 		Description:         description,
 		Deadline:            input.Deadline,
@@ -77,14 +77,14 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreInput) (*
 	return result, nil
 }
 
-func (s *Service) hasInvalidInterval(input *models.CreateChoreInput) bool {
+func (s *Service) hasInvalidInterval(input *models.CreateChoreParams) bool {
 	return input.IntervalDays != nil && (*input.IntervalDays < 1 || *input.IntervalDays > 3650)
 }
 
-func (s *Service) isTemplateScheduled(input *models.CreateChoreInput) bool {
+func (s *Service) isTemplateScheduled(input *models.CreateChoreParams) bool {
 	return input.ChoreTemplateId != nil && s.isScheduled(input)
 }
 
-func (s *Service) isScheduled(input *models.CreateChoreInput) bool {
+func (s *Service) isScheduled(input *models.CreateChoreParams) bool {
 	return input.IntervalDays != nil
 }

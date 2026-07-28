@@ -31,7 +31,7 @@ var _ = Describe("Create", func() {
 	DescribeTable(
 		"creates a manual one-off chore with different arguments",
 		func(
-			input *models.CreateChoreInput,
+			input *models.CreateChoreParams,
 			expected *models.CreateChoreResult,
 			normalizedName string,
 			normalizedDescription string,
@@ -45,7 +45,7 @@ var _ = Describe("Create", func() {
 				Return(normalizedDescription, true).
 				Once()
 			persister.EXPECT().
-				CreateManualOneOff(context.Background(), &models.CreateManualOneOffInput{
+				CreateManualOneOff(context.Background(), &models.CreateManualOneOffParams{
 					Name:                normalizedName,
 					Description:         normalizedDescription,
 					Deadline:            input.Deadline,
@@ -61,7 +61,7 @@ var _ = Describe("Create", func() {
 		},
 		Entry(
 			"with normalized whitespace and empty template flag",
-			&models.CreateChoreInput{
+			&models.CreateChoreParams{
 				Name:                " raw name ",
 				Description:         " raw description ",
 				Deadline:            time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC),
@@ -83,7 +83,7 @@ var _ = Describe("Create", func() {
 		),
 		Entry(
 			"with save as chore template",
-			&models.CreateChoreInput{
+			&models.CreateChoreParams{
 				Name:                "another chore",
 				Description:         "details",
 				Deadline:            time.Date(2026, time.July, 28, 0, 0, 0, 0, time.UTC),
@@ -111,7 +111,7 @@ var _ = Describe("Create", func() {
 			Return("", false).
 			Once()
 
-		result, err := service.Create(context.Background(), &models.CreateChoreInput{
+		result, err := service.Create(context.Background(), &models.CreateChoreParams{
 			Name:                "invalid name",
 			Description:         "description",
 			Deadline:            time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC),
@@ -135,7 +135,7 @@ var _ = Describe("Create", func() {
 			Return("", false).
 			Once()
 
-		result, err := service.Create(context.Background(), &models.CreateChoreInput{
+		result, err := service.Create(context.Background(), &models.CreateChoreParams{
 			Name:                "name",
 			Description:         "invalid description",
 			Deadline:            time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC),
@@ -161,7 +161,7 @@ var _ = Describe("Create", func() {
 			Return("Description", true).
 			Once()
 		persister.EXPECT().
-			CreateManualOneOff(ctx, &models.CreateManualOneOffInput{
+			CreateManualOneOff(ctx, &models.CreateManualOneOffParams{
 				Name:        "Name",
 				Description: "Description",
 				Deadline:    deadline,
@@ -169,7 +169,7 @@ var _ = Describe("Create", func() {
 			Return(nil, persistErr).
 			Once()
 
-		result, err := service.Create(ctx, &models.CreateChoreInput{
+		result, err := service.Create(ctx, &models.CreateChoreParams{
 			Name:                "name",
 			Description:         "description",
 			Deadline:            deadline,
@@ -187,7 +187,7 @@ var _ = Describe("Create", func() {
 	It("creates a manual scheduled chore atomically", func(ctx SpecContext) {
 		deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
 		intervalDays := 14
-		input := &models.CreateChoreInput{
+		input := &models.CreateChoreParams{
 			Name:                " raw chore name ",
 			Description:         " raw description ",
 			Deadline:            deadline,
@@ -204,7 +204,7 @@ var _ = Describe("Create", func() {
 		normalizer.EXPECT().NormalizeDescription(" raw description ").Return("Description", true).Once()
 		normalizer.EXPECT().NormalizeName(" raw schedule name ").Return("Schedule name", true).Once()
 		persister.EXPECT().
-			CreateManualScheduled(ctx, &models.CreateManualScheduledInput{
+			CreateManualScheduled(ctx, &models.CreateManualScheduledParams{
 				Name:         "Chore name",
 				Description:  "Description",
 				Deadline:     deadline,
@@ -218,7 +218,7 @@ var _ = Describe("Create", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(BeIdenticalTo(persisted))
-		Expect(input).To(Equal(&models.CreateChoreInput{
+		Expect(input).To(Equal(&models.CreateChoreParams{
 			Name:                " raw chore name ",
 			Description:         " raw description ",
 			Deadline:            deadline,
@@ -233,7 +233,7 @@ var _ = Describe("Create", func() {
 		choreTemplateId := 42
 		deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
 		intervalDays := 14
-		input := &models.CreateChoreInput{
+		input := &models.CreateChoreParams{
 			Name:                "",
 			Description:         "",
 			Deadline:            deadline,
@@ -248,7 +248,7 @@ var _ = Describe("Create", func() {
 		}
 		normalizer.EXPECT().NormalizeName(" raw schedule name ").Return("Schedule name", true).Once()
 		persister.EXPECT().
-			CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledInput{
+			CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledParams{
 				ChoreTemplateId: choreTemplateId,
 				Deadline:        deadline,
 				ScheduleName:    "Schedule name",
@@ -261,7 +261,7 @@ var _ = Describe("Create", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(BeIdenticalTo(persisted))
-		Expect(input).To(Equal(&models.CreateChoreInput{
+		Expect(input).To(Equal(&models.CreateChoreParams{
 			Name:                "",
 			Description:         "",
 			Deadline:            deadline,
@@ -278,7 +278,7 @@ var _ = Describe("Create", func() {
 		normalizer.EXPECT().NormalizeDescription("description").Return("Description", true).Once()
 		normalizer.EXPECT().NormalizeName("invalid schedule name").Return("", false).Once()
 
-		result, err := service.Create(context.Background(), &models.CreateChoreInput{
+		result, err := service.Create(context.Background(), &models.CreateChoreParams{
 			Name:                "chore name",
 			Description:         "description",
 			Deadline:            time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC),
@@ -297,7 +297,7 @@ var _ = Describe("Create", func() {
 		intervalDays := 14
 		normalizer.EXPECT().NormalizeName("invalid schedule name").Return("", false).Once()
 
-		result, err := service.Create(context.Background(), &models.CreateChoreInput{
+		result, err := service.Create(context.Background(), &models.CreateChoreParams{
 			Name:                "",
 			Description:         "",
 			Deadline:            time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC),
@@ -314,7 +314,7 @@ var _ = Describe("Create", func() {
 	DescribeTable(
 		"rejects an invalid schedule interval without persisting",
 		func(intervalDays int) {
-			result, err := service.Create(context.Background(), &models.CreateChoreInput{
+			result, err := service.Create(context.Background(), &models.CreateChoreParams{
 				Name:                "chore name",
 				Description:         "description",
 				Deadline:            time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC),
@@ -335,7 +335,7 @@ var _ = Describe("Create", func() {
 		"rejects an invalid template-based schedule interval without persisting",
 		func(intervalDays int) {
 			choreTemplateId := 42
-			result, err := service.Create(context.Background(), &models.CreateChoreInput{
+			result, err := service.Create(context.Background(), &models.CreateChoreParams{
 				Name:                "",
 				Description:         "",
 				Deadline:            time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC),
@@ -355,7 +355,7 @@ var _ = Describe("Create", func() {
 	It("rejects a scheduled chore without a deadline before persisting", func() {
 		intervalDays := 14
 
-		result, err := service.Create(context.Background(), &models.CreateChoreInput{
+		result, err := service.Create(context.Background(), &models.CreateChoreParams{
 			Name:                "chore name",
 			Description:         "description",
 			Deadline:            time.Time{},
@@ -373,7 +373,7 @@ var _ = Describe("Create", func() {
 		choreTemplateId := 42
 		intervalDays := 14
 
-		result, err := service.Create(context.Background(), &models.CreateChoreInput{
+		result, err := service.Create(context.Background(), &models.CreateChoreParams{
 			Name:                "",
 			Description:         "",
 			Deadline:            time.Time{},
@@ -395,7 +395,7 @@ var _ = Describe("Create", func() {
 		normalizer.EXPECT().NormalizeDescription("description").Return("Description", true).Once()
 		normalizer.EXPECT().NormalizeName("schedule name").Return("Schedule name", true).Once()
 		persister.EXPECT().
-			CreateManualScheduled(ctx, &models.CreateManualScheduledInput{
+			CreateManualScheduled(ctx, &models.CreateManualScheduledParams{
 				Name:         "Chore name",
 				Description:  "Description",
 				Deadline:     deadline,
@@ -405,7 +405,7 @@ var _ = Describe("Create", func() {
 			Return(nil, persistErr).
 			Once()
 
-		result, err := service.Create(ctx, &models.CreateChoreInput{
+		result, err := service.Create(ctx, &models.CreateChoreParams{
 			Name:                "chore name",
 			Description:         "description",
 			Deadline:            deadline,
@@ -427,7 +427,7 @@ var _ = Describe("Create", func() {
 		persistErr := errors.New("persistence failed")
 		normalizer.EXPECT().NormalizeName("schedule name").Return("Schedule name", true).Once()
 		persister.EXPECT().
-			CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledInput{
+			CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledParams{
 				ChoreTemplateId: choreTemplateId,
 				Deadline:        deadline,
 				ScheduleName:    "Schedule name",
@@ -436,7 +436,7 @@ var _ = Describe("Create", func() {
 			Return(nil, persistErr).
 			Once()
 
-		result, err := service.Create(ctx, &models.CreateChoreInput{
+		result, err := service.Create(ctx, &models.CreateChoreParams{
 			Name:                "",
 			Description:         "",
 			Deadline:            deadline,
