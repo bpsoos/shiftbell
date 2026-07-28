@@ -70,6 +70,5 @@ mockery *args:
             --entrypoint /bin/sh \
             --workdir /src \
             alpine \
-            -c "find /src -name mocks_test.go -type f -delete"
+            -c "find /src -type f \( -name mocks_test.go -o -name mocks.go \) -delete"
     just mockery
-

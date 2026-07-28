@@ -51,6 +51,12 @@ const (
 	ChoreStatusCompleted ChoreStatus = "completed"
 )
 
+type BrowseChoresParams struct {
+	Status ChoreStatus
+	Offset int
+	Limit  int
+}
+
 type Chore struct {
 	Id          int
 	Name        string
@@ -59,6 +65,8 @@ type Chore struct {
 	Deadline    time.Time
 	CompletedOn time.Time
 }
+
+type ChorePage = GetChoreBatchResult
 
 type CreateChoreParams struct {
 	Name        string

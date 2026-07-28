@@ -26,6 +26,7 @@ func NewService(deps *Deps, config *Config) *Service {
 }
 
 type Persister interface {
+	Browse(context.Context, *models.BrowseChoresParams) (*models.ChorePage, error)
 	CreateManualOneOff(context.Context, *models.CreateManualOneOffInput) (*models.CreateChoreResult, error)
 	CreateManualScheduled(context.Context, *models.CreateManualScheduledInput) (*models.CreateChoreResult, error)
 	CreateTemplateScheduled(context.Context, *models.CreateTemplateScheduledInput) (*models.CreateChoreResult, error)

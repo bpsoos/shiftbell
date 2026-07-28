@@ -15,4 +15,5 @@ jobs:
       - uses: extractions/setup-just@v4
         with:
           just-version: "1.51.0"
+      - run: just mockery
       - run: just test-ci
