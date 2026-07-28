@@ -2,6 +2,7 @@ package chores
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bpsoos/shiftbell/internal/models"
 	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
@@ -22,9 +23,14 @@ func (s *Service) Browse(ctx context.Context, params *models.BrowseChoresParams)
 		return nil, serviceerrors.ErrInvalidLimit
 	}
 
-	return s.persister.Browse(ctx, &models.BrowseChoresParams{
+	page, err := s.persister.Browse(ctx, &models.BrowseChoresParams{
 		Status: status,
 		Offset: params.Offset,
 		Limit:  params.Limit,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("browse chores: %w", err)
+	}
+
+	return page, nil
 }

@@ -2,6 +2,7 @@ package chores
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bpsoos/shiftbell/internal/models"
 	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
@@ -53,6 +54,57 @@ var _ = Describe("Browse", func() {
 			Offset: 20,
 			Limit:  10,
 		}))
+	})
+
+	It("browses completed chores", func(ctx SpecContext) {
+		params := &models.BrowseChoresParams{
+			Status: models.ChoreStatusCompleted,
+			Offset: 0,
+			Limit:  10,
+		}
+		persisted := &models.ChorePage{
+			Chores: []models.Chore{{Id: 4, Status: models.ChoreStatusCompleted}},
+		}
+		persister.EXPECT().
+			Browse(ctx, &models.BrowseChoresParams{
+				Status: models.ChoreStatusCompleted,
+				Offset: 0,
+				Limit:  10,
+			}).
+			Return(persisted, nil).
+			Once()
+
+		result, err := service.Browse(ctx, params)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result).To(BeIdenticalTo(persisted))
+		Expect(params).To(Equal(&models.BrowseChoresParams{
+			Status: models.ChoreStatusCompleted,
+			Offset: 0,
+			Limit:  10,
+		}))
+	})
+
+	It("preserves persistence errors", func(ctx SpecContext) {
+		persistErr := errors.New("persistence failed")
+		persister.EXPECT().
+			Browse(ctx, &models.BrowseChoresParams{
+				Status: models.ChoreStatusActive,
+				Offset: 0,
+				Limit:  10,
+			}).
+			Return(nil, persistErr).
+			Once()
+
+		result, err := service.Browse(ctx, &models.BrowseChoresParams{
+			Status: models.ChoreStatusActive,
+			Offset: 0,
+			Limit:  10,
+		})
+
+		Expect(result).To(BeNil())
+		Expect(err).To(MatchError("browse chores: persistence failed"))
+		Expect(errors.Is(err, persistErr)).To(BeTrue())
 	})
 
 	It("rejects an unsupported status", func() {
