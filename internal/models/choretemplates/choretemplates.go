@@ -13,6 +13,11 @@ type EditChoreTemplateParams struct {
 	Description string
 }
 
+type DeactivateChoreTemplateParams struct {
+	Id            int
+	DeactivatedAt time.Time
+}
+
 type ChoreTemplateFilter string
 
 const (

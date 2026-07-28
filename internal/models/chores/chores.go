@@ -61,13 +61,14 @@ type BrowseChoresParams struct {
 }
 
 type Chore struct {
-	Id          int
-	ScheduleId  *int
-	Name        string
-	Status      ChoreStatus
-	Description string
-	Deadline    time.Time
-	CompletedOn time.Time
+	Id            int
+	ScheduleId    *int
+	PredecessorId *int
+	Name          string
+	Status        ChoreStatus
+	Description   string
+	Deadline      time.Time
+	CompletedOn   time.Time
 }
 
 type ChorePage = GetChoreBatchResult
@@ -141,3 +142,23 @@ type EditScheduledChoreParams struct {
 }
 
 type EditChoreResult = ChoreDetails
+
+type CompleteChoreParams struct {
+	Id          int
+	CompletedOn time.Time
+}
+
+type CompleteChoreResult struct {
+	Chore     *Chore
+	Successor *Chore
+}
+
+type CorrectCompletionParams struct {
+	Id          int
+	CompletedOn time.Time
+}
+
+type CorrectCompletionResult struct {
+	Chore     *Chore
+	Successor *Chore
+}

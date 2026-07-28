@@ -28,3 +28,6 @@ packages:
   github.com/bpsoos/shiftbell/internal/service/chores:
     config:
       all: true
+  github.com/bpsoos/shiftbell/internal/service/schedules:
+    config:
+      all: true
