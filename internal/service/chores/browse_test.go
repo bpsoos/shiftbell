@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
-	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -36,7 +36,7 @@ var _ = Describe("Browse", func() {
 			Chores: []models.Chore{{Id: 4}},
 			More:   true,
 		}
-		normalizer.EXPECT().NormalizeSearch("").Return("", true).Once()
+		normalizer.EXPECT().NormalizeSearch("").Return("", nil).Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoresParams{
 				Status: models.ChoreStatusActive,
@@ -66,7 +66,7 @@ var _ = Describe("Browse", func() {
 		persisted := &models.ChorePage{
 			Chores: []models.Chore{{Id: 4, Status: models.ChoreStatusCompleted}},
 		}
-		normalizer.EXPECT().NormalizeSearch("").Return("", true).Once()
+		normalizer.EXPECT().NormalizeSearch("").Return("", nil).Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoresParams{
 				Status: models.ChoreStatusCompleted,
@@ -95,7 +95,7 @@ var _ = Describe("Browse", func() {
 			Limit:  10,
 		}
 		persisted := &models.ChorePage{}
-		normalizer.EXPECT().NormalizeSearch(" raw search ").Return("Normalized search", true).Once()
+		normalizer.EXPECT().NormalizeSearch(" raw search ").Return("Normalized search", nil).Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoresParams{
 				Status: models.ChoreStatusActive,
@@ -120,7 +120,7 @@ var _ = Describe("Browse", func() {
 
 	It("preserves persistence errors", func(ctx SpecContext) {
 		persistErr := errors.New("persistence failed")
-		normalizer.EXPECT().NormalizeSearch("").Return("", true).Once()
+		normalizer.EXPECT().NormalizeSearch("").Return("", nil).Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoresParams{
 				Status: models.ChoreStatusActive,
@@ -149,7 +149,7 @@ var _ = Describe("Browse", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidFilter))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidFilter))
 	})
 
 	It("rejects a negative offset", func() {
@@ -160,7 +160,7 @@ var _ = Describe("Browse", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidOffset))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidOffset))
 	})
 
 	It("rejects a non-positive limit", func() {
@@ -171,11 +171,11 @@ var _ = Describe("Browse", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidLimit))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidLimit))
 	})
 
 	It("rejects an invalid search without browsing chores", func() {
-		normalizer.EXPECT().NormalizeSearch("invalid search").Return("", false).Once()
+		normalizer.EXPECT().NormalizeSearch("invalid search").Return("", validationerrors.ErrDisallowedCharacter).Once()
 
 		result, err := service.Browse(context.Background(), &models.BrowseChoresParams{
 			Status: models.ChoreStatusActive,
@@ -185,6 +185,6 @@ var _ = Describe("Browse", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidSearch))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidSearch))
 	})
 })

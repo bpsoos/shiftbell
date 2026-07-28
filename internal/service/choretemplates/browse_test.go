@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
-	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -38,7 +38,7 @@ var _ = Describe("Browse", func() {
 		}
 		normalizer.EXPECT().
 			NormalizeSearch(" raw search ").
-			Return("Normalized search", true).
+			Return("Normalized search", nil).
 			Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoreTemplatesParams{
@@ -63,7 +63,7 @@ var _ = Describe("Browse", func() {
 
 	It("browses deactivated chore templates", func(ctx SpecContext) {
 		page := &models.ChoreTemplatePage{}
-		normalizer.EXPECT().NormalizeSearch("").Return("", true).Once()
+		normalizer.EXPECT().NormalizeSearch("").Return("", nil).Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoreTemplatesParams{
 				Filter: models.ChoreTemplateFilterDeactivated,
@@ -90,11 +90,11 @@ var _ = Describe("Browse", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidFilter))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidFilter))
 	})
 
 	It("rejects an invalid search", func() {
-		normalizer.EXPECT().NormalizeSearch("invalid search").Return("", false).Once()
+		normalizer.EXPECT().NormalizeSearch("invalid search").Return("", validationerrors.ErrDisallowedCharacter).Once()
 
 		result, err := service.Browse(context.Background(), &models.BrowseChoreTemplatesParams{
 			Search: "invalid search",
@@ -102,7 +102,7 @@ var _ = Describe("Browse", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidSearch))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidSearch))
 	})
 
 	It("rejects a negative offset", func() {
@@ -112,26 +112,26 @@ var _ = Describe("Browse", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidOffset))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidOffset))
 	})
 
 	It("rejects a non-positive limit", func() {
 		result, err := service.Browse(context.Background(), &models.BrowseChoreTemplatesParams{})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidLimit))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidLimit))
 	})
 
 	It("rejects missing parameters", func() {
 		result, err := service.Browse(context.Background(), nil)
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidLimit))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidLimit))
 	})
 
 	It("preserves persistence errors", func(ctx SpecContext) {
 		persistErr := errors.New("persistence failed")
-		normalizer.EXPECT().NormalizeSearch("search").Return("Search", true).Once()
+		normalizer.EXPECT().NormalizeSearch("search").Return("Search", nil).Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoreTemplatesParams{
 				Filter: models.ChoreTemplateFilterActive,

@@ -7,7 +7,7 @@ import (
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
-	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -38,11 +38,11 @@ var _ = Describe("Create", func() {
 		) {
 			normalizer.EXPECT().
 				NormalizeName(input.Name).
-				Return(normalizedName, true).
+				Return(normalizedName, nil).
 				Once()
 			normalizer.EXPECT().
 				NormalizeDescription(input.Description).
-				Return(normalizedDescription, true).
+				Return(normalizedDescription, nil).
 				Once()
 			persister.EXPECT().
 				CreateManualOneOff(context.Background(), &models.CreateManualOneOffParams{
@@ -108,7 +108,7 @@ var _ = Describe("Create", func() {
 	It("rejects an invalid name without persisting", func() {
 		normalizer.EXPECT().
 			NormalizeName("invalid name").
-			Return("", false).
+			Return("", validationerrors.ErrRequired).
 			Once()
 
 		result, err := service.Create(context.Background(), &models.CreateChoreParams{
@@ -122,17 +122,17 @@ var _ = Describe("Create", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidName))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidName))
 	})
 
 	It("rejects an invalid description without persisting", func() {
 		normalizer.EXPECT().
 			NormalizeName("name").
-			Return("Name", true).
+			Return("Name", nil).
 			Once()
 		normalizer.EXPECT().
 			NormalizeDescription("invalid description").
-			Return("", false).
+			Return("", validationerrors.ErrTooLong).
 			Once()
 
 		result, err := service.Create(context.Background(), &models.CreateChoreParams{
@@ -146,7 +146,7 @@ var _ = Describe("Create", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidDescription))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidDescription))
 	})
 
 	It("preserves manual one-off persistence errors", func(ctx SpecContext) {
@@ -154,11 +154,11 @@ var _ = Describe("Create", func() {
 		persistErr := errors.New("persistence failed")
 		normalizer.EXPECT().
 			NormalizeName("name").
-			Return("Name", true).
+			Return("Name", nil).
 			Once()
 		normalizer.EXPECT().
 			NormalizeDescription("description").
-			Return("Description", true).
+			Return("Description", nil).
 			Once()
 		persister.EXPECT().
 			CreateManualOneOff(ctx, &models.CreateManualOneOffParams{
@@ -200,9 +200,9 @@ var _ = Describe("Create", func() {
 			Chore:         &models.Chore{Id: 1},
 			ChoreTemplate: &choretemplatemodels.ChoreTemplate{Id: 2},
 		}
-		normalizer.EXPECT().NormalizeName(" raw chore name ").Return("Chore name", true).Once()
-		normalizer.EXPECT().NormalizeDescription(" raw description ").Return("Description", true).Once()
-		normalizer.EXPECT().NormalizeName(" raw schedule name ").Return("Schedule name", true).Once()
+		normalizer.EXPECT().NormalizeName(" raw chore name ").Return("Chore name", nil).Once()
+		normalizer.EXPECT().NormalizeDescription(" raw description ").Return("Description", nil).Once()
+		normalizer.EXPECT().NormalizeName(" raw schedule name ").Return("Schedule name", nil).Once()
 		persister.EXPECT().
 			CreateManualScheduled(ctx, &models.CreateManualScheduledParams{
 				Name:         "Chore name",
@@ -246,7 +246,7 @@ var _ = Describe("Create", func() {
 			Chore:         &models.Chore{Id: 1},
 			ChoreTemplate: &choretemplatemodels.ChoreTemplate{Id: choreTemplateId},
 		}
-		normalizer.EXPECT().NormalizeName(" raw schedule name ").Return("Schedule name", true).Once()
+		normalizer.EXPECT().NormalizeName(" raw schedule name ").Return("Schedule name", nil).Once()
 		persister.EXPECT().
 			CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledParams{
 				ChoreTemplateId: choreTemplateId,
@@ -274,9 +274,9 @@ var _ = Describe("Create", func() {
 
 	It("rejects an invalid manual schedule name without persisting", func() {
 		intervalDays := 14
-		normalizer.EXPECT().NormalizeName("chore name").Return("Chore name", true).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", true).Once()
-		normalizer.EXPECT().NormalizeName("invalid schedule name").Return("", false).Once()
+		normalizer.EXPECT().NormalizeName("chore name").Return("Chore name", nil).Once()
+		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
+		normalizer.EXPECT().NormalizeName("invalid schedule name").Return("", validationerrors.ErrRequired).Once()
 
 		result, err := service.Create(context.Background(), &models.CreateChoreParams{
 			Name:                "chore name",
@@ -289,13 +289,13 @@ var _ = Describe("Create", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidName))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidName))
 	})
 
 	It("rejects an invalid template-based schedule name without persisting", func() {
 		choreTemplateId := 42
 		intervalDays := 14
-		normalizer.EXPECT().NormalizeName("invalid schedule name").Return("", false).Once()
+		normalizer.EXPECT().NormalizeName("invalid schedule name").Return("", validationerrors.ErrRequired).Once()
 
 		result, err := service.Create(context.Background(), &models.CreateChoreParams{
 			Name:                "",
@@ -308,7 +308,7 @@ var _ = Describe("Create", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidName))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidName))
 	})
 
 	DescribeTable(
@@ -325,7 +325,7 @@ var _ = Describe("Create", func() {
 			})
 
 			Expect(result).To(BeNil())
-			Expect(err).To(MatchError(serviceerrors.ErrInvalidInterval))
+			Expect(err).To(MatchError(validationerrors.ErrInvalidInterval))
 		},
 		Entry("below the minimum", 0),
 		Entry("above the maximum", 3651),
@@ -346,7 +346,7 @@ var _ = Describe("Create", func() {
 			})
 
 			Expect(result).To(BeNil())
-			Expect(err).To(MatchError(serviceerrors.ErrInvalidInterval))
+			Expect(err).To(MatchError(validationerrors.ErrInvalidInterval))
 		},
 		Entry("below the minimum", 0),
 		Entry("above the maximum", 3651),
@@ -366,7 +366,7 @@ var _ = Describe("Create", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidDeadline))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidDeadline))
 	})
 
 	It("rejects a template-based scheduled chore without a deadline before persisting", func() {
@@ -384,16 +384,16 @@ var _ = Describe("Create", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidDeadline))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidDeadline))
 	})
 
 	It("preserves manual scheduled persistence errors", func(ctx SpecContext) {
 		deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
 		intervalDays := 14
 		persistErr := errors.New("persistence failed")
-		normalizer.EXPECT().NormalizeName("chore name").Return("Chore name", true).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", true).Once()
-		normalizer.EXPECT().NormalizeName("schedule name").Return("Schedule name", true).Once()
+		normalizer.EXPECT().NormalizeName("chore name").Return("Chore name", nil).Once()
+		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
+		normalizer.EXPECT().NormalizeName("schedule name").Return("Schedule name", nil).Once()
 		persister.EXPECT().
 			CreateManualScheduled(ctx, &models.CreateManualScheduledParams{
 				Name:         "Chore name",
@@ -425,7 +425,7 @@ var _ = Describe("Create", func() {
 		deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
 		intervalDays := 14
 		persistErr := errors.New("persistence failed")
-		normalizer.EXPECT().NormalizeName("schedule name").Return("Schedule name", true).Once()
+		normalizer.EXPECT().NormalizeName("schedule name").Return("Schedule name", nil).Once()
 		persister.EXPECT().
 			CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledParams{
 				ChoreTemplateId: choreTemplateId,

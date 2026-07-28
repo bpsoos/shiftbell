@@ -6,7 +6,7 @@ import (
 	"time"
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
-	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -43,8 +43,8 @@ var _ = Describe("Edit", func() {
 			Description: "Normalized description",
 			Deadline:    deadline,
 		}
-		normalizer.EXPECT().NormalizeName(" raw name ").Return("Normalized name", true).Once()
-		normalizer.EXPECT().NormalizeDescription(" raw description ").Return("Normalized description", true).Once()
+		normalizer.EXPECT().NormalizeName(" raw name ").Return("Normalized name", nil).Once()
+		normalizer.EXPECT().NormalizeDescription(" raw description ").Return("Normalized description", nil).Once()
 		persister.EXPECT().
 			EditOneOff(ctx, &models.EditOneOffChoreParams{
 				Id:          42,
@@ -87,8 +87,8 @@ var _ = Describe("Edit", func() {
 			Description: "Normalized description",
 			Deadline:    deadline,
 		}
-		normalizer.EXPECT().NormalizeName(" raw name ").Return("Normalized name", true).Once()
-		normalizer.EXPECT().NormalizeDescription(" raw description ").Return("Normalized description", true).Once()
+		normalizer.EXPECT().NormalizeName(" raw name ").Return("Normalized name", nil).Once()
+		normalizer.EXPECT().NormalizeDescription(" raw description ").Return("Normalized description", nil).Once()
 		persister.EXPECT().
 			EditScheduled(ctx, &models.EditScheduledChoreParams{
 				Id:                      42,
@@ -114,7 +114,7 @@ var _ = Describe("Edit", func() {
 	})
 
 	It("rejects an invalid name without persisting", func() {
-		normalizer.EXPECT().NormalizeName("invalid name").Return("", false).Once()
+		normalizer.EXPECT().NormalizeName("invalid name").Return("", validationerrors.ErrRequired).Once()
 
 		result, err := service.Edit(context.Background(), &models.EditChoreParams{
 			Name:     "invalid name",
@@ -122,12 +122,12 @@ var _ = Describe("Edit", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidName))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidName))
 	})
 
 	It("rejects an invalid description without persisting", func() {
-		normalizer.EXPECT().NormalizeName("name").Return("Name", true).Once()
-		normalizer.EXPECT().NormalizeDescription("invalid description").Return("", false).Once()
+		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
+		normalizer.EXPECT().NormalizeDescription("invalid description").Return("", validationerrors.ErrTooLong).Once()
 
 		result, err := service.Edit(context.Background(), &models.EditChoreParams{
 			Name:        "name",
@@ -136,12 +136,12 @@ var _ = Describe("Edit", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidDescription))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidDescription))
 	})
 
 	It("rejects a one-off chore without a deadline before persisting", func() {
-		normalizer.EXPECT().NormalizeName("name").Return("Name", true).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", true).Once()
+		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
+		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
 
 		result, err := service.Edit(context.Background(), &models.EditChoreParams{
 			Name:        "name",
@@ -151,14 +151,14 @@ var _ = Describe("Edit", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidDeadline))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidDeadline))
 	})
 
 	It("preserves one-off persistence errors", func(ctx SpecContext) {
 		deadline := time.Date(2026, time.August, 3, 0, 0, 0, 0, time.UTC)
 		persistErr := errors.New("persistence failed")
-		normalizer.EXPECT().NormalizeName("name").Return("Name", true).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", true).Once()
+		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
+		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
 		persister.EXPECT().
 			EditOneOff(ctx, &models.EditOneOffChoreParams{
 				Id:          42,
@@ -184,8 +184,8 @@ var _ = Describe("Edit", func() {
 	It("preserves scheduled persistence errors", func(ctx SpecContext) {
 		scheduleId := 7
 		persistErr := errors.New("persistence failed")
-		normalizer.EXPECT().NormalizeName("name").Return("Name", true).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", true).Once()
+		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
+		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
 		persister.EXPECT().
 			EditScheduled(ctx, &models.EditScheduledChoreParams{
 				Id:          42,

@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
-	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -39,11 +39,11 @@ var _ = Describe("Edit", func() {
 		}
 		normalizer.EXPECT().
 			NormalizeName(" raw name ").
-			Return("Normalized name", true).
+			Return("Normalized name", nil).
 			Once()
 		normalizer.EXPECT().
 			NormalizeDescription(" raw description ").
-			Return("Normalized description", true).
+			Return("Normalized description", nil).
 			Once()
 		persister.EXPECT().
 			Edit(ctx, &models.EditChoreTemplateParams{
@@ -68,7 +68,7 @@ var _ = Describe("Edit", func() {
 	It("rejects an invalid name", func() {
 		normalizer.EXPECT().
 			NormalizeName("invalid name").
-			Return("", false).
+			Return("", validationerrors.ErrRequired).
 			Once()
 
 		result, err := service.Edit(context.Background(), &models.EditChoreTemplateParams{
@@ -77,17 +77,17 @@ var _ = Describe("Edit", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidName))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidName))
 	})
 
 	It("rejects an invalid description", func() {
 		normalizer.EXPECT().
 			NormalizeName("name").
-			Return("Normalized name", true).
+			Return("Normalized name", nil).
 			Once()
 		normalizer.EXPECT().
 			NormalizeDescription("invalid description").
-			Return("", false).
+			Return("", validationerrors.ErrTooLong).
 			Once()
 
 		result, err := service.Edit(context.Background(), &models.EditChoreTemplateParams{
@@ -97,20 +97,20 @@ var _ = Describe("Edit", func() {
 		})
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidDescription))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidDescription))
 	})
 
 	It("rejects missing parameters", func() {
 		result, err := service.Edit(context.Background(), nil)
 
 		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(serviceerrors.ErrInvalidName))
+		Expect(err).To(MatchError(validationerrors.ErrInvalidName))
 	})
 
 	It("preserves persistence errors", func(ctx SpecContext) {
 		persistErr := errors.New("persistence failed")
-		normalizer.EXPECT().NormalizeName("name").Return("Name", true).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", true).Once()
+		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
+		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
 		persister.EXPECT().
 			Edit(ctx, &models.EditChoreTemplateParams{
 				Id:          42,

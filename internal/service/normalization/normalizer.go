@@ -5,6 +5,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -28,28 +29,31 @@ func New(config Config) *Normalizer {
 	}
 }
 
-func (n *Normalizer) NormalizeName(value string) (string, bool) {
+func (n *Normalizer) NormalizeName(value string) (string, error) {
 	if !utf8.ValidString(value) {
-		return "", false
+		return "", validationerrors.ErrInvalidUTF8
 	}
 
 	value = norm.NFC.String(strings.TrimSpace(value))
-	if value == "" || utf8.RuneCountInString(value) > n.nameLimit {
-		return "", false
+	if value == "" {
+		return "", validationerrors.ErrRequired
+	}
+	if utf8.RuneCountInString(value) > n.nameLimit {
+		return "", validationerrors.ErrTooLong
 	}
 
 	for _, r := range value {
 		if !unicode.IsPrint(r) {
-			return "", false
+			return "", validationerrors.ErrDisallowedCharacter
 		}
 	}
 
-	return value, true
+	return value, nil
 }
 
-func (n *Normalizer) NormalizeDescription(value string) (string, bool) {
+func (n *Normalizer) NormalizeDescription(value string) (string, error) {
 	if !utf8.ValidString(value) {
-		return "", false
+		return "", validationerrors.ErrInvalidUTF8
 	}
 
 	value = strings.ReplaceAll(value, "\r\n", "\n")
@@ -57,33 +61,33 @@ func (n *Normalizer) NormalizeDescription(value string) (string, bool) {
 	value = norm.NFC.String(value)
 	value = strings.TrimSpace(value)
 	if utf8.RuneCountInString(value) > n.descriptionLimit {
-		return "", false
+		return "", validationerrors.ErrTooLong
 	}
 
 	for _, r := range value {
 		if !unicode.IsPrint(r) && r != '\t' && r != '\n' {
-			return "", false
+			return "", validationerrors.ErrDisallowedCharacter
 		}
 	}
 
-	return value, true
+	return value, nil
 }
 
-func (n *Normalizer) NormalizeSearch(value string) (string, bool) {
+func (n *Normalizer) NormalizeSearch(value string) (string, error) {
 	if !utf8.ValidString(value) {
-		return "", false
+		return "", validationerrors.ErrInvalidUTF8
 	}
 
 	value = norm.NFC.String(strings.TrimSpace(value))
 	if utf8.RuneCountInString(value) > n.searchLimit {
-		return "", false
+		return "", validationerrors.ErrTooLong
 	}
 
 	for _, r := range value {
 		if !unicode.IsPrint(r) {
-			return "", false
+			return "", validationerrors.ErrDisallowedCharacter
 		}
 	}
 
-	return value, true
+	return value, nil
 }

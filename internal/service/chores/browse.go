@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
-	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 )
 
 func (s *Service) Browse(ctx context.Context, params *models.BrowseChoresParams) (*models.ChorePage, error) {
@@ -14,17 +14,17 @@ func (s *Service) Browse(ctx context.Context, params *models.BrowseChoresParams)
 		status = models.ChoreStatusActive
 	}
 	if status != models.ChoreStatusActive && status != models.ChoreStatusCompleted {
-		return nil, serviceerrors.ErrInvalidFilter
+		return nil, validationerrors.ErrInvalidFilter
 	}
 	if params.Offset < 0 {
-		return nil, serviceerrors.ErrInvalidOffset
+		return nil, validationerrors.ErrInvalidOffset
 	}
 	if params.Limit <= 0 {
-		return nil, serviceerrors.ErrInvalidLimit
+		return nil, validationerrors.ErrInvalidLimit
 	}
-	search, valid := s.normalizer.NormalizeSearch(params.Search)
-	if !valid {
-		return nil, serviceerrors.ErrInvalidSearch
+	search, err := s.normalizer.NormalizeSearch(params.Search)
+	if err != nil {
+		return nil, validationerrors.ErrInvalidSearch
 	}
 
 	page, err := s.persister.Browse(ctx, &models.BrowseChoresParams{

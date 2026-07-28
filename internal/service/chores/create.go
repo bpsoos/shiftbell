@@ -5,22 +5,22 @@ import (
 	"fmt"
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
-	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 )
 
 func (s *Service) Create(ctx context.Context, input *models.CreateChoreParams) (*models.CreateChoreResult, error) {
 	if input.Deadline.IsZero() {
-		return nil, serviceerrors.ErrInvalidDeadline
+		return nil, validationerrors.ErrInvalidDeadline
 	}
 
 	if s.hasInvalidInterval(input) {
-		return nil, serviceerrors.ErrInvalidInterval
+		return nil, validationerrors.ErrInvalidInterval
 	}
 
 	if s.isTemplateScheduled(input) {
-		scheduleName, valid := s.normalizer.NormalizeName(input.ScheduleName)
-		if !valid {
-			return nil, serviceerrors.ErrInvalidName
+		scheduleName, err := s.normalizer.NormalizeName(input.ScheduleName)
+		if err != nil {
+			return nil, validationerrors.ErrInvalidName
 		}
 
 		result, err := s.persister.CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledParams{
@@ -36,18 +36,18 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreParams) (
 		return result, nil
 	}
 
-	name, valid := s.normalizer.NormalizeName(input.Name)
-	if !valid {
-		return nil, serviceerrors.ErrInvalidName
+	name, err := s.normalizer.NormalizeName(input.Name)
+	if err != nil {
+		return nil, validationerrors.ErrInvalidName
 	}
-	description, valid := s.normalizer.NormalizeDescription(input.Description)
-	if !valid {
-		return nil, serviceerrors.ErrInvalidDescription
+	description, err := s.normalizer.NormalizeDescription(input.Description)
+	if err != nil {
+		return nil, validationerrors.ErrInvalidDescription
 	}
 	if s.isScheduled(input) {
-		scheduleName, valid := s.normalizer.NormalizeName(input.ScheduleName)
-		if !valid {
-			return nil, serviceerrors.ErrInvalidName
+		scheduleName, err := s.normalizer.NormalizeName(input.ScheduleName)
+		if err != nil {
+			return nil, validationerrors.ErrInvalidName
 		}
 
 		result, err := s.persister.CreateManualScheduled(ctx, &models.CreateManualScheduledParams{

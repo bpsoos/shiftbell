@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
-	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 )
 
 func (s *Service) Browse(ctx context.Context, params *models.BrowseChoreTemplatesParams) (*models.ChoreTemplatePage, error) {
 	if params == nil {
-		return nil, serviceerrors.ErrInvalidLimit
+		return nil, validationerrors.ErrInvalidLimit
 	}
 
 	filter := params.Filter
@@ -18,18 +18,18 @@ func (s *Service) Browse(ctx context.Context, params *models.BrowseChoreTemplate
 		filter = models.ChoreTemplateFilterActive
 	}
 	if filter != models.ChoreTemplateFilterActive && filter != models.ChoreTemplateFilterDeactivated {
-		return nil, serviceerrors.ErrInvalidFilter
+		return nil, validationerrors.ErrInvalidFilter
 	}
 	if params.Offset < 0 {
-		return nil, serviceerrors.ErrInvalidOffset
+		return nil, validationerrors.ErrInvalidOffset
 	}
 	if params.Limit <= 0 {
-		return nil, serviceerrors.ErrInvalidLimit
+		return nil, validationerrors.ErrInvalidLimit
 	}
 
-	search, valid := s.normalizer.NormalizeSearch(params.Search)
-	if !valid {
-		return nil, serviceerrors.ErrInvalidSearch
+	search, err := s.normalizer.NormalizeSearch(params.Search)
+	if err != nil {
+		return nil, validationerrors.ErrInvalidSearch
 	}
 
 	page, err := s.persister.Browse(ctx, &models.BrowseChoreTemplatesParams{

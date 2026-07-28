@@ -33,7 +33,7 @@ type Persister interface {
 }
 
 type Normalizer interface {
-	NormalizeName(string) (string, bool)
-	NormalizeDescription(string) (string, bool)
-	NormalizeSearch(string) (string, bool)
+	NormalizeName(string) (string, error)
+	NormalizeDescription(string) (string, error)
+	NormalizeSearch(string) (string, error)
 }
