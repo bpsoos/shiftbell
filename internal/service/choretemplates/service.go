@@ -3,7 +3,7 @@ package choretemplates
 import (
 	"context"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 )
 
 type Service struct {

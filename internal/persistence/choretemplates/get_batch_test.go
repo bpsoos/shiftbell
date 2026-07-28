@@ -1,7 +1,7 @@
 package choretemplates_test
 
 import (
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/testsupport/sqlitetest"
 	"github.com/jmoiron/sqlx"

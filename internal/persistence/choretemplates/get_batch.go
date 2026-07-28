@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 )
 
 func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTemplateBatchResult, error) {

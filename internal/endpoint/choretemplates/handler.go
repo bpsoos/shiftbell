@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/logging"
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	"github.com/labstack/echo/v5"
 )
 

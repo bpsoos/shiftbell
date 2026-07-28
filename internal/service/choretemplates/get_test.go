@@ -3,7 +3,7 @@ package choretemplates
 import (
 	"errors"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

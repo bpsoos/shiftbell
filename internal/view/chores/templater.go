@@ -6,7 +6,8 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/logging"
-	"github.com/bpsoos/shiftbell/internal/models"
+	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
+	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
 
@@ -21,7 +22,7 @@ func (t *Templater) Table(
 	w io.Writer,
 	offset int,
 	limit int,
-	chores *models.GetChoreBatchResult,
+	chores *choremodels.GetChoreBatchResult,
 ) error {
 	return table(offset, limit, chores).Render(ctx, w)
 }
@@ -31,9 +32,9 @@ func (t *Templater) Page(
 	w io.Writer,
 	offset int,
 	limit int,
-	chores *models.GetChoreBatchResult,
-	choreTemplates *models.GetChoreTemplateBatchResult,
-	selectedChoreTemplate *models.ChoreTemplate,
+	chores *choremodels.GetChoreBatchResult,
+	choreTemplates *choretemplatemodels.GetChoreTemplateBatchResult,
+	selectedChoreTemplate *choretemplatemodels.ChoreTemplate,
 ) error {
 	return page(offset, limit, chores, choreTemplates, selectedChoreTemplate).Render(ctx, w)
 }
@@ -41,7 +42,7 @@ func (t *Templater) Page(
 func (t *Templater) Chore(
 	ctx context.Context,
 	w io.Writer,
-	chore *models.Chore,
+	chore *choremodels.Chore,
 ) error {
 	return choreCard(chore).Render(ctx, w)
 }
@@ -64,7 +65,7 @@ func (t *Templater) PageWithLayout(
 	w io.Writer,
 	offset int,
 	limit int,
-	chores *models.GetChoreBatchResult,
+	chores *choremodels.GetChoreBatchResult,
 ) error {
 	return layouts.Main().Render(
 		templ.WithChildren(
@@ -78,7 +79,7 @@ func (t *Templater) PageWithLayout(
 func (t *Templater) JoinedComponents(
 	ctx context.Context,
 	w io.Writer,
-	componentSpecifiers ...models.NewChoreTemplateComponent,
+	componentSpecifiers ...choremodels.NewChoreTemplateComponent,
 ) error {
 	components := make([]templ.Component, 0)
 	for i := range componentSpecifiers {
@@ -87,9 +88,9 @@ func (t *Templater) JoinedComponents(
 			attrs["hx-swap-oob"] = "true"
 		}
 		switch componentSpecifiers[i] {
-		case models.NewChoreTemplateComponentBaseInputs:
+		case choremodels.NewChoreTemplateComponentBaseInputs:
 			components = append(components, baseInputs(attrs))
-		case models.NewChoreTemplateComponentInputTypeSelector:
+		case choremodels.NewChoreTemplateComponentInputTypeSelector:
 			components = append(components, selectInputTypeButtonGroup(attrs))
 		default:
 			logging.Default().Error("unknown new chore template component", "component", componentSpecifiers[i])
@@ -101,9 +102,9 @@ func (t *Templater) JoinedComponents(
 }
 
 func isManual(ctx context.Context) bool {
-	return models.GetIsManual(ctx)
+	return choremodels.GetIsManual(ctx)
 }
 
-func selectedChoreTemplate(ctx context.Context) *models.ChoreTemplate {
-	return models.GetSelectedChoreTemplate(ctx)
+func selectedChoreTemplate(ctx context.Context) *choretemplatemodels.ChoreTemplate {
+	return choremodels.GetSelectedChoreTemplate(ctx)
 }

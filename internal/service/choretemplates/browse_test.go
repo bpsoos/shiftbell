@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

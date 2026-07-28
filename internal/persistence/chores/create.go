@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/chores"
 )
 
 func (p *Persister) Create(params *models.CreateChoreParams) (*models.Chore, error) {

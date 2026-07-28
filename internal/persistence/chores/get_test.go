@@ -3,7 +3,7 @@ package chores_test
 import (
 	"time"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/chores"
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
 	"github.com/bpsoos/shiftbell/internal/testsupport/sqlitetest"
 	"github.com/jmoiron/sqlx"

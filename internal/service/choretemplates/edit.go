@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
 )
 

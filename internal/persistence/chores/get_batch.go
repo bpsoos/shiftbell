@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/chores"
 )
 
 func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult, error) {

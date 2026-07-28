@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/a-h/templ"
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
 

@@ -3,7 +3,7 @@ package chores
 import (
 	"context"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/chores"
 )
 
 type Service struct {

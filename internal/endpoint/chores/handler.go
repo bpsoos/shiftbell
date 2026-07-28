@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/bpsoos/shiftbell/internal/logging"
-	"github.com/bpsoos/shiftbell/internal/models"
+	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
+	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	"github.com/labstack/echo/v5"
 )
 
@@ -18,28 +19,28 @@ type Templater interface {
 		io.Writer,
 		int,
 		int,
-		*models.GetChoreBatchResult,
+		*choremodels.GetChoreBatchResult,
 	) error
 	Chore(
 		context.Context,
 		io.Writer,
-		*models.Chore,
+		*choremodels.Chore,
 	) error
 	Page(
 		context.Context,
 		io.Writer,
 		int,
 		int,
-		*models.GetChoreBatchResult,
-		*models.GetChoreTemplateBatchResult,
-		*models.ChoreTemplate,
+		*choremodels.GetChoreBatchResult,
+		*choretemplatemodels.GetChoreTemplateBatchResult,
+		*choretemplatemodels.ChoreTemplate,
 	) error
 	PageWithLayout(
 		context.Context,
 		io.Writer,
 		int,
 		int,
-		*models.GetChoreBatchResult,
+		*choremodels.GetChoreBatchResult,
 	) error
 	NewChorePage(
 		context.Context,
@@ -48,18 +49,18 @@ type Templater interface {
 	JoinedComponents(
 		ctx context.Context,
 		w io.Writer,
-		componentSpecifiers ...models.NewChoreTemplateComponent,
+		componentSpecifiers ...choremodels.NewChoreTemplateComponent,
 	) error
 }
 
 type ChoreTemplatePersister interface {
-	Get(id int) (*models.ChoreTemplate, error)
+	Get(id int) (*choretemplatemodels.ChoreTemplate, error)
 }
 
 type Persister interface {
-	Create(params *models.CreateChoreParams) (*models.Chore, error)
-	GetBatch(offset int, limit int) (*models.GetChoreBatchResult, error)
-	Get(id int) (*models.Chore, error)
+	Create(params *choremodels.CreateChoreParams) (*choremodels.Chore, error)
+	GetBatch(offset int, limit int) (*choremodels.GetChoreBatchResult, error)
+	Get(id int) (*choremodels.Chore, error)
 	MarkComplete(id int, completedOn time.Time) error
 }
 
@@ -211,7 +212,7 @@ func (h *Handler) Create(ctx *echo.Context) error {
 		return ctx.String(http.StatusUnprocessableEntity, "invalid deadline")
 	}
 
-	_, err = h.persister.Create(&models.CreateChoreParams{
+	_, err = h.persister.Create(&choremodels.CreateChoreParams{
 		Name:        name,
 		Description: description,
 		Deadline:    deadline,
@@ -232,7 +233,7 @@ type NewChoreParams struct {
 }
 
 func (h *Handler) New(ctx *echo.Context) error {
-	ctxValues := &models.NewChoreCtxValues{
+	ctxValues := &choremodels.NewChoreCtxValues{
 		SelectedChoreTemplate: nil,
 		IsManual:              false,
 	}
@@ -268,14 +269,14 @@ func (h *Handler) New(ctx *echo.Context) error {
 	}
 
 	if ctx.QueryParams().Has("field") {
-		componentSpecifiers := make([]models.NewChoreTemplateComponent, 0)
+		componentSpecifiers := make([]choremodels.NewChoreTemplateComponent, 0)
 		for i := range params.Fields {
 			field := params.Fields[i]
 			switch field {
-			case string(models.NewChoreTemplateComponentBaseInputs):
-				componentSpecifiers = append(componentSpecifiers, models.NewChoreTemplateComponentBaseInputs)
-			case string(models.NewChoreTemplateComponentInputTypeSelector):
-				componentSpecifiers = append(componentSpecifiers, models.NewChoreTemplateComponentInputTypeSelector)
+			case string(choremodels.NewChoreTemplateComponentBaseInputs):
+				componentSpecifiers = append(componentSpecifiers, choremodels.NewChoreTemplateComponentBaseInputs)
+			case string(choremodels.NewChoreTemplateComponentInputTypeSelector):
+				componentSpecifiers = append(componentSpecifiers, choremodels.NewChoreTemplateComponentInputTypeSelector)
 			default:
 				logging.Default().Info("invalid field specified", "field", field)
 				return ctx.String(http.StatusUnprocessableEntity, "invalid field specified")
@@ -288,6 +289,6 @@ func (h *Handler) New(ctx *echo.Context) error {
 	return h.templater.NewChorePage(withNewChoreCtx(ctx, ctxValues), ctx.Response())
 }
 
-func withNewChoreCtx(ctx *echo.Context, values *models.NewChoreCtxValues) context.Context {
-	return models.WithNewChoreCtxValues(ctx.Request().Context(), values)
+func withNewChoreCtx(ctx *echo.Context, values *choremodels.NewChoreCtxValues) context.Context {
+	return choremodels.WithNewChoreCtxValues(ctx.Request().Context(), values)
 }

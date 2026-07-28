@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 )
 
 func (s *Service) Get(ctx context.Context, id int) (*models.ChoreTemplateDetails, error) {

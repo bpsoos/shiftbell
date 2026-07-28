@@ -5,7 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/bpsoos/shiftbell/internal/models"
+	models "github.com/bpsoos/shiftbell/internal/models/chores"
+	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	serviceerrors "github.com/bpsoos/shiftbell/internal/service"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -197,7 +198,7 @@ var _ = Describe("Create", func() {
 		}
 		persisted := &models.CreateChoreResult{
 			Chore:         &models.Chore{Id: 1},
-			ChoreTemplate: &models.ChoreTemplate{Id: 2},
+			ChoreTemplate: &choretemplatemodels.ChoreTemplate{Id: 2},
 		}
 		normalizer.EXPECT().NormalizeName(" raw chore name ").Return("Chore name", true).Once()
 		normalizer.EXPECT().NormalizeDescription(" raw description ").Return("Description", true).Once()
@@ -243,7 +244,7 @@ var _ = Describe("Create", func() {
 		}
 		persisted := &models.CreateChoreResult{
 			Chore:         &models.Chore{Id: 1},
-			ChoreTemplate: &models.ChoreTemplate{Id: choreTemplateId},
+			ChoreTemplate: &choretemplatemodels.ChoreTemplate{Id: choreTemplateId},
 		}
 		normalizer.EXPECT().NormalizeName(" raw schedule name ").Return("Schedule name", true).Once()
 		persister.EXPECT().

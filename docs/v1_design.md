@@ -15,7 +15,7 @@ Complex flows with multiple steps complete synchronously in a single transaction
 
 V2 would add users who can own chores and schedules that can rotate ownership.
 
-V3 would add topics such as household and photography.
+V3 would add a new resource, "topics" that separates chores into separate pages such as "household" or "photography".
 
 V4 would add permissions and read-only users.
 
@@ -29,7 +29,7 @@ The application runs its embedded database migrations on startup before serving 
 
 Deadlines and completion dates are calendar dates rather than timestamps. Date calculations use the configured application timezone.
 
-The application timezone is configured with `APP_TIMEZONE` using an IANA timezone name such as `Europe/Budapest`. It defaults to `UTC` when unset and prevents startup when explicitly configured with an invalid value. The resolved timezone is displayed in the UI.
+The application timezone is an IANA timezone name such as `Europe/Budapest`. It defaults to `UTC`. The resolved timezone is displayed in the UI.
 
 Changing the configured timezone only affects subsequent calculations of dates.
 

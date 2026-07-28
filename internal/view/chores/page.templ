@@ -1,16 +1,17 @@
 package chores
 
 import (
-	"github.com/bpsoos/shiftbell/internal/models"
+	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
+	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
 
 templ page(
 	offset int,
 	limit int,
-	results *models.GetChoreBatchResult,
-	choreTemplates *models.GetChoreTemplateBatchResult,
-	selectedChoreTemplate *models.ChoreTemplate,
+	results *choremodels.GetChoreBatchResult,
+	choreTemplates *choretemplatemodels.GetChoreTemplateBatchResult,
+	selectedChoreTemplate *choretemplatemodels.ChoreTemplate,
 ) {
 	@choreTemplateSelector()
 	@layouts.Nav("chores")
