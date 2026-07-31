@@ -1,0 +1,26 @@
+application_image := "shiftbell-acceptance-application"
+test_runner_image := "shiftbell-acceptance-test-runner"
+
+build-application:
+    docker build --file Dockerfile --target application --tag {{application_image}} ../..
+
+build-test-runner:
+    docker build --file Dockerfile --target test-runner --tag {{test_runner_image}} ../..
+
+build: build-application build-test-runner
+
+up: build
+    docker compose up --detach --wait application
+
+down:
+    docker compose down
+
+test-acceptance: up
+    docker compose run --rm --no-deps --entrypoint go test-runner \
+        tool ginkgo run \
+        --label-filter=e2e \
+        --randomize-all \
+        --fail-on-pending \
+        --fail-on-empty \
+        --trace \
+        ./test/acceptance

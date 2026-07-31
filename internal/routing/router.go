@@ -2,10 +2,14 @@ package routing
 
 import "github.com/labstack/echo/v5"
 
+type HomeHandler interface {
+	Get(*echo.Context) error
+}
+
 type ChoreTemplateHandler interface {
-	GetBatch(*echo.Context) error
-	Create(ctx *echo.Context) error
-	Delete(ctx *echo.Context) error
+	Browse(*echo.Context) error
+	Create(*echo.Context) error
+	Get(*echo.Context) error
 }
 
 type ChoreHandler interface {
@@ -17,17 +21,20 @@ type ChoreHandler interface {
 }
 
 type RouterDeps struct {
+	HomeHandler          HomeHandler
 	ChoreTemplateHandler ChoreTemplateHandler
 	ChoreHandler         ChoreHandler
 }
 
 type Router struct {
+	homeHandler          HomeHandler
 	choreTemplateHandler ChoreTemplateHandler
 	choreHandler         ChoreHandler
 }
 
 func NewRouter(deps *RouterDeps) *Router {
 	return &Router{
+		homeHandler:          deps.HomeHandler,
 		choreTemplateHandler: deps.ChoreTemplateHandler,
 		choreHandler:         deps.ChoreHandler,
 	}

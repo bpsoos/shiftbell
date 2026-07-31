@@ -10,7 +10,7 @@ import (
 func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTemplateBatchResult, error) {
 	rows, err := p.db.Query(
 		`
-			select *
+			select id, name, description
 			from chore_templates
 			order by id desc
 			limit ?

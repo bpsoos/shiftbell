@@ -54,7 +54,7 @@ type Templater interface {
 }
 
 type ChoreTemplatePersister interface {
-	Get(id int) (*choretemplatemodels.ChoreTemplate, error)
+	Get(context.Context, int) (*choretemplatemodels.ChoreTemplateDetails, error)
 }
 
 type Persister interface {
@@ -259,13 +259,13 @@ func (h *Handler) New(ctx *echo.Context) error {
 	}
 
 	if ctx.QueryParams().Has("choreTemplateId") {
-		selectedChoreTemplate, err := h.choreTemplatePersister.Get(params.ChoreTemplateId)
+		selectedChoreTemplate, err := h.choreTemplatePersister.Get(ctx.Request().Context(), params.ChoreTemplateId)
 		if err != nil {
 			logging.Default().Info("get chore template error", "err", err)
 			return ctx.String(http.StatusInternalServerError, "something went wrong")
 		}
 		logging.Default().Info("fetched chore template successfully", "chore_template_id", params.ChoreTemplateId)
-		ctxValues.SelectedChoreTemplate = selectedChoreTemplate
+		ctxValues.SelectedChoreTemplate = &selectedChoreTemplate.ChoreTemplate
 	}
 
 	if ctx.QueryParams().Has("field") {

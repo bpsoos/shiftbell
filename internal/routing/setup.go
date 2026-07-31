@@ -14,15 +14,15 @@ func (r *Router) Setup(app *echo.Echo) error {
 	}
 	app.StaticFS("/styles", stylesFs)
 
-	app.GET("/", r.choreHandler.GetBatch)
+	app.GET("/", r.homeHandler.Get)
 	app.GET("/chores", r.choreHandler.GetBatch)
 	app.GET("/chores/new", r.choreHandler.New)
 	app.POST("/chores", r.choreHandler.Create)
 	app.GET("/chores/:id", r.choreHandler.Get)
 	app.PATCH("/chores/:id", r.choreHandler.Patch)
 
-	app.GET("/choretemplates", r.choreTemplateHandler.GetBatch)
-	app.POST("/choretemplates", r.choreTemplateHandler.Create)
-	app.DELETE("/choretemplates/:id", r.choreTemplateHandler.Delete)
+	app.POST("/chore-templates", r.choreTemplateHandler.Create)
+	app.GET("/chore-templates", r.choreTemplateHandler.Browse)
+	app.GET("/chore-templates/:id", r.choreTemplateHandler.Get)
 	return nil
 }

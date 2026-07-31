@@ -21,11 +21,11 @@ var _ = Describe("Get", func() {
 	})
 
 	Context("with no chore templates", func() {
-		It("returns an error", func() {
-			result, err := persister.Get(1)
+		It("returns an error", func(ctx SpecContext) {
+			result, err := persister.Get(ctx, 1)
 
 			Expect(result).To(BeNil())
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(models.ErrNotFound))
 		})
 	})
 
@@ -35,11 +35,11 @@ var _ = Describe("Get", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("returns the chore template", func() {
-			result, err := persister.Get(1)
+		It("returns the chore template", func(ctx SpecContext) {
+			result, err := persister.Get(ctx, 1)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(&models.ChoreTemplate{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}))
+			Expect(result).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}}))
 		})
 	})
 
@@ -49,11 +49,11 @@ var _ = Describe("Get", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("returns an empty description", func() {
-			result, err := persister.Get(1)
+		It("returns an empty description", func(ctx SpecContext) {
+			result, err := persister.Get(ctx, 1)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(&models.ChoreTemplate{Id: 1, Name: "Laundry", Description: ""}))
+			Expect(result).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 1, Name: "Laundry"}}))
 		})
 	})
 
@@ -69,11 +69,11 @@ var _ = Describe("Get", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("returns the requested chore template", func() {
-			result, err := persister.Get(2)
+		It("returns the requested chore template", func(ctx SpecContext) {
+			result, err := persister.Get(ctx, 2)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(&models.ChoreTemplate{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}))
+			Expect(result).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}}))
 		})
 	})
 })

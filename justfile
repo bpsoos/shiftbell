@@ -54,10 +54,13 @@ fmt:
         -c "go fmt ./... && go tool templ fmt ."
 
 test:
-    just go tool ginkgo run -r -p --randomize-all --randomize-suites
+    just go tool ginkgo run -r -p --randomize-all --randomize-suites --skip-package=test/acceptance
 
 test-ci:
-    just go tool ginkgo run -r -v -p --randomize-all --randomize-suites --fail-on-pending --fail-on-empty --keep-going
+    just go tool ginkgo run -r -v -p --randomize-all --randomize-suites --fail-on-pending --fail-on-empty --keep-going --skip-package=test/acceptance
+
+test-acceptance:
+    just --justfile test/acceptance/justfile test-acceptance
 
 mockery *args:
     docker run --rm \

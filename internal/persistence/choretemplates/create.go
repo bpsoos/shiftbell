@@ -1,29 +1,36 @@
 package choretemplates
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 )
 
-func (p *Persister) Create(name string, description string) error {
+func (p *Persister) Create(ctx context.Context, params *models.CreateChoreTemplateParams) (*models.ChoreTemplate, error) {
 	var sqlDesc sql.NullString
-	if description != "" {
+	if params.Description != "" {
 		sqlDesc = sql.NullString{
-			String: description,
+			String: params.Description,
 			Valid:  true,
 		}
 	}
-	_, err := p.db.NamedExec(`
+	result, err := p.db.ExecContext(ctx, `
 		insert into chore_templates (name, description)
-		values (:name, :description)
-	`, map[string]any{
-		"description": sqlDesc,
-		"name":        name,
-	})
-
+		values (?, ?)
+	`, params.Name, sqlDesc)
 	if err != nil {
-		return fmt.Errorf("db exec inserting chore templates: %v", err)
+		return nil, fmt.Errorf("insert chore template: %w", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("read inserted chore template id: %w", err)
 	}
 
-	return nil
+	return &models.ChoreTemplate{
+		Id:          int(id),
+		Name:        params.Name,
+		Description: params.Description,
+	}, nil
 }

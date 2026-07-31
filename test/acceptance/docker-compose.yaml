@@ -1,0 +1,22 @@
+services:
+  application:
+    image: shiftbell-acceptance-application
+    environment:
+      APP_TIMEZONE: UTC
+      DATABASE_FILEPATH: /data/acceptance.db
+      LOG_FORMAT: text
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider --header='Accept: application/vnd.shiftbell+json' http://localhost/"]
+      interval: 1s
+      timeout: 1s
+      retries: 30
+
+  test-runner:
+    image: shiftbell-acceptance-test-runner
+    environment:
+      SHIFTBELL_BASE_URL: http://application
+    depends_on:
+      application:
+        condition: service_healthy

@@ -7,13 +7,15 @@ import (
 	"github.com/bpsoos/shiftbell/internal/database"
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
+	"github.com/bpsoos/shiftbell/internal/endpoint/home"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	"github.com/bpsoos/shiftbell/internal/migrations"
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
 	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/routing"
+	choretemplatesservice "github.com/bpsoos/shiftbell/internal/service/choretemplates"
+	"github.com/bpsoos/shiftbell/internal/service/normalization"
 	choresview "github.com/bpsoos/shiftbell/internal/view/chores"
-	choretemplatesview "github.com/bpsoos/shiftbell/internal/view/choretemplates"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -48,10 +50,17 @@ func execute() int {
 		Db: db,
 	})
 
-	choreTemplatesTemplater := choretemplatesview.NewTemplater()
+	normalizer := normalization.New(normalization.Config{
+		NameLimit:        200,
+		DescriptionLimit: 2000,
+		SearchLimit:      200,
+	})
+	choreTemplateService := choretemplatesservice.NewService(&choretemplatesservice.Deps{
+		Persister:  choreTemplatePersister,
+		Normalizer: normalizer,
+	}, &choretemplatesservice.Config{})
 	choreTemplatesHandler := choretemplatesendpoint.NewHandler(&choretemplatesendpoint.HandlerDeps{
-		Templater:              choreTemplatesTemplater,
-		ChoreTemplatePersister: choreTemplatePersister,
+		Service: choreTemplateService,
 	})
 
 	choresPersister := chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
@@ -63,6 +72,7 @@ func execute() int {
 	})
 
 	router := routing.NewRouter(&routing.RouterDeps{
+		HomeHandler:          home.NewHandler(),
 		ChoreHandler:         choresHandler,
 		ChoreTemplateHandler: choreTemplatesHandler,
 	})
