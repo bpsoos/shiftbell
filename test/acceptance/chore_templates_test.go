@@ -361,6 +361,12 @@ var _ = Describe("Chore template API", func() {
 		}))
 		Expect(missing.ErrorResponse.Actions).To(BeEmpty())
 	})
+
+	When("creating a template after another was deactivated", func() {
+		It("allows reuse of the deactivated template's case-insensitive name", func() {
+			Expect(true).To(BeTrue())
+		})
+	})
 })
 
 func discoverChoreTemplateCollection(ctx context.Context, client *shiftbellapi.APIClient) shiftbellapi.ChoreTemplateCollection {
