@@ -1,6 +1,11 @@
 package chores
 
-import "github.com/jmoiron/sqlx"
+import (
+	"context"
+
+	models "github.com/bpsoos/shiftbell/internal/models/chores"
+	"github.com/jmoiron/sqlx"
+)
 
 type Persister struct {
 	db *sqlx.DB
@@ -14,4 +19,50 @@ func NewPersister(deps *PersisterDeps) *Persister {
 	return &Persister{
 		db: deps.Db,
 	}
+}
+
+func (p *Persister) CreateManualScheduled(
+	_ context.Context,
+	_ *models.CreateManualScheduledParams,
+) (*models.CreateChoreResult, error) {
+	return nil, nil
+}
+
+func (p *Persister) CreateTemplateScheduled(
+	_ context.Context,
+	_ *models.CreateTemplateScheduledParams,
+) (*models.CreateChoreResult, error) {
+	return nil, nil
+}
+
+func (p *Persister) EditOneOff(
+	_ context.Context,
+	_ *models.EditOneOffChoreParams,
+) (*models.EditChoreResult, error) {
+	return nil, nil
+}
+
+func (p *Persister) EditScheduled(
+	_ context.Context,
+	_ *models.EditScheduledChoreParams,
+) (*models.EditChoreResult, error) {
+	return nil, nil
+}
+
+func (p *Persister) Complete(
+	_ context.Context,
+	_ *models.CompleteChoreParams,
+) (*models.CompleteChoreResult, error) {
+	return nil, nil
+}
+
+func (p *Persister) CorrectCompletion(
+	_ context.Context,
+	_ *models.CorrectCompletionParams,
+) (*models.CorrectCompletionResult, error) {
+	return nil, nil
+}
+
+func (p *Persister) Delete(_ context.Context, _ int) error {
+	return nil
 }

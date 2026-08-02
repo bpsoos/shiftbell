@@ -40,8 +40,8 @@ var _ = Describe("Get", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("returns the active chore", func() {
-			result, err := persister.Get(1)
+		It("returns the active chore", func(ctx SpecContext) {
+			result, err := persister.Get(ctx, 1)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(&models.Chore{
@@ -75,8 +75,8 @@ var _ = Describe("Get", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("returns the completed chore", func() {
-			result, err := persister.Get(1)
+		It("returns the completed chore", func(ctx SpecContext) {
+			result, err := persister.Get(ctx, 1)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(&models.Chore{

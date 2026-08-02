@@ -13,6 +13,7 @@ import (
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
 	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/routing"
+	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	choretemplatesservice "github.com/bpsoos/shiftbell/internal/service/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/service/normalization"
 	choresview "github.com/bpsoos/shiftbell/internal/view/chores"
@@ -62,10 +63,13 @@ func execute() int {
 		DescriptionLimit: 2000,
 		SearchLimit:      200,
 	})
-	choreTemplateService := choretemplatesservice.NewService(&choretemplatesservice.Deps{
-		Persister:  choreTemplatePersister,
-		Normalizer: normalizer,
-	}, &choretemplatesservice.Config{})
+	choreTemplateService := choretemplatesservice.NewService(
+		&choretemplatesservice.Deps{
+			Persister:  choreTemplatePersister,
+			Normalizer: normalizer,
+		},
+		&choretemplatesservice.Config{},
+	)
 	choreTemplatesHandler := choretemplatesendpoint.NewHandler(
 		&choretemplatesendpoint.HandlerDeps{
 			Service: choreTemplateService,
@@ -76,9 +80,17 @@ func execute() int {
 		&chorespersistence.PersisterDeps{Db: db},
 	)
 	choresTemplater := choresview.NewTemplater()
+	choresService := choresservice.NewService(
+		&choresservice.Deps{
+			Persister:  choresPersister,
+			Normalizer: normalizer,
+		},
+		&choresservice.Config{AppTimezone: appConfig.AppTimezone},
+	)
 	choresHandler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
 		Templater:              choresTemplater,
 		Persister:              choresPersister,
+		Service:                choresService,
 		ChoreTemplatePersister: choreTemplatePersister,
 	})
 

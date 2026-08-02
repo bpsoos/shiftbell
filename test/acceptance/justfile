@@ -1,6 +1,9 @@
 application_image := "shiftbell-acceptance-application"
 test_runner_image := "shiftbell-acceptance-test-runner"
 
+default:
+    just --list
+
 build-application:
     docker build --file Dockerfile --target application --tag {{application_image}} ../..
 
@@ -15,7 +18,7 @@ up: build
 down:
     docker compose down
 
-test-acceptance: up
+test: up
     docker compose run --rm --no-deps --entrypoint go test-runner \
         tool ginkgo run \
         --label-filter=e2e \

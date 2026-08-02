@@ -1,50 +1,48 @@
 package chores
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
 )
 
-func (p *Persister) Get(id int) (*models.Chore, error) {
-	row := p.db.QueryRow(
-		`
-			select name,
-				description,
-				completed_on,
-				deadline
-			from chores
-			where id = $1
-		`,
-		id,
-	)
-
+func (p *Persister) Get(ctx context.Context, id int) (*models.Chore, error) {
 	var (
-		name                string
-		description         sql.NullString
-		status              = models.ChoreStatusActive
-		deadline            time.Time
-		completedOnNullable sql.NullTime
-		completedOn         time.Time
+		name        string
+		description sql.NullString
+		isComplete  bool
+		completedOn sql.NullTime
+		deadline    time.Time
 	)
-	err := row.Scan(&name, &description, &completedOnNullable, &deadline)
+	err := p.db.QueryRowContext(ctx, `
+		select name, description, is_complete, completed_on, deadline
+		from chores
+		where id = ?
+	`, id).Scan(&name, &description, &isComplete, &completedOn, &deadline)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, models.ErrNotFound
+	}
 	if err != nil {
-		return nil, fmt.Errorf("get chore query: %w", err)
+		return nil, fmt.Errorf("get chore: %w", err)
 	}
 
-	if completedOnNullable.Valid {
-		completedOn = completedOnNullable.Time
+	status := models.ChoreStatusActive
+	if isComplete {
 		status = models.ChoreStatusCompleted
 	}
-
-	return &models.Chore{
+	chore := &models.Chore{
 		Id:          id,
-		Name:        name,
 		Status:      status,
+		Name:        name,
 		Description: description.String,
-		CompletedOn: completedOn,
 		Deadline:    deadline,
-	}, nil
+	}
+	if completedOn.Valid {
+		chore.CompletedOn = completedOn.Time
+	}
+	return chore, nil
 }

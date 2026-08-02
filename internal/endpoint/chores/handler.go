@@ -61,7 +61,7 @@ type ChoreTemplatePersister interface {
 type Persister interface {
 	Create(params *choremodels.CreateOneOffChoreParams) (*choremodels.Chore, error)
 	GetBatch(offset int, limit int) (*choremodels.GetChoreBatchResult, error)
-	Get(id int) (*choremodels.Chore, error)
+	Get(context.Context, int) (*choremodels.Chore, error)
 	MarkComplete(id int, completedOn time.Time) error
 }
 
@@ -115,7 +115,7 @@ func (h *Handler) Get(ctx *echo.Context) error {
 		return ctx.String(http.StatusUnprocessableEntity, "invalid id")
 	}
 
-	chore, err := h.persister.Get(id)
+	chore, err := h.persister.Get(ctx.Request().Context(), id)
 	if err != nil {
 		logging.Default().Error("get batch error", "err", err)
 		return ctx.String(http.StatusInternalServerError, "something went wrong")
