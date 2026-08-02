@@ -7,7 +7,10 @@ import (
 	"net/http"
 )
 
-func (c *APIClient) GetChoreTemplates(ctx context.Context, href string) (*GetChoreTemplatesResult, error) {
+func (c *APIClient) GetChoreTemplates(
+	ctx context.Context,
+	href string,
+) (*GetChoreTemplatesResult, error) {
 	request, err := c.newRequest(ctx, http.MethodGet, href, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create get chore templates request: %w", err)

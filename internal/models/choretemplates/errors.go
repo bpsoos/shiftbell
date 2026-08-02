@@ -15,7 +15,10 @@ type NameConflictError struct {
 }
 
 func (e *NameConflictError) Error() string {
-	return fmt.Sprintf("chore template name conflicts with active chore template %d", e.ExistingId)
+	return fmt.Sprintf(
+		"chore template name conflicts with active chore template %d",
+		e.ExistingId,
+	)
 }
 
 type ActiveScheduleReference struct {
@@ -28,5 +31,8 @@ type ActiveScheduleReferencesError struct {
 }
 
 func (e *ActiveScheduleReferencesError) Error() string {
-	return fmt.Sprintf("chore template has %d active schedule references", len(e.Schedules))
+	return fmt.Sprintf(
+		"chore template has %d active schedule references",
+		len(e.Schedules),
+	)
 }

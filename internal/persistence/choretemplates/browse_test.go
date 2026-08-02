@@ -39,21 +39,24 @@ var _ = Describe("Browse", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("returns active chore templates newest first and reports another page", func(ctx SpecContext) {
-		page, err := persister.Browse(ctx, &models.BrowseChoreTemplatesParams{
-			Filter: models.ChoreTemplateFilterActive,
-			Limit:  2,
-		})
+	It(
+		"returns active chore templates newest first and reports another page",
+		func(ctx SpecContext) {
+			page, err := persister.Browse(ctx, &models.BrowseChoreTemplatesParams{
+				Filter: models.ChoreTemplateFilterActive,
+				Limit:  2,
+			})
 
-		Expect(err).NotTo(HaveOccurred())
-		Expect(page).To(Equal(&models.ChoreTemplatePage{
-			ChoreTemplates: []models.ChoreTemplate{
-				{Id: 3, Name: "Floors"},
-				{Id: 2, Name: "Dishes", Description: "Load the dishwasher"},
-			},
-			More: true,
-		}))
-	})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(page).To(Equal(&models.ChoreTemplatePage{
+				ChoreTemplates: []models.ChoreTemplate{
+					{Id: 3, Name: "Floors"},
+					{Id: 2, Name: "Dishes", Description: "Load the dishwasher"},
+				},
+				More: true,
+			}))
+		},
+	)
 
 	It("applies the offset and reports the final active page", func(ctx SpecContext) {
 		page, err := persister.Browse(ctx, &models.BrowseChoreTemplatesParams{
@@ -71,25 +74,28 @@ var _ = Describe("Browse", func() {
 		}))
 	})
 
-	It("returns deactivated chore templates with their deactivation time", func(ctx SpecContext) {
-		page, err := persister.Browse(ctx, &models.BrowseChoreTemplatesParams{
-			Filter: models.ChoreTemplateFilterDeactivated,
-			Limit:  10,
-		})
+	It(
+		"returns deactivated chore templates with their deactivation time",
+		func(ctx SpecContext) {
+			page, err := persister.Browse(ctx, &models.BrowseChoreTemplatesParams{
+				Filter: models.ChoreTemplateFilterDeactivated,
+				Limit:  10,
+			})
 
-		Expect(err).NotTo(HaveOccurred())
-		Expect(page).To(Equal(&models.ChoreTemplatePage{
-			ChoreTemplates: []models.ChoreTemplate{
-				{
-					Id:            4,
-					Name:          "Archived",
-					Description:   "No longer used",
-					DeactivatedAt: &deactivatedAt,
+			Expect(err).NotTo(HaveOccurred())
+			Expect(page).To(Equal(&models.ChoreTemplatePage{
+				ChoreTemplates: []models.ChoreTemplate{
+					{
+						Id:            4,
+						Name:          "Archived",
+						Description:   "No longer used",
+						DeactivatedAt: &deactivatedAt,
+					},
 				},
-			},
-			More: false,
-		}))
-	})
+				More: false,
+			}))
+		},
+	)
 
 	It("searches chore template names case-insensitively", func(ctx SpecContext) {
 		page, err := persister.Browse(ctx, &models.BrowseChoreTemplatesParams{

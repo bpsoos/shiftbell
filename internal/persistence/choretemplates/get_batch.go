@@ -7,7 +7,10 @@ import (
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 )
 
-func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTemplateBatchResult, error) {
+func (p *Persister) GetBatch(
+	offset int,
+	limit int,
+) (*models.GetChoreTemplateBatchResult, error) {
 	rows, err := p.db.Query(
 		`
 			select id, name, description
@@ -20,7 +23,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTemplateBat
 		offset,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("db query selecting chore templates: %v", err)
+		return nil, fmt.Errorf("db query selecting chore templates: %w", err)
 	}
 	var (
 		id          int
@@ -31,7 +34,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreTemplateBat
 	for rows.Next() {
 		err := rows.Scan(&id, &name, &description)
 		if err != nil {
-			return nil, fmt.Errorf("reading fetched rows: %v", err)
+			return nil, fmt.Errorf("reading fetched rows: %w", err)
 		}
 		desc := ""
 		if description.Valid {

@@ -10,7 +10,7 @@ import (
 func (r *Router) Setup(app *echo.Echo) error {
 	stylesFs, err := static.Styles()
 	if err != nil {
-		return fmt.Errorf("styles: %v", err)
+		return fmt.Errorf("styles: %w", err)
 	}
 	app.StaticFS("/styles", stylesFs)
 

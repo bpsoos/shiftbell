@@ -28,9 +28,12 @@ var _ = Describe("Chore API", func() {
 			Entry("missing deadline"),
 		)
 
-		It("does not create a chore when save-as-template conflicts with an active template", func() {
-			Expect(true).To(BeTrue())
-		})
+		It(
+			"does not create a chore when save-as-template conflicts with an active template",
+			func() {
+				Expect(true).To(BeTrue())
+			},
+		)
 
 		It("does not create a chore from a deactivated template", func() {
 			Expect(true).To(BeTrue())

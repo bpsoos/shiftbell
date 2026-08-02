@@ -45,7 +45,12 @@ func decodeErrorResponse(responseBody []byte) (*ErrorResponse, error) {
 	return &response, nil
 }
 
-func (c *APIClient) newRequest(ctx context.Context, method string, href string, body io.Reader) (*http.Request, error) {
+func (c *APIClient) newRequest(
+	ctx context.Context,
+	method string,
+	href string,
+	body io.Reader,
+) (*http.Request, error) {
 	baseURL, err := url.Parse(c.baseURL + "/")
 	if err != nil {
 		return nil, fmt.Errorf("parse base URL: %w", err)
@@ -54,7 +59,12 @@ func (c *APIClient) newRequest(ctx context.Context, method string, href string, 
 	if err != nil {
 		return nil, fmt.Errorf("parse reference: %w", err)
 	}
-	request, err := http.NewRequestWithContext(ctx, method, baseURL.ResolveReference(reference).String(), body)
+	request, err := http.NewRequestWithContext(
+		ctx,
+		method,
+		baseURL.ResolveReference(reference).String(),
+		body,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +72,10 @@ func (c *APIClient) newRequest(ctx context.Context, method string, href string, 
 	return request, nil
 }
 
-func (c *APIClient) do(request *http.Request, expectedStatus int) (http.Header, []byte, error) {
+func (c *APIClient) do(
+	request *http.Request,
+	expectedStatus int,
+) (http.Header, []byte, error) {
 	statusCode, header, responseBody, err := c.doResponse(request)
 	if err != nil {
 		return nil, nil, err

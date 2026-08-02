@@ -20,7 +20,9 @@ var _ = Describe("MarkComplete", func() {
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
+		persister = chorespersistence.NewPersister(
+			&chorespersistence.PersisterDeps{Db: db},
+		)
 		completedOn = time.Date(2026, time.July, 19, 0, 0, 0, 0, time.UTC)
 		deadline = time.Date(2026, time.July, 20, 0, 0, 0, 0, time.UTC)
 	})
@@ -86,7 +88,10 @@ var _ = Describe("MarkComplete", func() {
 			Expect(persister.MarkComplete(99, completedOn)).To(Succeed())
 
 			var count int
-			Expect(db.QueryRow(`select count(*) from chores where is_complete = true`).Scan(&count)).To(Succeed())
+			Expect(
+				db.QueryRow(`select count(*) from chores where is_complete = true`).
+					Scan(&count),
+			).To(Succeed())
 			Expect(count).To(Equal(0))
 		})
 	})

@@ -8,12 +8,20 @@ import (
 	"net/http"
 )
 
-func (c *APIClient) EditChoreTemplate(ctx context.Context, params EditChoreTemplateParams) (*EditChoreTemplateResult, error) {
+func (c *APIClient) EditChoreTemplate(
+	ctx context.Context,
+	params EditChoreTemplateParams,
+) (*EditChoreTemplateResult, error) {
 	requestBody, err := json.Marshal(params)
 	if err != nil {
 		return nil, fmt.Errorf("encode edit chore template request: %w", err)
 	}
-	request, err := c.newRequest(ctx, params.Action.Method, params.Action.Href, bytes.NewReader(requestBody))
+	request, err := c.newRequest(
+		ctx,
+		params.Action.Method,
+		params.Action.Href,
+		bytes.NewReader(requestBody),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("create edit chore template request: %w", err)
 	}
@@ -34,6 +42,9 @@ func (c *APIClient) EditChoreTemplate(ctx context.Context, params EditChoreTempl
 	if err := json.Unmarshal(responseBody, &representation); err != nil {
 		return nil, fmt.Errorf("decode edit chore template response: %w", err)
 	}
-	result.SuccessResponse = &EditChoreTemplateResponse{ChoreTemplate: representation.ChoreTemplate, Actions: representation.Actions}
+	result.SuccessResponse = &EditChoreTemplateResponse{
+		ChoreTemplate: representation.ChoreTemplate,
+		Actions:       representation.Actions,
+	}
 	return result, nil
 }

@@ -17,22 +17,37 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 
 	offset, err := strconv.Atoi(ctx.QueryParamOr("offset", "0"))
 	if err != nil {
-		return hypermedia.JSON(ctx, http.StatusUnprocessableEntity, errorResponse{Error: "invalid offset"})
+		return hypermedia.JSON(
+			ctx,
+			http.StatusUnprocessableEntity,
+			errorResponse{Error: "invalid offset"},
+		)
 	}
 	limit, err := strconv.Atoi(ctx.QueryParamOr("limit", "20"))
 	if err != nil {
-		return hypermedia.JSON(ctx, http.StatusUnprocessableEntity, errorResponse{Error: "invalid limit"})
+		return hypermedia.JSON(
+			ctx,
+			http.StatusUnprocessableEntity,
+			errorResponse{Error: "invalid limit"},
+		)
 	}
 
-	page, err := h.service.Browse(ctx.Request().Context(), &models.BrowseChoreTemplatesParams{
-		Filter: models.ChoreTemplateFilter(ctx.QueryParamOr("state", "")),
-		Search: ctx.QueryParamOr("search", ""),
-		Offset: offset,
-		Limit:  limit,
-	})
+	page, err := h.service.Browse(
+		ctx.Request().Context(),
+		&models.BrowseChoreTemplatesParams{
+			Filter: models.ChoreTemplateFilter(ctx.QueryParamOr("state", "")),
+			Search: ctx.QueryParamOr("search", ""),
+			Offset: offset,
+			Limit:  limit,
+		},
+	)
 	if err != nil {
 		logging.Default().Error("browse chore templates", "err", err)
-		return hypermedia.JSON(ctx, http.StatusInternalServerError, errorResponse{Error: "something went wrong"})
+		return hypermedia.JSON(
+			ctx,
+			http.StatusInternalServerError,
+			errorResponse{Error: "something went wrong"},
+		)
 	}
 
 	items := make([]response, len(page.ChoreTemplates))

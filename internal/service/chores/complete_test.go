@@ -51,7 +51,9 @@ var _ = Describe("Complete", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(BeIdenticalTo(persisted))
-		Expect(input).To(Equal(&models.CompleteChoreParams{Id: 42, CompletedOn: completedOn}))
+		Expect(
+			input,
+		).To(Equal(&models.CompleteChoreParams{Id: 42, CompletedOn: completedOn}))
 	})
 
 	It("completes a scheduled chore and returns its successor", func(ctx SpecContext) {
@@ -79,7 +81,9 @@ var _ = Describe("Complete", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(BeIdenticalTo(persisted))
-		Expect(input).To(Equal(&models.CompleteChoreParams{Id: 42, CompletedOn: completedOn}))
+		Expect(
+			input,
+		).To(Equal(&models.CompleteChoreParams{Id: 42, CompletedOn: completedOn}))
 	})
 
 	It("rejects a completion date after the application-local current date", func() {
@@ -93,7 +97,10 @@ var _ = Describe("Complete", func() {
 	})
 
 	It("rejects a missing completion date", func() {
-		result, err := service.Complete(GinkgoT().Context(), &models.CompleteChoreParams{Id: 42})
+		result, err := service.Complete(
+			GinkgoT().Context(),
+			&models.CompleteChoreParams{Id: 42},
+		)
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidCompletionDate))

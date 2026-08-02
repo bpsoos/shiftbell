@@ -17,7 +17,9 @@ var _ = Describe("GetBatch", func() {
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = choretemplatespersistence.NewChoreTemplatePersister(&choretemplatespersistence.PersisterDeps{Db: db})
+		persister = choretemplatespersistence.NewChoreTemplatePersister(
+			&choretemplatespersistence.PersisterDeps{Db: db},
+		)
 	})
 
 	Context("with no chore templates", func() {
@@ -32,7 +34,12 @@ var _ = Describe("GetBatch", func() {
 
 	Context("with one chore template", func() {
 		BeforeEach(func() {
-			_, err := db.Exec(`insert into chore_templates (id, name, description) values (?, ?, ?)`, 1, "Laundry", nil)
+			_, err := db.Exec(
+				`insert into chore_templates (id, name, description) values (?, ?, ?)`,
+				1,
+				"Laundry",
+				nil,
+			)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -41,7 +48,9 @@ var _ = Describe("GetBatch", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.ChoreTemplates).To(HaveLen(1))
-			Expect(result.ChoreTemplates[0]).To(Equal(models.ChoreTemplate{Id: 1, Name: "Laundry", Description: ""}))
+			Expect(
+				result.ChoreTemplates[0],
+			).To(Equal(models.ChoreTemplate{Id: 1, Name: "Laundry", Description: ""}))
 			Expect(result.More).To(BeFalse())
 		})
 	})
@@ -65,7 +74,9 @@ var _ = Describe("GetBatch", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.ChoreTemplates).To(HaveLen(1))
-			Expect(result.ChoreTemplates[0]).To(Equal(models.ChoreTemplate{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}))
+			Expect(
+				result.ChoreTemplates[0],
+			).To(Equal(models.ChoreTemplate{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}))
 			Expect(result.More).To(BeTrue())
 		})
 

@@ -26,7 +26,11 @@ var _ = Describe("Deactivate", func() {
 	})
 
 	It("permanently deactivates a chore template", func(ctx SpecContext) {
-		persisted := &models.ChoreTemplate{Id: 42, Name: "Laundry", DeactivatedAt: &deactivatedAt}
+		persisted := &models.ChoreTemplate{
+			Id:            42,
+			Name:          "Laundry",
+			DeactivatedAt: &deactivatedAt,
+		}
 		persister.EXPECT().Deactivate(ctx, &models.DeactivateChoreTemplateParams{
 			Id:            42,
 			DeactivatedAt: deactivatedAt,
@@ -38,20 +42,25 @@ var _ = Describe("Deactivate", func() {
 		Expect(result).To(BeIdenticalTo(persisted))
 	})
 
-	It("preserves active schedule references that block deactivation", func(ctx SpecContext) {
-		blocked := &models.ActiveScheduleReferencesError{Schedules: []models.ActiveScheduleReference{
-			{Id: 7, Name: "Every two weeks"},
-		}}
-		persister.EXPECT().Deactivate(ctx, &models.DeactivateChoreTemplateParams{
-			Id:            42,
-			DeactivatedAt: deactivatedAt,
-		}).Return(nil, blocked).Once()
+	It(
+		"preserves active schedule references that block deactivation",
+		func(ctx SpecContext) {
+			blocked := &models.ActiveScheduleReferencesError{
+				Schedules: []models.ActiveScheduleReference{
+					{Id: 7, Name: "Every two weeks"},
+				},
+			}
+			persister.EXPECT().Deactivate(ctx, &models.DeactivateChoreTemplateParams{
+				Id:            42,
+				DeactivatedAt: deactivatedAt,
+			}).Return(nil, blocked).Once()
 
-		result, err := service.Deactivate(ctx, 42)
+			result, err := service.Deactivate(ctx, 42)
 
-		Expect(result).To(BeNil())
-		var actual *models.ActiveScheduleReferencesError
-		Expect(errors.As(err, &actual)).To(BeTrue())
-		Expect(actual).To(BeIdenticalTo(blocked))
-	})
+			Expect(result).To(BeNil())
+			var actual *models.ActiveScheduleReferencesError
+			Expect(errors.As(err, &actual)).To(BeTrue())
+			Expect(actual).To(BeIdenticalTo(blocked))
+		},
+	)
 })

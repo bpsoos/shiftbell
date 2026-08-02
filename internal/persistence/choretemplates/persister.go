@@ -22,10 +22,16 @@ func NewChoreTemplatePersister(deps *PersisterDeps) *Persister {
 	}
 }
 
-func (p *Persister) Edit(context.Context, *models.EditChoreTemplateParams) (*models.ChoreTemplate, error) {
+func (p *Persister) Edit(
+	context.Context,
+	*models.EditChoreTemplateParams,
+) (*models.ChoreTemplate, error) {
 	return nil, errors.ErrUnsupported
 }
 
-func (p *Persister) Deactivate(context.Context, *models.DeactivateChoreTemplateParams) (*models.ChoreTemplate, error) {
+func (p *Persister) Deactivate(
+	context.Context,
+	*models.DeactivateChoreTemplateParams,
+) (*models.ChoreTemplate, error) {
 	return nil, errors.ErrUnsupported
 }

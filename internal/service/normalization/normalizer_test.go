@@ -40,7 +40,8 @@ var _ = Describe("Normalizer", func() {
 			Expect(value).To(Equal("ééé"))
 		})
 
-		DescribeTable("rejects an invalid name",
+		DescribeTable(
+			"rejects an invalid name",
 			func(value string, expected error) {
 				normalized, err := normalizer.NormalizeName(value)
 
@@ -49,9 +50,17 @@ var _ = Describe("Normalizer", func() {
 			},
 			Entry("when empty", "", validationerrors.ErrRequired),
 			Entry("when whitespace only", " \t\n ", validationerrors.ErrRequired),
-			Entry("when invalid UTF-8", string([]byte{0xff}), validationerrors.ErrInvalidUTF8),
+			Entry(
+				"when invalid UTF-8",
+				string([]byte{0xff}),
+				validationerrors.ErrInvalidUTF8,
+			),
 			Entry("when over the configured limit", "abcd", validationerrors.ErrTooLong),
-			Entry("when containing a line break", "a\nb", validationerrors.ErrDisallowedCharacter),
+			Entry(
+				"when containing a line break",
+				"a\nb",
+				validationerrors.ErrDisallowedCharacter,
+			),
 		)
 	})
 
@@ -84,16 +93,29 @@ var _ = Describe("Normalizer", func() {
 			Expect(value).To(Equal("ééééé"))
 		})
 
-		DescribeTable("rejects an invalid description",
+		DescribeTable(
+			"rejects an invalid description",
 			func(value string, expected error) {
 				normalized, err := normalizer.NormalizeDescription(value)
 
 				Expect(err).To(MatchError(expected))
 				Expect(normalized).To(BeEmpty())
 			},
-			Entry("when invalid UTF-8", string([]byte{0xff}), validationerrors.ErrInvalidUTF8),
-			Entry("when over the configured limit", "abcdef", validationerrors.ErrTooLong),
-			Entry("when containing a control character", "a\x00b", validationerrors.ErrDisallowedCharacter),
+			Entry(
+				"when invalid UTF-8",
+				string([]byte{0xff}),
+				validationerrors.ErrInvalidUTF8,
+			),
+			Entry(
+				"when over the configured limit",
+				"abcdef",
+				validationerrors.ErrTooLong,
+			),
+			Entry(
+				"when containing a control character",
+				"a\x00b",
+				validationerrors.ErrDisallowedCharacter,
+			),
 		)
 	})
 
@@ -126,16 +148,25 @@ var _ = Describe("Normalizer", func() {
 			Expect(value).To(Equal("ééé"))
 		})
 
-		DescribeTable("rejects an invalid search",
+		DescribeTable(
+			"rejects an invalid search",
 			func(value string, expected error) {
 				normalized, err := normalizer.NormalizeSearch(value)
 
 				Expect(err).To(MatchError(expected))
 				Expect(normalized).To(BeEmpty())
 			},
-			Entry("when invalid UTF-8", string([]byte{0xff}), validationerrors.ErrInvalidUTF8),
+			Entry(
+				"when invalid UTF-8",
+				string([]byte{0xff}),
+				validationerrors.ErrInvalidUTF8,
+			),
 			Entry("when over the configured limit", "abcd", validationerrors.ErrTooLong),
-			Entry("when containing a line break", "a\nb", validationerrors.ErrDisallowedCharacter),
+			Entry(
+				"when containing a line break",
+				"a\nb",
+				validationerrors.ErrDisallowedCharacter,
+			),
 		)
 	})
 })

@@ -10,7 +10,10 @@ import (
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 )
 
-func (p *Persister) Get(ctx context.Context, id int) (*models.ChoreTemplateDetails, error) {
+func (p *Persister) Get(
+	ctx context.Context,
+	id int,
+) (*models.ChoreTemplateDetails, error) {
 	row := p.db.QueryRowContext(
 		ctx,
 		`

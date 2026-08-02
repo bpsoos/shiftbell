@@ -8,7 +8,10 @@ import (
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 )
 
-func (s *Service) Browse(ctx context.Context, params *models.BrowseChoreTemplatesParams) (*models.ChoreTemplatePage, error) {
+func (s *Service) Browse(
+	ctx context.Context,
+	params *models.BrowseChoreTemplatesParams,
+) (*models.ChoreTemplatePage, error) {
 	if params == nil {
 		return nil, validationerrors.ErrInvalidLimit
 	}
@@ -17,7 +20,8 @@ func (s *Service) Browse(ctx context.Context, params *models.BrowseChoreTemplate
 	if filter == "" {
 		filter = models.ChoreTemplateFilterActive
 	}
-	if filter != models.ChoreTemplateFilterActive && filter != models.ChoreTemplateFilterDeactivated {
+	if filter != models.ChoreTemplateFilterActive &&
+		filter != models.ChoreTemplateFilterDeactivated {
 		return nil, validationerrors.ErrInvalidFilter
 	}
 	if params.Offset < 0 {

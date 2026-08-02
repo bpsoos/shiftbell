@@ -1,6 +1,7 @@
 package appcfg
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -39,7 +40,7 @@ func Load() (*AppCfg, error) {
 func loadDatabaseFilepath() (string, error) {
 	databaseFilepath := os.Getenv("DATABASE_FILEPATH")
 	if databaseFilepath == "" {
-		return "", fmt.Errorf("DATABASE_FILEPATH is required")
+		return "", errors.New("DATABASE_FILEPATH is required")
 	}
 	if err := validateDatabaseFilepath(databaseFilepath); err != nil {
 		return "", err
@@ -56,7 +57,10 @@ func loadLogHandler() (logging.Handler, error) {
 	case "text":
 		return logging.HandlerConsole, nil
 	default:
-		return logging.HandlerJSON, fmt.Errorf("invalid LOG_FORMAT %q: expected text or json", logFormat)
+		return logging.HandlerJSON, fmt.Errorf(
+			"invalid LOG_FORMAT %q: expected text or json",
+			logFormat,
+		)
 	}
 }
 
@@ -81,7 +85,7 @@ func validateDatabaseFilepath(databaseFilepath string) error {
 		return fmt.Errorf("invalid DATABASE_FILEPATH parent directory: %w", err)
 	}
 	if !parentInfo.IsDir() {
-		return fmt.Errorf("invalid DATABASE_FILEPATH parent directory is not a directory")
+		return errors.New("invalid DATABASE_FILEPATH parent directory is not a directory")
 	}
 
 	info, err := os.Stat(databaseFilepath)
@@ -92,7 +96,7 @@ func validateDatabaseFilepath(databaseFilepath string) error {
 		return fmt.Errorf("invalid DATABASE_FILEPATH: %w", err)
 	}
 	if info.IsDir() {
-		return fmt.Errorf("invalid DATABASE_FILEPATH points to a directory")
+		return errors.New("invalid DATABASE_FILEPATH points to a directory")
 	}
 
 	return nil

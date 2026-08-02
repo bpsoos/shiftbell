@@ -31,7 +31,7 @@ func (p *Persister) Get(id int) (*models.Chore, error) {
 	)
 	err := row.Scan(&name, &description, &completedOnNullable, &deadline)
 	if err != nil {
-		return nil, fmt.Errorf("get chore query: %v", err)
+		return nil, fmt.Errorf("get chore query: %w", err)
 	}
 
 	if completedOnNullable.Valid {

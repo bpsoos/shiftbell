@@ -200,9 +200,18 @@ var _ = Describe("Create", func() {
 			Chore:         &models.Chore{Id: 1},
 			ChoreTemplate: &choretemplatemodels.ChoreTemplate{Id: 2},
 		}
-		normalizer.EXPECT().NormalizeName(" raw chore name ").Return("Chore name", nil).Once()
-		normalizer.EXPECT().NormalizeDescription(" raw description ").Return("Description", nil).Once()
-		normalizer.EXPECT().NormalizeName(" raw schedule name ").Return("Schedule name", nil).Once()
+		normalizer.EXPECT().
+			NormalizeName(" raw chore name ").
+			Return("Chore name", nil).
+			Once()
+		normalizer.EXPECT().
+			NormalizeDescription(" raw description ").
+			Return("Description", nil).
+			Once()
+		normalizer.EXPECT().
+			NormalizeName(" raw schedule name ").
+			Return("Schedule name", nil).
+			Once()
 		persister.EXPECT().
 			CreateManualScheduled(ctx, &models.CreateManualScheduledParams{
 				Name:         "Chore name",
@@ -246,7 +255,10 @@ var _ = Describe("Create", func() {
 			Chore:         &models.Chore{Id: 1},
 			ChoreTemplate: &choretemplatemodels.ChoreTemplate{Id: choreTemplateId},
 		}
-		normalizer.EXPECT().NormalizeName(" raw schedule name ").Return("Schedule name", nil).Once()
+		normalizer.EXPECT().
+			NormalizeName(" raw schedule name ").
+			Return("Schedule name", nil).
+			Once()
 		persister.EXPECT().
 			CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledParams{
 				ChoreTemplateId: choreTemplateId,
@@ -275,8 +287,14 @@ var _ = Describe("Create", func() {
 	It("rejects an invalid manual schedule name without persisting", func() {
 		intervalDays := 14
 		normalizer.EXPECT().NormalizeName("chore name").Return("Chore name", nil).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
-		normalizer.EXPECT().NormalizeName("invalid schedule name").Return("", validationerrors.ErrRequired).Once()
+		normalizer.EXPECT().
+			NormalizeDescription("description").
+			Return("Description", nil).
+			Once()
+		normalizer.EXPECT().
+			NormalizeName("invalid schedule name").
+			Return("", validationerrors.ErrRequired).
+			Once()
 
 		result, err := service.Create(context.Background(), &models.CreateChoreParams{
 			Name:                "chore name",
@@ -295,7 +313,10 @@ var _ = Describe("Create", func() {
 	It("rejects an invalid template-based schedule name without persisting", func() {
 		choreTemplateId := 42
 		intervalDays := 14
-		normalizer.EXPECT().NormalizeName("invalid schedule name").Return("", validationerrors.ErrRequired).Once()
+		normalizer.EXPECT().
+			NormalizeName("invalid schedule name").
+			Return("", validationerrors.ErrRequired).
+			Once()
 
 		result, err := service.Create(context.Background(), &models.CreateChoreParams{
 			Name:                "",
@@ -369,31 +390,40 @@ var _ = Describe("Create", func() {
 		Expect(err).To(MatchError(validationerrors.ErrInvalidDeadline))
 	})
 
-	It("rejects a template-based scheduled chore without a deadline before persisting", func() {
-		choreTemplateId := 42
-		intervalDays := 14
+	It(
+		"rejects a template-based scheduled chore without a deadline before persisting",
+		func() {
+			choreTemplateId := 42
+			intervalDays := 14
 
-		result, err := service.Create(context.Background(), &models.CreateChoreParams{
-			Name:                "",
-			Description:         "",
-			Deadline:            time.Time{},
-			ChoreTemplateId:     &choreTemplateId,
-			ScheduleName:        "schedule name",
-			IntervalDays:        &intervalDays,
-			SaveAsChoreTemplate: false,
-		})
+			result, err := service.Create(context.Background(), &models.CreateChoreParams{
+				Name:                "",
+				Description:         "",
+				Deadline:            time.Time{},
+				ChoreTemplateId:     &choreTemplateId,
+				ScheduleName:        "schedule name",
+				IntervalDays:        &intervalDays,
+				SaveAsChoreTemplate: false,
+			})
 
-		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(validationerrors.ErrInvalidDeadline))
-	})
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError(validationerrors.ErrInvalidDeadline))
+		},
+	)
 
 	It("preserves manual scheduled persistence errors", func(ctx SpecContext) {
 		deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
 		intervalDays := 14
 		persistErr := errors.New("persistence failed")
 		normalizer.EXPECT().NormalizeName("chore name").Return("Chore name", nil).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
-		normalizer.EXPECT().NormalizeName("schedule name").Return("Schedule name", nil).Once()
+		normalizer.EXPECT().
+			NormalizeDescription("description").
+			Return("Description", nil).
+			Once()
+		normalizer.EXPECT().
+			NormalizeName("schedule name").
+			Return("Schedule name", nil).
+			Once()
 		persister.EXPECT().
 			CreateManualScheduled(ctx, &models.CreateManualScheduledParams{
 				Name:         "Chore name",
@@ -425,7 +455,10 @@ var _ = Describe("Create", func() {
 		deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
 		intervalDays := 14
 		persistErr := errors.New("persistence failed")
-		normalizer.EXPECT().NormalizeName("schedule name").Return("Schedule name", nil).Once()
+		normalizer.EXPECT().
+			NormalizeName("schedule name").
+			Return("Schedule name", nil).
+			Once()
 		persister.EXPECT().
 			CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledParams{
 				ChoreTemplateId: choreTemplateId,
@@ -450,5 +483,4 @@ var _ = Describe("Create", func() {
 		Expect(err).To(MatchError("create template scheduled chore: persistence failed"))
 		Expect(errors.Is(err, persistErr)).To(BeTrue())
 	})
-
 })

@@ -5,10 +5,14 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/bpsoos/shiftbell/internal/logging"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 )
 
-func (p *Persister) Browse(ctx context.Context, params *models.BrowseChoreTemplatesParams) (*models.ChoreTemplatePage, error) {
+func (p *Persister) Browse(
+	ctx context.Context,
+	params *models.BrowseChoreTemplatesParams,
+) (*models.ChoreTemplatePage, error) {
 	stateCondition := "deactivated_at is null"
 	if params.Filter == models.ChoreTemplateFilterDeactivated {
 		stateCondition = "deactivated_at is not null"
@@ -30,7 +34,12 @@ func (p *Persister) Browse(ctx context.Context, params *models.BrowseChoreTempla
 	if err != nil {
 		return nil, fmt.Errorf("select chore templates: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			logging.Default().Error("error closing rows", "err", err)
+		}
+	}()
 
 	choreTemplates := make([]models.ChoreTemplate, 0, params.Limit+1)
 	for rows.Next() {
@@ -39,7 +48,12 @@ func (p *Persister) Browse(ctx context.Context, params *models.BrowseChoreTempla
 			description   sql.NullString
 			deactivatedAt sql.NullTime
 		)
-		if err := rows.Scan(&choreTemplate.Id, &choreTemplate.Name, &description, &deactivatedAt); err != nil {
+		if err := rows.Scan(
+			&choreTemplate.Id,
+			&choreTemplate.Name,
+			&description,
+			&deactivatedAt,
+		); err != nil {
 			return nil, fmt.Errorf("scan chore template: %w", err)
 		}
 		choreTemplate.Description = description.String

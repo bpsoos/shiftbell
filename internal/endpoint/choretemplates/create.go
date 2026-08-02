@@ -38,7 +38,6 @@ func (h *Handler) Create(ctx *echo.Context) error {
 			Description: request.Description,
 		},
 	)
-
 	if err != nil {
 		if isInvalidCreateRequestError(err) {
 			return hypermedia.JSON(
@@ -48,7 +47,11 @@ func (h *Handler) Create(ctx *echo.Context) error {
 			)
 		}
 		logging.Default().Error("create chore template", "err", err)
-		return hypermedia.JSON(ctx, http.StatusInternalServerError, errorResponse{Error: "something went wrong"})
+		return hypermedia.JSON(
+			ctx,
+			http.StatusInternalServerError,
+			errorResponse{Error: "something went wrong"},
+		)
 	}
 
 	response := newResponse(choreTemplate)
@@ -60,7 +63,8 @@ func (h *Handler) Create(ctx *echo.Context) error {
 }
 
 func isInvalidCreateRequestError(err error) bool {
-	return errors.Is(err, validationerrors.ErrInvalidName) || errors.Is(err, validationerrors.ErrInvalidDescription)
+	return errors.Is(err, validationerrors.ErrInvalidName) ||
+		errors.Is(err, validationerrors.ErrInvalidDescription)
 }
 
 func createAction() hypermedia.Action {

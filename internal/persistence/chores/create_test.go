@@ -21,7 +21,9 @@ var _ = Describe("Create", func() {
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
+		persister = chorespersistence.NewPersister(
+			&chorespersistence.PersisterDeps{Db: db},
+		)
 		deadline = time.Date(2026, time.July, 20, 0, 0, 0, 0, time.UTC)
 	})
 
@@ -68,7 +70,10 @@ var _ = Describe("Create", func() {
 			Expect(result.Description).To(Equal("Wash and fold clothes"))
 
 			var description string
-			Expect(db.QueryRow(`select description from chores where id = ?`, result.Id).Scan(&description)).To(Succeed())
+			Expect(
+				db.QueryRow(`select description from chores where id = ?`, result.Id).
+					Scan(&description),
+			).To(Succeed())
 			Expect(description).To(Equal("Wash and fold clothes"))
 		})
 	})

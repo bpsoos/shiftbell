@@ -18,7 +18,9 @@ var _ = Describe("GetBatch", func() {
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
+		persister = chorespersistence.NewPersister(
+			&chorespersistence.PersisterDeps{Db: db},
+		)
 	})
 
 	Context("with no chores", func() {
@@ -120,7 +122,9 @@ var _ = Describe("GetBatch", func() {
 
 	Context("with chores sharing a deadline", func() {
 		BeforeEach(func() {
-			_, err := db.Exec(`create index chores_active_deadline_id_desc on chores(is_complete, deadline asc, id desc)`)
+			_, err := db.Exec(
+				`create index chores_active_deadline_id_desc on chores(is_complete, deadline asc, id desc)`,
+			)
 			Expect(err).NotTo(HaveOccurred())
 
 			deadline := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)

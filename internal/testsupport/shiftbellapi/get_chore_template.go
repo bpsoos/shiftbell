@@ -7,7 +7,10 @@ import (
 	"net/http"
 )
 
-func (c *APIClient) GetChoreTemplate(ctx context.Context, params GetChoreTemplateParams) (*GetChoreTemplateResult, error) {
+func (c *APIClient) GetChoreTemplate(
+	ctx context.Context,
+	params GetChoreTemplateParams,
+) (*GetChoreTemplateResult, error) {
 	request, err := c.newRequest(ctx, http.MethodGet, params.Link.Href, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create get chore template request: %w", err)
@@ -28,6 +31,9 @@ func (c *APIClient) GetChoreTemplate(ctx context.Context, params GetChoreTemplat
 	if err := json.Unmarshal(responseBody, &representation); err != nil {
 		return nil, fmt.Errorf("decode get chore template response: %w", err)
 	}
-	result.SuccessResponse = &GetChoreTemplateResponse{ChoreTemplate: representation.ChoreTemplate, Actions: representation.Actions}
+	result.SuccessResponse = &GetChoreTemplateResponse{
+		ChoreTemplate: representation.ChoreTemplate,
+		Actions:       representation.Actions,
+	}
 	return result, nil
 }

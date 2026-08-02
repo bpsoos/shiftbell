@@ -8,12 +8,16 @@ import (
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 )
 
-func (s *Service) Browse(ctx context.Context, params *models.BrowseSchedulesParams) (*models.SchedulePage, error) {
+func (s *Service) Browse(
+	ctx context.Context,
+	params *models.BrowseSchedulesParams,
+) (*models.SchedulePage, error) {
 	filter := params.Filter
 	if filter == "" {
 		filter = models.ScheduleFilterActive
 	}
-	if filter != models.ScheduleFilterActive && filter != models.ScheduleFilterDeactivated {
+	if filter != models.ScheduleFilterActive &&
+		filter != models.ScheduleFilterDeactivated {
 		return nil, validationerrors.ErrInvalidFilter
 	}
 	if params.Offset < 0 {

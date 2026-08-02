@@ -49,7 +49,9 @@ var _ = Describe("Browse", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(BeIdenticalTo(page))
-		Expect(params).To(Equal(&models.BrowseSchedulesParams{Search: " raw search ", Offset: 5, Limit: 10}))
+		Expect(
+			params,
+		).To(Equal(&models.BrowseSchedulesParams{Search: " raw search ", Offset: 5, Limit: 10}))
 	})
 
 	It("browses deactivated schedules", func(ctx SpecContext) {

@@ -8,7 +8,10 @@ import (
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 )
 
-func (p *Persister) Create(ctx context.Context, params *models.CreateChoreTemplateParams) (*models.ChoreTemplate, error) {
+func (p *Persister) Create(
+	ctx context.Context,
+	params *models.CreateChoreTemplateParams,
+) (*models.ChoreTemplate, error) {
 	var sqlDesc sql.NullString
 	if params.Description != "" {
 		sqlDesc = sql.NullString{

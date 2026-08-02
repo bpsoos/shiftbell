@@ -8,12 +8,20 @@ import (
 	"net/http"
 )
 
-func (c *APIClient) CreateChoreTemplate(ctx context.Context, params CreateChoreTemplateParams) (*CreateChoreTemplateResult, error) {
+func (c *APIClient) CreateChoreTemplate(
+	ctx context.Context,
+	params CreateChoreTemplateParams,
+) (*CreateChoreTemplateResult, error) {
 	requestBody, err := json.Marshal(params)
 	if err != nil {
 		return nil, fmt.Errorf("encode create chore template request: %w", err)
 	}
-	request, err := c.newRequest(ctx, params.Action.Method, params.Action.Href, bytes.NewReader(requestBody))
+	request, err := c.newRequest(
+		ctx,
+		params.Action.Method,
+		params.Action.Href,
+		bytes.NewReader(requestBody),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("create chore template request: %w", err)
 	}
@@ -34,6 +42,10 @@ func (c *APIClient) CreateChoreTemplate(ctx context.Context, params CreateChoreT
 	if err := json.Unmarshal(responseBody, &representation); err != nil {
 		return nil, fmt.Errorf("decode create chore template response: %w", err)
 	}
-	result.SuccessResponse = &CreateChoreTemplateResponse{ChoreTemplate: representation.ChoreTemplate, Actions: representation.Actions, Location: header.Get("Location")}
+	result.SuccessResponse = &CreateChoreTemplateResponse{
+		ChoreTemplate: representation.ChoreTemplate,
+		Actions:       representation.Actions,
+		Location:      header.Get("Location"),
+	}
 	return result, nil
 }

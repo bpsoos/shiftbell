@@ -35,11 +35,20 @@ func NewService(deps *Deps, config *Config) *Service {
 }
 
 type Persister interface {
-	Create(context.Context, *models.CreateChoreTemplateParams) (*models.ChoreTemplate, error)
-	Browse(context.Context, *models.BrowseChoreTemplatesParams) (*models.ChoreTemplatePage, error)
+	Create(
+		context.Context,
+		*models.CreateChoreTemplateParams,
+	) (*models.ChoreTemplate, error)
+	Browse(
+		context.Context,
+		*models.BrowseChoreTemplatesParams,
+	) (*models.ChoreTemplatePage, error)
 	Get(context.Context, int) (*models.ChoreTemplateDetails, error)
 	Edit(context.Context, *models.EditChoreTemplateParams) (*models.ChoreTemplate, error)
-	Deactivate(context.Context, *models.DeactivateChoreTemplateParams) (*models.ChoreTemplate, error)
+	Deactivate(
+		context.Context,
+		*models.DeactivateChoreTemplateParams,
+	) (*models.ChoreTemplate, error)
 }
 
 type Normalizer interface {

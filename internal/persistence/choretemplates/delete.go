@@ -9,7 +9,7 @@ func (p *Persister) Delete(id int) error {
 		id,
 	)
 	if err != nil {
-		return fmt.Errorf("delete exec: %v", err)
+		return fmt.Errorf("delete exec: %w", err)
 	}
 	return nil
 }

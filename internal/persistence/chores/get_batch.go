@@ -26,7 +26,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 		offset,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("db query selecting chores: %v", err)
+		return nil, fmt.Errorf("db query selecting chores: %w", err)
 	}
 	var (
 		id          int
@@ -38,7 +38,7 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 	for rows.Next() {
 		err := rows.Scan(&id, &name, &description, &deadline)
 		if err != nil {
-			return nil, fmt.Errorf("reading fetched rows: %v", err)
+			return nil, fmt.Errorf("reading fetched rows: %w", err)
 		}
 		results = append(results, models.Chore{
 			Id:          id,

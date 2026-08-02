@@ -110,7 +110,10 @@ var _ = Describe("Edit", func() {
 	It("preserves persistence errors", func(ctx SpecContext) {
 		persistErr := errors.New("persistence failed")
 		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
+		normalizer.EXPECT().
+			NormalizeDescription("description").
+			Return("Description", nil).
+			Once()
 		persister.EXPECT().
 			Edit(ctx, &models.EditChoreTemplateParams{
 				Id:          42,

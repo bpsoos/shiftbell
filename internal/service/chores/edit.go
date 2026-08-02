@@ -8,7 +8,10 @@ import (
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 )
 
-func (s *Service) Edit(ctx context.Context, input *models.EditChoreParams) (*models.ChoreDetails, error) {
+func (s *Service) Edit(
+	ctx context.Context,
+	input *models.EditChoreParams,
+) (*models.ChoreDetails, error) {
 	name, err := s.normalizer.NormalizeName(input.Name)
 	if err != nil {
 		return nil, validationerrors.ErrInvalidName

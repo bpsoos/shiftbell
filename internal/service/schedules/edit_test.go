@@ -25,38 +25,47 @@ var _ = Describe("Edit", func() {
 		)
 	})
 
-	It("normalizes and persists the schedule without replacing its template", func(ctx SpecContext) {
-		params := &models.EditScheduleParams{
-			Id:           42,
-			Name:         " raw name ",
-			IntervalDays: 14,
-		}
-		persisted := &models.Schedule{
-			Id:              42,
-			Name:            "Normalized name",
-			ChoreTemplateId: 7,
-			IntervalDays:    14,
-		}
-		normalizer.EXPECT().NormalizeName(" raw name ").Return("Normalized name", nil).Once()
-		persister.EXPECT().Edit(ctx, &models.EditScheduleParams{
-			Id:           42,
-			Name:         "Normalized name",
-			IntervalDays: 14,
-		}).Return(persisted, nil).Once()
+	It(
+		"normalizes and persists the schedule without replacing its template",
+		func(ctx SpecContext) {
+			params := &models.EditScheduleParams{
+				Id:           42,
+				Name:         " raw name ",
+				IntervalDays: 14,
+			}
+			persisted := &models.Schedule{
+				Id:              42,
+				Name:            "Normalized name",
+				ChoreTemplateId: 7,
+				IntervalDays:    14,
+			}
+			normalizer.EXPECT().
+				NormalizeName(" raw name ").
+				Return("Normalized name", nil).
+				Once()
+			persister.EXPECT().Edit(ctx, &models.EditScheduleParams{
+				Id:           42,
+				Name:         "Normalized name",
+				IntervalDays: 14,
+			}).Return(persisted, nil).Once()
 
-		result, err := service.Edit(ctx, params)
+			result, err := service.Edit(ctx, params)
 
-		Expect(err).NotTo(HaveOccurred())
-		Expect(result).To(BeIdenticalTo(persisted))
-		Expect(params).To(Equal(&models.EditScheduleParams{
-			Id:           42,
-			Name:         " raw name ",
-			IntervalDays: 14,
-		}))
-	})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(BeIdenticalTo(persisted))
+			Expect(params).To(Equal(&models.EditScheduleParams{
+				Id:           42,
+				Name:         " raw name ",
+				IntervalDays: 14,
+			}))
+		},
+	)
 
 	It("rejects an invalid name", func() {
-		normalizer.EXPECT().NormalizeName("invalid name").Return("", validationerrors.ErrRequired).Once()
+		normalizer.EXPECT().
+			NormalizeName("invalid name").
+			Return("", validationerrors.ErrRequired).
+			Once()
 
 		result, err := service.Edit(
 			GinkgoT().Context(),

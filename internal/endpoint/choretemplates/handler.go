@@ -10,8 +10,14 @@ import (
 )
 
 type Service interface {
-	Browse(context.Context, *models.BrowseChoreTemplatesParams) (*models.ChoreTemplatePage, error)
-	Create(context.Context, *models.CreateChoreTemplateParams) (*models.ChoreTemplate, error)
+	Browse(
+		context.Context,
+		*models.BrowseChoreTemplatesParams,
+	) (*models.ChoreTemplatePage, error)
+	Create(
+		context.Context,
+		*models.CreateChoreTemplateParams,
+	) (*models.ChoreTemplate, error)
 	Get(context.Context, int) (*models.ChoreTemplateDetails, error)
 }
 

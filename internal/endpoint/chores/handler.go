@@ -112,7 +112,6 @@ func (h *Handler) Get(ctx *echo.Context) error {
 		logging.Default().Error("unknown get for cause", "get_for_type", getForType)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown get for type")
 	}
-
 }
 
 func (h *Handler) GetBatch(ctx *echo.Context) error {
@@ -146,16 +145,36 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
 		ctx.Response().WriteHeader(http.StatusOK)
 
-		return h.templater.Table(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
+		return h.templater.Table(
+			ctx.Request().Context(),
+			ctx.Response(),
+			offset,
+			limit,
+			chores,
+		)
 	case "all":
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
 		ctx.Response().WriteHeader(http.StatusOK)
 
 		if ctx.Request().Header.Get("HX-Request") == "true" {
-			return h.templater.Page(ctx.Request().Context(), ctx.Response(), offset, limit, chores, nil, nil)
+			return h.templater.Page(
+				ctx.Request().Context(),
+				ctx.Response(),
+				offset,
+				limit,
+				chores,
+				nil,
+				nil,
+			)
 		}
 
-		return h.templater.PageWithLayout(ctx.Request().Context(), ctx.Response(), offset, limit, chores)
+		return h.templater.PageWithLayout(
+			ctx.Request().Context(),
+			ctx.Response(),
+			offset,
+			limit,
+			chores,
+		)
 	default:
 		logging.Default().Error("unknown content", "content", content)
 		return ctx.String(http.StatusUnprocessableEntity, "unknown content")
@@ -208,7 +227,8 @@ func (h *Handler) Create(ctx *echo.Context) error {
 	}
 	deadline, err := time.Parse(time.DateOnly, deadlineValue)
 	if err != nil {
-		logging.Default().Info("invalid deadline for create chore", "deadline", deadlineValue, "err", err)
+		logging.Default().
+			Info("invalid deadline for create chore", "deadline", deadlineValue, "err", err)
 		return ctx.String(http.StatusUnprocessableEntity, "invalid deadline")
 	}
 
@@ -259,12 +279,16 @@ func (h *Handler) New(ctx *echo.Context) error {
 	}
 
 	if ctx.QueryParams().Has("choreTemplateId") {
-		selectedChoreTemplate, err := h.choreTemplatePersister.Get(ctx.Request().Context(), params.ChoreTemplateId)
+		selectedChoreTemplate, err := h.choreTemplatePersister.Get(
+			ctx.Request().Context(),
+			params.ChoreTemplateId,
+		)
 		if err != nil {
 			logging.Default().Info("get chore template error", "err", err)
 			return ctx.String(http.StatusInternalServerError, "something went wrong")
 		}
-		logging.Default().Info("fetched chore template successfully", "chore_template_id", params.ChoreTemplateId)
+		logging.Default().
+			Info("fetched chore template successfully", "chore_template_id", params.ChoreTemplateId)
 		ctxValues.SelectedChoreTemplate = &selectedChoreTemplate.ChoreTemplate
 	}
 
@@ -274,21 +298,36 @@ func (h *Handler) New(ctx *echo.Context) error {
 			field := params.Fields[i]
 			switch field {
 			case string(choremodels.NewChoreTemplateComponentBaseInputs):
-				componentSpecifiers = append(componentSpecifiers, choremodels.NewChoreTemplateComponentBaseInputs)
+				componentSpecifiers = append(
+					componentSpecifiers,
+					choremodels.NewChoreTemplateComponentBaseInputs,
+				)
 			case string(choremodels.NewChoreTemplateComponentInputTypeSelector):
-				componentSpecifiers = append(componentSpecifiers, choremodels.NewChoreTemplateComponentInputTypeSelector)
+				componentSpecifiers = append(
+					componentSpecifiers,
+					choremodels.NewChoreTemplateComponentInputTypeSelector,
+				)
 			default:
 				logging.Default().Info("invalid field specified", "field", field)
-				return ctx.String(http.StatusUnprocessableEntity, "invalid field specified")
+				return ctx.String(
+					http.StatusUnprocessableEntity,
+					"invalid field specified",
+				)
 			}
 		}
 
-		return h.templater.JoinedComponents(withNewChoreCtx(ctx, ctxValues), ctx.Response(), componentSpecifiers...)
+		return h.templater.JoinedComponents(
+			withNewChoreCtx(ctx, ctxValues),
+			ctx.Response(),
+			componentSpecifiers...)
 	}
 
 	return h.templater.NewChorePage(withNewChoreCtx(ctx, ctxValues), ctx.Response())
 }
 
-func withNewChoreCtx(ctx *echo.Context, values *choremodels.NewChoreCtxValues) context.Context {
+func withNewChoreCtx(
+	ctx *echo.Context,
+	values *choremodels.NewChoreCtxValues,
+) context.Context {
 	return choremodels.WithNewChoreCtxValues(ctx.Request().Context(), values)
 }

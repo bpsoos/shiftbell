@@ -36,7 +36,13 @@ func (t *Templater) Page(
 	choreTemplates *choretemplatemodels.GetChoreTemplateBatchResult,
 	selectedChoreTemplate *choretemplatemodels.ChoreTemplate,
 ) error {
-	return page(offset, limit, chores, choreTemplates, selectedChoreTemplate).Render(ctx, w)
+	return page(
+		offset,
+		limit,
+		chores,
+		choreTemplates,
+		selectedChoreTemplate,
+	).Render(ctx, w)
 }
 
 func (t *Templater) Chore(
@@ -93,7 +99,8 @@ func (t *Templater) JoinedComponents(
 		case choremodels.NewChoreTemplateComponentInputTypeSelector:
 			components = append(components, selectInputTypeButtonGroup(attrs))
 		default:
-			logging.Default().Error("unknown new chore template component", "component", componentSpecifiers[i])
+			logging.Default().
+				Error("unknown new chore template component", "component", componentSpecifiers[i])
 		}
 	}
 	components = append(components, submitRow(templ.Attributes{"hx-swap-oob": "true"}))

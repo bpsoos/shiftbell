@@ -16,7 +16,9 @@ var _ = Describe("Delete", func() {
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = choretemplatespersistence.NewChoreTemplatePersister(&choretemplatespersistence.PersisterDeps{Db: db})
+		persister = choretemplatespersistence.NewChoreTemplatePersister(
+			&choretemplatespersistence.PersisterDeps{Db: db},
+		)
 	})
 
 	Context("with no chore templates", func() {
@@ -24,14 +26,21 @@ var _ = Describe("Delete", func() {
 			Expect(persister.Delete(1)).To(Succeed())
 
 			var count int
-			Expect(db.QueryRow(`select count(*) from chore_templates`).Scan(&count)).To(Succeed())
+			Expect(
+				db.QueryRow(`select count(*) from chore_templates`).Scan(&count),
+			).To(Succeed())
 			Expect(count).To(Equal(0))
 		})
 	})
 
 	Context("with one chore template", func() {
 		BeforeEach(func() {
-			_, err := db.Exec(`insert into chore_templates (id, name, description) values (?, ?, ?)`, 1, "Laundry", "Wash and fold clothes")
+			_, err := db.Exec(
+				`insert into chore_templates (id, name, description) values (?, ?, ?)`,
+				1,
+				"Laundry",
+				"Wash and fold clothes",
+			)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -39,7 +48,9 @@ var _ = Describe("Delete", func() {
 			Expect(persister.Delete(1)).To(Succeed())
 
 			var count int
-			Expect(db.QueryRow(`select count(*) from chore_templates`).Scan(&count)).To(Succeed())
+			Expect(
+				db.QueryRow(`select count(*) from chore_templates`).Scan(&count),
+			).To(Succeed())
 			Expect(count).To(Equal(0))
 		})
 	})
@@ -60,11 +71,15 @@ var _ = Describe("Delete", func() {
 			Expect(persister.Delete(1)).To(Succeed())
 
 			var count int
-			Expect(db.QueryRow(`select count(*) from chore_templates`).Scan(&count)).To(Succeed())
+			Expect(
+				db.QueryRow(`select count(*) from chore_templates`).Scan(&count),
+			).To(Succeed())
 			Expect(count).To(Equal(1))
 
 			var name string
-			Expect(db.QueryRow(`select name from chore_templates`).Scan(&name)).To(Succeed())
+			Expect(
+				db.QueryRow(`select name from chore_templates`).Scan(&name),
+			).To(Succeed())
 			Expect(name).To(Equal("Dishes"))
 		})
 	})

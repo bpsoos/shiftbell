@@ -44,11 +44,18 @@ func execute() int {
 		logger.Error("could not connect to db", "err", err)
 		return 1
 	}
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			logger.Error("error closing db", "err", err)
+		}
+	}()
 	db.SetMaxOpenConns(1)
-	choreTemplatePersister := choretemplatespersistence.NewChoreTemplatePersister(&choretemplatespersistence.PersisterDeps{
-		Db: db,
-	})
+	choreTemplatePersister := choretemplatespersistence.NewChoreTemplatePersister(
+		&choretemplatespersistence.PersisterDeps{
+			Db: db,
+		},
+	)
 
 	normalizer := normalization.New(normalization.Config{
 		NameLimit:        200,
@@ -59,11 +66,15 @@ func execute() int {
 		Persister:  choreTemplatePersister,
 		Normalizer: normalizer,
 	}, &choretemplatesservice.Config{})
-	choreTemplatesHandler := choretemplatesendpoint.NewHandler(&choretemplatesendpoint.HandlerDeps{
-		Service: choreTemplateService,
-	})
+	choreTemplatesHandler := choretemplatesendpoint.NewHandler(
+		&choretemplatesendpoint.HandlerDeps{
+			Service: choreTemplateService,
+		},
+	)
 
-	choresPersister := chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
+	choresPersister := chorespersistence.NewPersister(
+		&chorespersistence.PersisterDeps{Db: db},
+	)
 	choresTemplater := choresview.NewTemplater()
 	choresHandler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
 		Templater:              choresTemplater,
@@ -80,7 +91,11 @@ func execute() int {
 	e.Logger = logger
 	e.Use(middleware.RequestLogger())
 
-	router.Setup(e)
+	err = router.Setup(e)
+	if err != nil {
+		logger.Error("error setting up routes", "err", err)
+		return 1
+	}
 
 	if err := e.Start("0.0.0.0:80"); err != nil {
 		logging.Default().Error("fatal error", "error", err)

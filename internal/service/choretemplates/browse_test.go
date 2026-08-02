@@ -84,39 +84,54 @@ var _ = Describe("Browse", func() {
 	})
 
 	It("rejects an invalid filter", func() {
-		result, err := service.Browse(context.Background(), &models.BrowseChoreTemplatesParams{
-			Filter: "all",
-			Limit:  10,
-		})
+		result, err := service.Browse(
+			context.Background(),
+			&models.BrowseChoreTemplatesParams{
+				Filter: "all",
+				Limit:  10,
+			},
+		)
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidFilter))
 	})
 
 	It("rejects an invalid search", func() {
-		normalizer.EXPECT().NormalizeSearch("invalid search").Return("", validationerrors.ErrDisallowedCharacter).Once()
+		normalizer.EXPECT().
+			NormalizeSearch("invalid search").
+			Return("", validationerrors.ErrDisallowedCharacter).
+			Once()
 
-		result, err := service.Browse(context.Background(), &models.BrowseChoreTemplatesParams{
-			Search: "invalid search",
-			Limit:  10,
-		})
+		result, err := service.Browse(
+			context.Background(),
+			&models.BrowseChoreTemplatesParams{
+				Search: "invalid search",
+				Limit:  10,
+			},
+		)
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidSearch))
 	})
 
 	It("rejects a negative offset", func() {
-		result, err := service.Browse(context.Background(), &models.BrowseChoreTemplatesParams{
-			Offset: -1,
-			Limit:  10,
-		})
+		result, err := service.Browse(
+			context.Background(),
+			&models.BrowseChoreTemplatesParams{
+				Offset: -1,
+				Limit:  10,
+			},
+		)
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidOffset))
 	})
 
 	It("rejects a non-positive limit", func() {
-		result, err := service.Browse(context.Background(), &models.BrowseChoreTemplatesParams{})
+		result, err := service.Browse(
+			context.Background(),
+			&models.BrowseChoreTemplatesParams{},
+		)
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidLimit))

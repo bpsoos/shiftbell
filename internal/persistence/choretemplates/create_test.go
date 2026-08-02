@@ -19,18 +19,26 @@ var _ = Describe("Create", func() {
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = choretemplatespersistence.NewChoreTemplatePersister(&choretemplatespersistence.PersisterDeps{Db: db})
+		persister = choretemplatespersistence.NewChoreTemplatePersister(
+			&choretemplatespersistence.PersisterDeps{Db: db},
+		)
 	})
 
 	Context("with no description", func() {
 		It("persists a null description", func(ctx SpecContext) {
-			created, err := persister.Create(ctx, &models.CreateChoreTemplateParams{Name: "Laundry"})
+			created, err := persister.Create(
+				ctx,
+				&models.CreateChoreTemplateParams{Name: "Laundry"},
+			)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(created).To(Equal(&models.ChoreTemplate{Id: 1, Name: "Laundry"}))
 
 			var name string
 			var description sql.NullString
-			Expect(db.QueryRow(`select name, description from chore_templates`).Scan(&name, &description)).To(Succeed())
+			Expect(
+				db.QueryRow(`select name, description from chore_templates`).
+					Scan(&name, &description),
+			).To(Succeed())
 			Expect(name).To(Equal("Laundry"))
 			Expect(description.Valid).To(BeFalse())
 		})
@@ -43,11 +51,16 @@ var _ = Describe("Create", func() {
 				Description: "Wash and fold clothes",
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(created).To(Equal(&models.ChoreTemplate{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}))
+			Expect(
+				created,
+			).To(Equal(&models.ChoreTemplate{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}))
 
 			var name string
 			var description string
-			Expect(db.QueryRow(`select name, description from chore_templates`).Scan(&name, &description)).To(Succeed())
+			Expect(
+				db.QueryRow(`select name, description from chore_templates`).
+					Scan(&name, &description),
+			).To(Succeed())
 			Expect(name).To(Equal("Laundry"))
 			Expect(description).To(Equal("Wash and fold clothes"))
 		})
@@ -55,13 +68,28 @@ var _ = Describe("Create", func() {
 
 	Context("with many chore templates", func() {
 		It("persists every chore template", func(ctx SpecContext) {
-			_, err := persister.Create(ctx, &models.CreateChoreTemplateParams{Name: "Laundry", Description: "Wash and fold clothes"})
+			_, err := persister.Create(
+				ctx,
+				&models.CreateChoreTemplateParams{
+					Name:        "Laundry",
+					Description: "Wash and fold clothes",
+				},
+			)
 			Expect(err).NotTo(HaveOccurred())
-			_, err = persister.Create(ctx, &models.CreateChoreTemplateParams{Name: "Dishes", Description: "Load the dishwasher"})
+			_, err = persister.Create(
+				ctx,
+				&models.CreateChoreTemplateParams{
+					Name:        "Dishes",
+					Description: "Load the dishwasher",
+				},
+			)
 			Expect(err).NotTo(HaveOccurred())
 
 			var count int
-			Expect(db.QueryRow(`select count(*) from chore_templates where name in (?, ?)`, "Laundry", "Dishes").Scan(&count)).To(Succeed())
+			Expect(
+				db.QueryRow(`select count(*) from chore_templates where name in (?, ?)`, "Laundry", "Dishes").
+					Scan(&count),
+			).To(Succeed())
 			Expect(count).To(Equal(2))
 		})
 	})

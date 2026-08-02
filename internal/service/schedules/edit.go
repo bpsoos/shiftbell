@@ -8,7 +8,10 @@ import (
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 )
 
-func (s *Service) Edit(ctx context.Context, params *models.EditScheduleParams) (*models.Schedule, error) {
+func (s *Service) Edit(
+	ctx context.Context,
+	params *models.EditScheduleParams,
+) (*models.Schedule, error) {
 	name, err := s.normalizer.NormalizeName(params.Name)
 	if err != nil {
 		return nil, validationerrors.ErrInvalidName

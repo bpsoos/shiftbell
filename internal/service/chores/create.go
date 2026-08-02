@@ -8,7 +8,10 @@ import (
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 )
 
-func (s *Service) Create(ctx context.Context, input *models.CreateChoreParams) (*models.CreateChoreResult, error) {
+func (s *Service) Create(
+	ctx context.Context,
+	input *models.CreateChoreParams,
+) (*models.CreateChoreResult, error) {
 	if input.Deadline.IsZero() {
 		return nil, validationerrors.ErrInvalidDeadline
 	}
@@ -23,12 +26,15 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreParams) (
 			return nil, validationerrors.ErrInvalidName
 		}
 
-		result, err := s.persister.CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledParams{
-			ChoreTemplateId: *input.ChoreTemplateId,
-			Deadline:        input.Deadline,
-			ScheduleName:    scheduleName,
-			IntervalDays:    *input.IntervalDays,
-		})
+		result, err := s.persister.CreateTemplateScheduled(
+			ctx,
+			&models.CreateTemplateScheduledParams{
+				ChoreTemplateId: *input.ChoreTemplateId,
+				Deadline:        input.Deadline,
+				ScheduleName:    scheduleName,
+				IntervalDays:    *input.IntervalDays,
+			},
+		)
 		if err != nil {
 			return nil, fmt.Errorf("create template scheduled chore: %w", err)
 		}
@@ -50,13 +56,16 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreParams) (
 			return nil, validationerrors.ErrInvalidName
 		}
 
-		result, err := s.persister.CreateManualScheduled(ctx, &models.CreateManualScheduledParams{
-			Name:         name,
-			Description:  description,
-			Deadline:     input.Deadline,
-			ScheduleName: scheduleName,
-			IntervalDays: *input.IntervalDays,
-		})
+		result, err := s.persister.CreateManualScheduled(
+			ctx,
+			&models.CreateManualScheduledParams{
+				Name:         name,
+				Description:  description,
+				Deadline:     input.Deadline,
+				ScheduleName: scheduleName,
+				IntervalDays: *input.IntervalDays,
+			},
+		)
 		if err != nil {
 			return nil, fmt.Errorf("create manual scheduled chore: %w", err)
 		}
@@ -78,7 +87,8 @@ func (s *Service) Create(ctx context.Context, input *models.CreateChoreParams) (
 }
 
 func (s *Service) hasInvalidInterval(input *models.CreateChoreParams) bool {
-	return input.IntervalDays != nil && (*input.IntervalDays < 1 || *input.IntervalDays > 3650)
+	return input.IntervalDays != nil &&
+		(*input.IntervalDays < 1 || *input.IntervalDays > 3650)
 }
 
 func (s *Service) isTemplateScheduled(input *models.CreateChoreParams) bool {

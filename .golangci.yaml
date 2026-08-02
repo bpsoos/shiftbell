@@ -8,16 +8,27 @@ linters:
     - ineffassign
     - staticcheck
     - unused
-    - lll
-  settings:
-    lll:
-      line-length: 90
-      tab-width: 4
+    - modernize
+    - usestdlibvars
+    - intrange
+    - exptostd
+    - prealloc
+    - perfsprint
+    - makezero
+    - unconvert
+    - wastedassign
+    - gocritic
+    - errorlint
+    - bodyclose
+    - nolintlint
   exclusions:
     rules:
+      - path: testsupport/*
+        linters:
+          - staticcheck
       - path: _test\.go
         linters:
-          - gocyclo
+          - staticcheck
 formatters:
   enable:
     - gofumpt

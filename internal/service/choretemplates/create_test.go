@@ -68,9 +68,12 @@ var _ = Describe("Create", func() {
 			Return("", validationerrors.ErrRequired).
 			Once()
 
-		result, err := service.Create(context.Background(), &models.CreateChoreTemplateParams{
-			Name: "invalid name",
-		})
+		result, err := service.Create(
+			context.Background(),
+			&models.CreateChoreTemplateParams{
+				Name: "invalid name",
+			},
+		)
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidName))
@@ -86,10 +89,13 @@ var _ = Describe("Create", func() {
 			Return("", validationerrors.ErrTooLong).
 			Once()
 
-		result, err := service.Create(context.Background(), &models.CreateChoreTemplateParams{
-			Name:        "name",
-			Description: "invalid description",
-		})
+		result, err := service.Create(
+			context.Background(),
+			&models.CreateChoreTemplateParams{
+				Name:        "name",
+				Description: "invalid description",
+			},
+		)
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidDescription))
@@ -105,7 +111,10 @@ var _ = Describe("Create", func() {
 	It("preserves persistence errors", func(ctx SpecContext) {
 		persistErr := errors.New("persistence failed")
 		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
+		normalizer.EXPECT().
+			NormalizeDescription("description").
+			Return("Description", nil).
+			Once()
 		persister.EXPECT().
 			Create(ctx, &models.CreateChoreTemplateParams{
 				Name:        "Name",
@@ -127,7 +136,10 @@ var _ = Describe("Create", func() {
 	It("preserves the existing template for a name conflict", func(ctx SpecContext) {
 		conflict := &models.NameConflictError{ExistingId: 7}
 		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
-		normalizer.EXPECT().NormalizeDescription("description").Return("Description", nil).Once()
+		normalizer.EXPECT().
+			NormalizeDescription("description").
+			Return("Description", nil).
+			Once()
 		persister.EXPECT().
 			Create(ctx, &models.CreateChoreTemplateParams{
 				Name:        "Name",

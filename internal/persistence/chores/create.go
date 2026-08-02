@@ -7,7 +7,9 @@ import (
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
 )
 
-func (p *Persister) Create(params *models.CreateOneOffChoreParams) (*models.Chore, error) {
+func (p *Persister) Create(
+	params *models.CreateOneOffChoreParams,
+) (*models.Chore, error) {
 	var descNullable sql.NullString
 	if params.Description != "" {
 		descNullable = sql.NullString{

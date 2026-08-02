@@ -25,11 +25,15 @@ func (*Migrator) Migrate(sqliteFilepath string) error {
 	logger := logging.Default()
 	driver, err := iofs.New(fs, ".")
 	if err != nil {
-		return fmt.Errorf("new iofs: %v", err)
+		return fmt.Errorf("new iofs: %w", err)
 	}
-	m, err := migrate.NewWithSourceInstance("iofs", driver, database.SQLiteMigrationURL(sqliteFilepath))
+	m, err := migrate.NewWithSourceInstance(
+		"iofs",
+		driver,
+		database.SQLiteMigrationURL(sqliteFilepath),
+	)
 	if err != nil {
-		return fmt.Errorf("new source instance: %v", err)
+		return fmt.Errorf("new source instance: %w", err)
 	}
 	defer func() {
 		errSource, errDb := m.Close()
@@ -49,7 +53,7 @@ func (*Migrator) Migrate(sqliteFilepath string) error {
 
 			return nil
 		}
-		return fmt.Errorf("migrate up: %v", err)
+		return fmt.Errorf("migrate up: %w", err)
 	}
 	return nil
 }

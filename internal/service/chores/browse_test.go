@@ -95,7 +95,10 @@ var _ = Describe("Browse", func() {
 			Limit:  10,
 		}
 		persisted := &models.ChorePage{}
-		normalizer.EXPECT().NormalizeSearch(" raw search ").Return("Normalized search", nil).Once()
+		normalizer.EXPECT().
+			NormalizeSearch(" raw search ").
+			Return("Normalized search", nil).
+			Once()
 		persister.EXPECT().
 			Browse(ctx, &models.BrowseChoresParams{
 				Status: models.ChoreStatusActive,
@@ -175,7 +178,10 @@ var _ = Describe("Browse", func() {
 	})
 
 	It("rejects an invalid search without browsing chores", func() {
-		normalizer.EXPECT().NormalizeSearch("invalid search").Return("", validationerrors.ErrDisallowedCharacter).Once()
+		normalizer.EXPECT().
+			NormalizeSearch("invalid search").
+			Return("", validationerrors.ErrDisallowedCharacter).
+			Once()
 
 		result, err := service.Browse(context.Background(), &models.BrowseChoresParams{
 			Status: models.ChoreStatusActive,

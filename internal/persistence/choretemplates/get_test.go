@@ -17,7 +17,9 @@ var _ = Describe("Get", func() {
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = choretemplatespersistence.NewChoreTemplatePersister(&choretemplatespersistence.PersisterDeps{Db: db})
+		persister = choretemplatespersistence.NewChoreTemplatePersister(
+			&choretemplatespersistence.PersisterDeps{Db: db},
+		)
 	})
 
 	Context("with no chore templates", func() {
@@ -31,7 +33,12 @@ var _ = Describe("Get", func() {
 
 	Context("with one chore template", func() {
 		BeforeEach(func() {
-			_, err := db.Exec(`insert into chore_templates (id, name, description) values (?, ?, ?)`, 1, "Laundry", "Wash and fold clothes")
+			_, err := db.Exec(
+				`insert into chore_templates (id, name, description) values (?, ?, ?)`,
+				1,
+				"Laundry",
+				"Wash and fold clothes",
+			)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -39,13 +46,20 @@ var _ = Describe("Get", func() {
 			result, err := persister.Get(ctx, 1)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}}))
+			Expect(
+				result,
+			).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}}))
 		})
 	})
 
 	Context("with a chore template without a description", func() {
 		BeforeEach(func() {
-			_, err := db.Exec(`insert into chore_templates (id, name, description) values (?, ?, ?)`, 1, "Laundry", nil)
+			_, err := db.Exec(
+				`insert into chore_templates (id, name, description) values (?, ?, ?)`,
+				1,
+				"Laundry",
+				nil,
+			)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -53,7 +67,9 @@ var _ = Describe("Get", func() {
 			result, err := persister.Get(ctx, 1)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 1, Name: "Laundry"}}))
+			Expect(
+				result,
+			).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 1, Name: "Laundry"}}))
 		})
 	})
 
@@ -73,7 +89,9 @@ var _ = Describe("Get", func() {
 			result, err := persister.Get(ctx, 2)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}}))
+			Expect(
+				result,
+			).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}}))
 		})
 	})
 })

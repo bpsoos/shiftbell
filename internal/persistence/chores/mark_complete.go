@@ -17,7 +17,7 @@ func (p *Persister) MarkComplete(id int, completedOn time.Time) error {
 		id,
 	)
 	if err != nil {
-		return fmt.Errorf("update chores exec: %v", err)
+		return fmt.Errorf("update chores exec: %w", err)
 	}
 	return nil
 }

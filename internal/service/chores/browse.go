@@ -8,7 +8,10 @@ import (
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 )
 
-func (s *Service) Browse(ctx context.Context, params *models.BrowseChoresParams) (*models.ChorePage, error) {
+func (s *Service) Browse(
+	ctx context.Context,
+	params *models.BrowseChoresParams,
+) (*models.ChorePage, error) {
 	status := params.Status
 	if status == "" {
 		status = models.ChoreStatusActive

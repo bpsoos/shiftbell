@@ -7,7 +7,7 @@ default:
     just --list
 
 build:
-    docker compose build
+    docker compose build -q
 
 shell: build
     docker run --rm -it -v {{justfile_dir()}}:/src {{dev_image}}
@@ -46,13 +46,9 @@ go *args: build
         {{dev_image}} \
         {{args}}
 
-fmt:
-    docker run --rm \
-        -v {{justfile_dir()}}:/src \
-        --entrypoint /bin/sh \
-        --workdir /src \
-        {{dev_image}} \
-        -c "go fmt ./... && go tool templ fmt ."
+@fmt:
+    just go tool templ fmt
+    just golangci-lint fmt
 
 test:
     just go tool ginkgo run -r -p --randomize-all --randomize-suites --skip-package=test/acceptance
@@ -62,6 +58,12 @@ test-ci:
 
 test-acceptance:
     just --justfile test/acceptance/justfile test-acceptance
+
+@lint:
+    just golangci-lint run
+
+@generate-templ:
+    just go tool templ generate
 
 @golangci-lint *args:
     docker run --rm \

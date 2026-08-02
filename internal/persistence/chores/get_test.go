@@ -19,7 +19,9 @@ var _ = Describe("Get", func() {
 
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = chorespersistence.NewPersister(&chorespersistence.PersisterDeps{Db: db})
+		persister = chorespersistence.NewPersister(
+			&chorespersistence.PersisterDeps{Db: db},
+		)
 	})
 
 	Context("with an active chore without a description", func() {

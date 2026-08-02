@@ -21,7 +21,10 @@ type contextKey string
 
 var newChoreCtxKey contextKey = "newChore"
 
-func WithNewChoreCtxValues(ctx context.Context, values *NewChoreCtxValues) context.Context {
+func WithNewChoreCtxValues(
+	ctx context.Context,
+	values *NewChoreCtxValues,
+) context.Context {
 	return context.WithValue(ctx, newChoreCtxKey, values)
 }
 

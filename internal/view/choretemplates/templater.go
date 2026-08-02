@@ -32,7 +32,8 @@ func (t *Templater) PageWithLayout(
 	limit int,
 	choreTemplates *models.GetChoreTemplateBatchResult,
 ) error {
-	return layouts.Main().Render(templ.WithChildren(ctx, page(offset, limit, choreTemplates)), w)
+	return layouts.Main().
+		Render(templ.WithChildren(ctx, page(offset, limit, choreTemplates)), w)
 }
 
 func (t *Templater) Table(

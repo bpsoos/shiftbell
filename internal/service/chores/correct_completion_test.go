@@ -29,7 +29,11 @@ var _ = Describe("CorrectCompletion", func() {
 	It("corrects a one-off chore completion date", func(ctx SpecContext) {
 		completedOn := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
 		input := &models.CorrectCompletionParams{Id: 42, CompletedOn: completedOn}
-		corrected := &models.Chore{Id: 42, Status: models.ChoreStatusCompleted, CompletedOn: completedOn}
+		corrected := &models.Chore{
+			Id:          42,
+			Status:      models.ChoreStatusCompleted,
+			CompletedOn: completedOn,
+		}
 		persisted := &models.CorrectCompletionResult{Chore: corrected}
 		persister.EXPECT().
 			CorrectCompletion(ctx, &models.CorrectCompletionParams{Id: 42, CompletedOn: completedOn}).
@@ -40,35 +44,54 @@ var _ = Describe("CorrectCompletion", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(BeIdenticalTo(corrected))
-		Expect(input).To(Equal(&models.CorrectCompletionParams{Id: 42, CompletedOn: completedOn}))
+		Expect(
+			input,
+		).To(Equal(&models.CorrectCompletionParams{Id: 42, CompletedOn: completedOn}))
 	})
 
-	It("atomically corrects a scheduled chore and its active successor", func(ctx SpecContext) {
-		scheduleId := 7
-		completedOn := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
-		input := &models.CorrectCompletionParams{Id: 42, CompletedOn: completedOn}
-		corrected := &models.Chore{Id: 42, ScheduleId: &scheduleId, Status: models.ChoreStatusCompleted, CompletedOn: completedOn}
-		persisted := &models.CorrectCompletionResult{
-			Chore:     corrected,
-			Successor: &models.Chore{Id: 43, ScheduleId: &scheduleId, Deadline: time.Date(2026, time.August, 10, 0, 0, 0, 0, time.UTC)},
-		}
-		persister.EXPECT().
-			CorrectCompletion(ctx, &models.CorrectCompletionParams{Id: 42, CompletedOn: completedOn}).
-			Return(persisted, nil).
-			Once()
+	It(
+		"atomically corrects a scheduled chore and its active successor",
+		func(ctx SpecContext) {
+			scheduleId := 7
+			completedOn := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
+			input := &models.CorrectCompletionParams{Id: 42, CompletedOn: completedOn}
+			corrected := &models.Chore{
+				Id:          42,
+				ScheduleId:  &scheduleId,
+				Status:      models.ChoreStatusCompleted,
+				CompletedOn: completedOn,
+			}
+			persisted := &models.CorrectCompletionResult{
+				Chore: corrected,
+				Successor: &models.Chore{
+					Id:         43,
+					ScheduleId: &scheduleId,
+					Deadline:   time.Date(2026, time.August, 10, 0, 0, 0, 0, time.UTC),
+				},
+			}
+			persister.EXPECT().
+				CorrectCompletion(ctx, &models.CorrectCompletionParams{Id: 42, CompletedOn: completedOn}).
+				Return(persisted, nil).
+				Once()
 
-		result, err := service.CorrectCompletion(ctx, input)
+			result, err := service.CorrectCompletion(ctx, input)
 
-		Expect(err).NotTo(HaveOccurred())
-		Expect(result).To(BeIdenticalTo(corrected))
-		Expect(input).To(Equal(&models.CorrectCompletionParams{Id: 42, CompletedOn: completedOn}))
-	})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(BeIdenticalTo(corrected))
+			Expect(
+				input,
+			).To(Equal(&models.CorrectCompletionParams{Id: 42, CompletedOn: completedOn}))
+		},
+	)
 
 	It("rejects an invalid completion date", func() {
-		result, err := service.CorrectCompletion(GinkgoT().Context(), &models.CorrectCompletionParams{
-			Id:          42,
-			CompletedOn: time.Date(2026, time.July, 30, 0, 0, 0, 0, time.UTC),
-		})
+		result, err := service.CorrectCompletion(
+			GinkgoT().Context(),
+			&models.CorrectCompletionParams{
+				Id:          42,
+				CompletedOn: time.Date(2026, time.July, 30, 0, 0, 0, 0, time.UTC),
+			},
+		)
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidCompletionDate))
