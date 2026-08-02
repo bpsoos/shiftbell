@@ -30,6 +30,89 @@ type GetHomeResult struct {
 	Home Home
 }
 
+type Chore struct {
+	Id          int     `json:"id"`
+	ScheduleId  *int    `json:"schedule_id"`
+	Status      string  `json:"status"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Deadline    string  `json:"deadline"`
+	CompletedOn *string `json:"completed_on"`
+	Links       Links   `json:"_links"`
+}
+
+type ChoreCollection struct {
+	Items   []Chore `json:"items"`
+	More    bool    `json:"more"`
+	Links   Links   `json:"_links"`
+	Actions Actions `json:"_actions"`
+}
+
+type GetChoresResult struct {
+	Collection ChoreCollection
+}
+
+type ChoreCreationChoice struct {
+	Label string `json:"label"`
+	Href  string `json:"href"`
+}
+
+type ChoreCreationTemplate struct {
+	Id          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type ChoreCreationStep struct {
+	Step     string                 `json:"step"`
+	Template *ChoreCreationTemplate `json:"template,omitempty"`
+	Choices  []ChoreCreationChoice  `json:"choices,omitempty"`
+	Fields   []ActionField          `json:"fields,omitempty"`
+	Action   *Action                `json:"action,omitempty"`
+}
+
+type GetChoreCreationStepResult struct {
+	Step ChoreCreationStep
+}
+
+type CreateChoreParams struct {
+	Action              Action `json:"-"`
+	Name                string `json:"name"`
+	Description         string `json:"description"`
+	Deadline            string `json:"deadline"`
+	ChoreTemplateId     *int   `json:"chore_template_id,omitempty"`
+	ScheduleName        string `json:"schedule_name,omitempty"`
+	IntervalDays        *int   `json:"interval_days,omitempty"`
+	SaveAsChoreTemplate bool   `json:"save_as_chore_template"`
+}
+
+type CreateChoreResponse struct {
+	Chore    Chore
+	Actions  Actions
+	Location string
+}
+
+type CreateChoreResult struct {
+	StatusCode      int
+	SuccessResponse *CreateChoreResponse
+	ErrorResponse   *ErrorResponse
+}
+
+type GetChoreParams struct {
+	Link Link
+}
+
+type GetChoreResponse struct {
+	Chore   Chore
+	Actions Actions
+}
+
+type GetChoreResult struct {
+	StatusCode      int
+	SuccessResponse *GetChoreResponse
+	ErrorResponse   *ErrorResponse
+}
+
 type ChoreTemplate struct {
 	Id            int     `json:"id"`
 	Name          string  `json:"name"`
@@ -123,5 +206,10 @@ type ErrorResponse struct {
 
 type choreTemplateRepresentation struct {
 	ChoreTemplate
+	Actions Actions `json:"_actions"`
+}
+
+type choreRepresentation struct {
+	Chore
 	Actions Actions `json:"_actions"`
 }
