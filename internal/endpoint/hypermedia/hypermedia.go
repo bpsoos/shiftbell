@@ -14,10 +14,9 @@ type Link struct {
 }
 
 type ActionField struct {
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	Required  bool   `json:"required"`
-	MaxLength int    `json:"max_length"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Required bool   `json:"required"`
 }
 
 type Action struct {

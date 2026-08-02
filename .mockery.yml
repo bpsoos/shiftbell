@@ -22,6 +22,12 @@ require-template-schema-exists: true
 template: testify
 template-schema: '{{.Template}}.schema.json'
 packages:
+  github.com/bpsoos/shiftbell/internal/endpoint/chores:
+    config:
+      filename: service_mock_test.go
+      pkgname: chores_test
+    interfaces:
+      Service:
   github.com/bpsoos/shiftbell/internal/service/choretemplates:
     config:
       all: true

@@ -73,8 +73,8 @@ func createAction() hypermedia.Action {
 		Method:      http.MethodPost,
 		ContentType: "application/json",
 		Fields: []hypermedia.ActionField{
-			{Name: "name", Type: "string", Required: true, MaxLength: 200},
-			{Name: "description", Type: "string", Required: false, MaxLength: 2000},
+			{Name: "name", Type: "string", Required: true},
+			{Name: "description", Type: "string", Required: false},
 		},
 	}
 }

@@ -65,16 +65,14 @@ var _ = Describe("Chore template API", func() {
 							gstruct.IndexIdentity,
 							gstruct.Elements{
 								"0": gstruct.MatchAllFields(gstruct.Fields{
-									"Name":      Equal("name"),
-									"Type":      Equal("string"),
-									"Required":  BeTrue(),
-									"MaxLength": Equal(200),
+									"Name":     Equal("name"),
+									"Type":     Equal("string"),
+									"Required": BeTrue(),
 								}),
 								"1": gstruct.MatchAllFields(gstruct.Fields{
-									"Name":      Equal("description"),
-									"Type":      Equal("string"),
-									"Required":  BeFalse(),
-									"MaxLength": Equal(2000),
+									"Name":     Equal("description"),
+									"Type":     Equal("string"),
+									"Required": BeFalse(),
 								}),
 							},
 						),
@@ -536,8 +534,8 @@ func expectActiveChoreTemplateActions(actions shiftbellapi.Actions, selfHref str
 			"Method":      Equal(http.MethodPatch),
 			"ContentType": Equal("application/json"),
 			"Fields": Equal([]shiftbellapi.ActionField{
-				{Name: "name", Type: "string", Required: true, MaxLength: 200},
-				{Name: "description", Type: "string", Required: false, MaxLength: 2000},
+				{Name: "name", Type: "string", Required: true},
+				{Name: "description", Type: "string", Required: false},
 			}),
 		}),
 		shiftbellapi.ActionDeactivateTemplate: gstruct.MatchAllFields(gstruct.Fields{

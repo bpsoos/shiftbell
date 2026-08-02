@@ -19,6 +19,7 @@ func (h *Handler) Get(ctx *echo.Context) error {
 	return hypermedia.JSON(ctx, http.StatusOK, response{
 		Links: map[string]hypermedia.Link{
 			"self":            {Href: "/"},
+			"chores":          {Href: "/chores"},
 			"chore_templates": {Href: "/chore-templates"},
 		},
 	})

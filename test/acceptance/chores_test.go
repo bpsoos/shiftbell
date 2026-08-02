@@ -91,19 +91,17 @@ var _ = Describe("Chore API", func() {
 				"Template": BeNil(),
 				"Choices":  BeEmpty(),
 				"Fields": Equal([]shiftbellapi.ActionField{
-					{Name: "name", Type: "string", Required: true, MaxLength: 200},
+					{Name: "name", Type: "string", Required: true},
 					{
-						Name:      "description",
-						Type:      "string",
-						Required:  false,
-						MaxLength: 2000,
+						Name:     "description",
+						Type:     "string",
+						Required: false,
 					},
-					{Name: "deadline", Type: "date", Required: true, MaxLength: 0},
+					{Name: "deadline", Type: "date", Required: true},
 					{
-						Name:      "save_as_chore_template",
-						Type:      "boolean",
-						Required:  false,
-						MaxLength: 0,
+						Name:     "save_as_chore_template",
+						Type:     "boolean",
+						Required: false,
 					},
 				}),
 				"Action": Equal(&shiftbellapi.Action{
@@ -152,14 +150,13 @@ var _ = Describe("Chore API", func() {
 					"Method":      Equal(http.MethodPatch),
 					"ContentType": Equal("application/json"),
 					"Fields": Equal([]shiftbellapi.ActionField{
-						{Name: "name", Type: "string", Required: true, MaxLength: 200},
+						{Name: "name", Type: "string", Required: true},
 						{
-							Name:      "description",
-							Type:      "string",
-							Required:  false,
-							MaxLength: 2000,
+							Name:     "description",
+							Type:     "string",
+							Required: false,
 						},
-						{Name: "deadline", Type: "date", Required: true, MaxLength: 0},
+						{Name: "deadline", Type: "date", Required: true},
 					}),
 				}),
 				shiftbellapi.ActionCompleteChore: gstruct.MatchAllFields(gstruct.Fields{
@@ -168,10 +165,9 @@ var _ = Describe("Chore API", func() {
 					"ContentType": Equal("application/json"),
 					"Fields": Equal([]shiftbellapi.ActionField{
 						{
-							Name:      "completed_on",
-							Type:      "date",
-							Required:  true,
-							MaxLength: 0,
+							Name:     "completed_on",
+							Type:     "date",
+							Required: true,
 						},
 					}),
 				}),

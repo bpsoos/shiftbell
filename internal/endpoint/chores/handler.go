@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
@@ -64,16 +65,30 @@ type Persister interface {
 	MarkComplete(id int, completedOn time.Time) error
 }
 
+type Service interface {
+	Browse(
+		context.Context,
+		*choremodels.BrowseChoresParams,
+	) (*choremodels.ChorePage, error)
+	Create(
+		context.Context,
+		*choremodels.CreateChoreParams,
+	) (*choremodels.CreateChoreResult, error)
+	Get(context.Context, int) (*choremodels.ChoreDetails, error)
+}
+
 type HandlerDeps struct {
 	Templater              Templater
 	Persister              Persister
 	ChoreTemplatePersister ChoreTemplatePersister
+	Service                Service
 }
 
 type Handler struct {
 	templater              Templater
 	persister              Persister
 	choreTemplatePersister ChoreTemplatePersister
+	service                Service
 }
 
 func NewHandler(deps *HandlerDeps) *Handler {
@@ -81,10 +96,15 @@ func NewHandler(deps *HandlerDeps) *Handler {
 		templater:              deps.Templater,
 		persister:              deps.Persister,
 		choreTemplatePersister: deps.ChoreTemplatePersister,
+		service:                deps.Service,
 	}
 }
 
 func (h *Handler) Get(ctx *echo.Context) error {
+	if hypermedia.Accepts(ctx.Request()) {
+		return h.get(ctx)
+	}
+
 	idStr := ctx.ParamOr("id", "")
 	if idStr == "" {
 		return ctx.String(http.StatusUnprocessableEntity, "id missing")
@@ -115,6 +135,10 @@ func (h *Handler) Get(ctx *echo.Context) error {
 }
 
 func (h *Handler) GetBatch(ctx *echo.Context) error {
+	if hypermedia.Accepts(ctx.Request()) {
+		return h.browse(ctx)
+	}
+
 	offsetStr := ctx.QueryParamOr("offset", "0")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
@@ -214,6 +238,10 @@ func (h *Handler) Patch(ctx *echo.Context) error {
 }
 
 func (h *Handler) Create(ctx *echo.Context) error {
+	if hypermedia.Accepts(ctx.Request()) {
+		return h.create(ctx)
+	}
+
 	name := ctx.FormValueOr("name", "")
 	if name == "" {
 		logging.Default().Info("missing name for create chore")
@@ -253,6 +281,10 @@ type NewChoreParams struct {
 }
 
 func (h *Handler) New(ctx *echo.Context) error {
+	if hypermedia.Accepts(ctx.Request()) {
+		return h.newChore(ctx)
+	}
+
 	ctxValues := &choremodels.NewChoreCtxValues{
 		SelectedChoreTemplate: nil,
 		IsManual:              false,
