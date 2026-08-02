@@ -17,3 +17,23 @@ jobs:
           just-version: "1.51.0"
       - run: just mockery
       - run: just test-ci
+
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      GOEXPERIMENT: jsonv2
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: extractions/setup-just@v4
+        with:
+          just-version: "1.51.0"
+      - run: just mockery
+      - run: just generate-templ
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
+
