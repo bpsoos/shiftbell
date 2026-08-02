@@ -30,8 +30,8 @@ var _ = Describe("Deactivate", func() {
 
 	It("atomically deactivates the schedule and removes its active chore", func(ctx SpecContext) {
 		persisted := &models.Schedule{
-			Id: 42,
-			Name: "Laundry",
+			Id:            42,
+			Name:          "Laundry",
 			DeactivatedAt: &deactivatedAt,
 		}
 		persister.EXPECT().Deactivate(ctx, &models.DeactivateScheduleParams{

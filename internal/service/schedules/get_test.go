@@ -21,9 +21,9 @@ var _ = Describe("Get", func() {
 
 	It("returns schedule details", func(ctx SpecContext) {
 		details := &models.ScheduleDetails{
-			Id: 42,
-			Name: "Laundry",
-			ChoreTemplateId: 7,
+			Id:                42,
+			Name:              "Laundry",
+			ChoreTemplateId:   7,
 			ChoreTemplateName: "Wash clothes",
 		}
 		persister.EXPECT().Get(ctx, 42).Return(details, nil).Once()

@@ -27,15 +27,15 @@ var _ = Describe("Edit", func() {
 
 	It("normalizes and persists the schedule without replacing its template", func(ctx SpecContext) {
 		params := &models.EditScheduleParams{
-			Id: 42,
-			Name: " raw name ",
+			Id:           42,
+			Name:         " raw name ",
 			IntervalDays: 14,
 		}
 		persisted := &models.Schedule{
-			Id: 42,
-			Name: "Normalized name",
+			Id:              42,
+			Name:            "Normalized name",
 			ChoreTemplateId: 7,
-			IntervalDays: 14,
+			IntervalDays:    14,
 		}
 		normalizer.EXPECT().NormalizeName(" raw name ").Return("Normalized name", nil).Once()
 		persister.EXPECT().Edit(ctx, &models.EditScheduleParams{
@@ -49,8 +49,8 @@ var _ = Describe("Edit", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(BeIdenticalTo(persisted))
 		Expect(params).To(Equal(&models.EditScheduleParams{
-			Id: 42,
-			Name: " raw name ",
+			Id:           42,
+			Name:         " raw name ",
 			IntervalDays: 14,
 		}))
 	})
@@ -87,14 +87,14 @@ var _ = Describe("Edit", func() {
 		persistErr := errors.New("persistence failed")
 		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
 		persister.EXPECT().Edit(ctx, &models.EditScheduleParams{
-			Id: 42,
-			Name: "Name",
+			Id:           42,
+			Name:         "Name",
 			IntervalDays: 14,
 		}).Return(nil, persistErr).Once()
 
 		result, err := service.Edit(ctx, &models.EditScheduleParams{
-			Id: 42,
-			Name: "name",
+			Id:           42,
+			Name:         "name",
 			IntervalDays: 14,
 		})
 

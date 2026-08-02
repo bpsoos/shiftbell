@@ -1,0 +1,28 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - lll
+  settings:
+    lll:
+      line-length: 90
+      tab-width: 4
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gocyclo
+formatters:
+  enable:
+    - gofumpt
+    - golines
+  settings:
+    golines:
+      max-len: 90
+      tab-len: 4

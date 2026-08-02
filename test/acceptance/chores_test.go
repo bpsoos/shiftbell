@@ -7,7 +7,7 @@ import (
 
 var _ = Describe("Chore API", func() {
 	When("creating a one-off chore", func() {
-		DescribeTable("creates the requested one-off chore atomically",
+		DescribeTable("creates the requested one-off chore",
 			func() {
 				Expect(true).To(BeTrue())
 			},
@@ -16,7 +16,7 @@ var _ = Describe("Chore API", func() {
 			Entry("template-based one-off"),
 		)
 
-		It("stores a template-based chore as an independent snapshot", func() {
+		It("stores a new template when save-as-template is enabled", func() {
 			Expect(true).To(BeTrue())
 		})
 
@@ -67,8 +67,7 @@ var _ = Describe("Chore API", func() {
 		It("moves the chore from the active collection to completed history", func() {
 			Expect(true).To(BeTrue())
 		})
-
-		It("does not create a successor", func() {
+		It("treats repeated completion requests as successful no-ops", func() {
 			Expect(true).To(BeTrue())
 		})
 

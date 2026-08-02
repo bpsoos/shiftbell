@@ -1,5 +1,6 @@
 dev_image := "shiftbell-dev"
 prod_image := "shiftbell"
+golangci_lint_image := "golangci/golangci-lint:v2.12.2"
 export DEV_IMAGE := dev_image
 
 default:
@@ -61,6 +62,18 @@ test-ci:
 
 test-acceptance:
     just --justfile test/acceptance/justfile test-acceptance
+
+@golangci-lint *args:
+    docker run --rm \
+        -v "{{justfile_directory()}}:/app" \
+        -v "shiftbell-golangci-cache:/cache" \
+        -w /app \
+        -e GOEXPERIMENT=jsonv2 \
+        -e GOLANGCI_LINT_CACHE=/cache/golangci-lint \
+        -e GOCACHE=/cache/go-build \
+        -e GOMODCACHE=/cache/go-mod \
+        {{golangci_lint_image}} \
+        golangci-lint {{args}}
 
 mockery *args:
     docker run --rm \
