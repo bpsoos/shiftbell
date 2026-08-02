@@ -84,8 +84,12 @@ var _ = Describe("Chore template API", func() {
 			By("creating a chore template")
 			createResult, err := client.CreateChoreTemplate(
 				ctx,
+				shiftbellapi.RequestParams{
+					Method:      createAction.Method,
+					Href:        createAction.Href,
+					ContentType: createAction.ContentType,
+				},
 				shiftbellapi.CreateChoreTemplateParams{
-					Action:      createAction,
 					Name:        "  Laundry  ",
 					Description: "  Wash and fold weekly.  ",
 				},
@@ -236,8 +240,12 @@ var _ = Describe("Chore template API", func() {
 
 			conflict, err := client.CreateChoreTemplate(
 				ctx,
+				shiftbellapi.RequestParams{
+					Method:      createAction.Method,
+					Href:        createAction.Href,
+					ContentType: createAction.ContentType,
+				},
 				shiftbellapi.CreateChoreTemplateParams{
-					Action:      createAction,
 					Name:        strings.ToUpper(name),
 					Description: "Conflicting description",
 				},
@@ -273,11 +281,16 @@ var _ = Describe("Chore template API", func() {
 			)
 			selfHref := created.ChoreTemplate.Links[shiftbellapi.RelationSelf].Href
 			expectActiveChoreTemplateActions(created.Actions, selfHref)
+			editAction := created.Actions[shiftbellapi.ActionEditChoreTemplate]
 
 			editResult, err := client.EditChoreTemplate(
 				ctx,
+				shiftbellapi.RequestParams{
+					Method:      editAction.Method,
+					Href:        editAction.Href,
+					ContentType: editAction.ContentType,
+				},
 				shiftbellapi.EditChoreTemplateParams{
-					Action:      created.Actions[shiftbellapi.ActionEditChoreTemplate],
 					Name:        "  Edited template  ",
 					Description: "  Edited description  ",
 				},
@@ -335,8 +348,12 @@ var _ = Describe("Chore template API", func() {
 
 		conflict, err := client.EditChoreTemplate(
 			ctx,
+			shiftbellapi.RequestParams{
+				Method:      editAction.Method,
+				Href:        editAction.Href,
+				ContentType: editAction.ContentType,
+			},
 			shiftbellapi.EditChoreTemplateParams{
-				Action:      editAction,
 				Name:        strings.ToUpper(existingName),
 				Description: "Conflicting edit",
 			},
@@ -372,11 +389,14 @@ var _ = Describe("Chore template API", func() {
 			)
 			selfHref := created.ChoreTemplate.Links[shiftbellapi.RelationSelf].Href
 			expectActiveChoreTemplateActions(created.Actions, selfHref)
+			deactivateAction := created.Actions[shiftbellapi.ActionDeactivateTemplate]
 
 			deactivated, err := client.DeactivateChoreTemplate(
 				ctx,
-				shiftbellapi.DeactivateChoreTemplateParams{
-					Action: created.Actions[shiftbellapi.ActionDeactivateTemplate],
+				shiftbellapi.RequestParams{
+					Method:      deactivateAction.Method,
+					Href:        deactivateAction.Href,
+					ContentType: deactivateAction.ContentType,
 				},
 			)
 			Expect(err).NotTo(HaveOccurred())
@@ -429,8 +449,12 @@ var _ = Describe("Chore template API", func() {
 
 		invalid, err := client.CreateChoreTemplate(
 			ctx,
+			shiftbellapi.RequestParams{
+				Method:      createAction.Method,
+				Href:        createAction.Href,
+				ContentType: createAction.ContentType,
+			},
 			shiftbellapi.CreateChoreTemplateParams{
-				Action:      createAction,
 				Name:        "   ",
 				Description: "Invalid template",
 			},
@@ -509,11 +533,19 @@ func createChoreTemplate(
 	description string,
 ) *shiftbellapi.CreateChoreTemplateResponse {
 	GinkgoHelper()
-	result, err := client.CreateChoreTemplate(ctx, shiftbellapi.CreateChoreTemplateParams{
-		Action:      collection.Actions[shiftbellapi.ActionCreateChoreTemplate],
-		Name:        name,
-		Description: description,
-	})
+	createAction := collection.Actions[shiftbellapi.ActionCreateChoreTemplate]
+	result, err := client.CreateChoreTemplate(
+		ctx,
+		shiftbellapi.RequestParams{
+			Method:      createAction.Method,
+			Href:        createAction.Href,
+			ContentType: createAction.ContentType,
+		},
+		shiftbellapi.CreateChoreTemplateParams{
+			Name:        name,
+			Description: description,
+		},
+	)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(result.StatusCode).To(Equal(http.StatusCreated))
 	Expect(result.ErrorResponse).To(BeNil())

@@ -9,14 +9,19 @@ import (
 
 func (c *APIClient) DeactivateChoreTemplate(
 	ctx context.Context,
-	params DeactivateChoreTemplateParams,
+	requestParams RequestParams,
 ) (*DeactivateChoreTemplateResult, error) {
-	request, err := c.newRequest(ctx, params.Action.Method, params.Action.Href, nil)
+	request, err := c.newRequest(
+		ctx,
+		requestParams.Method,
+		requestParams.Href,
+		nil,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("create deactivate chore template request: %w", err)
 	}
-	if params.Action.ContentType != "" {
-		request.Header.Set("Content-Type", params.Action.ContentType)
+	if requestParams.ContentType != "" {
+		request.Header.Set("Content-Type", requestParams.ContentType)
 	}
 	_, responseBody, err := c.do(request, http.StatusOK)
 	if err != nil {

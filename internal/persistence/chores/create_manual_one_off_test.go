@@ -2,9 +2,11 @@ package chores_test
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
+	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
 	"github.com/bpsoos/shiftbell/internal/testsupport/sqlitetest"
 	"github.com/jmoiron/sqlx"
@@ -65,4 +67,94 @@ var _ = Describe("Create a manual one-off chore", func() {
 		Expect(isComplete).To(BeFalse())
 		Expect(persisted).To(Equal(deadline))
 	})
+
+	It(
+		"atomically persists the chore and a new template when requested",
+		func(ctx SpecContext) {
+			deadline := time.Date(2020, time.February, 4, 0, 0, 0, 0, time.UTC)
+
+			result, err := persister.CreateManualOneOff(
+				ctx,
+				&choremodels.CreateManualOneOffParams{
+					Name:                "Kitchen",
+					Description:         "Reusable kitchen steps.",
+					Deadline:            deadline,
+					SaveAsChoreTemplate: true,
+				},
+			)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(&choremodels.CreateChoreResult{
+				Chore: &choremodels.Chore{
+					Id:          1,
+					Status:      choremodels.ChoreStatusActive,
+					Name:        "Kitchen",
+					Description: "Reusable kitchen steps.",
+					Deadline:    deadline,
+				},
+				ChoreTemplate: &choretemplatemodels.ChoreTemplate{
+					Id:          1,
+					Name:        "Kitchen",
+					Description: "Reusable kitchen steps.",
+				},
+			}))
+			var choreTemplateId sql.NullInt64
+			Expect(db.QueryRowContext(
+				ctx,
+				`select chore_template_id from chores where id = ?`,
+				1,
+			).Scan(&choreTemplateId)).To(Succeed())
+			Expect(choreTemplateId.Valid).To(BeFalse())
+			var name, description string
+			Expect(db.QueryRowContext(
+				ctx,
+				`select name, description from chore_templates where id = ?`,
+				1,
+			).Scan(&name, &description)).To(Succeed())
+			Expect(name).To(Equal("Kitchen"))
+			Expect(description).To(Equal("Reusable kitchen steps."))
+		},
+	)
+
+	It(
+		"rolls back the chore when an active template name conflicts",
+		func(ctx SpecContext) {
+			_, err := db.ExecContext(
+				ctx,
+				`insert into chore_templates (id, name, description) values (?, ?, ?)`,
+				7,
+				"KITCHEN",
+				"Existing template",
+			)
+			Expect(err).NotTo(HaveOccurred())
+			deadline := time.Date(2020, time.February, 4, 0, 0, 0, 0, time.UTC)
+
+			result, err := persister.CreateManualOneOff(
+				ctx,
+				&choremodels.CreateManualOneOffParams{
+					Name:                "Kitchen",
+					Description:         "Reusable kitchen steps.",
+					Deadline:            deadline,
+					SaveAsChoreTemplate: true,
+				},
+			)
+
+			Expect(result).To(BeNil())
+			var conflict *choretemplatemodels.NameConflictError
+			Expect(errors.As(err, &conflict)).To(BeTrue())
+			Expect(conflict.ExistingId).To(Equal(7))
+			var choreCount, templateCount int
+			Expect(
+				db.QueryRowContext(ctx, `select count(*) from chores`).Scan(&choreCount),
+			).To(Succeed())
+			Expect(
+				db.QueryRowContext(
+					ctx,
+					`select count(*) from chore_templates`,
+				).Scan(&templateCount),
+			).To(Succeed())
+			Expect(choreCount).To(BeZero())
+			Expect(templateCount).To(Equal(1))
+		},
+	)
 })

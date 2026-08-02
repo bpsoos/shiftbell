@@ -10,6 +10,7 @@ import (
 
 func (c *APIClient) CreateChore(
 	ctx context.Context,
+	requestParams RequestParams,
 	params CreateChoreParams,
 ) (*CreateChoreResult, error) {
 	requestBody, err := json.Marshal(params)
@@ -18,14 +19,14 @@ func (c *APIClient) CreateChore(
 	}
 	request, err := c.newRequest(
 		ctx,
-		params.Action.Method,
-		params.Action.Href,
+		requestParams.Method,
+		requestParams.Href,
 		bytes.NewReader(requestBody),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create chore request: %w", err)
 	}
-	request.Header.Set("Content-Type", params.Action.ContentType)
+	request.Header.Set("Content-Type", requestParams.ContentType)
 	statusCode, header, responseBody, err := c.doResponse(request)
 	if err != nil {
 		return nil, err

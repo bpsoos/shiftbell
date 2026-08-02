@@ -14,6 +14,33 @@ import (
 )
 
 var _ = Describe("Browse chores", func() {
+	It("passes filters and pagination to the service", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
+			Status: choremodels.ChoreStatusCompleted,
+			Search: "Kitchen",
+			Offset: 4,
+			Limit:  7,
+		}).Return(&choremodels.ChorePage{}, nil).Once()
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: service},
+		)
+		e := echo.New()
+		e.GET("/chores", handler.GetBatch)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores?status=completed&search=Kitchen&offset=4&limit=7",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusOK))
+	})
+
 	It(
 		"returns the active chore collection with its creation affordance",
 		func(ctx SpecContext) {

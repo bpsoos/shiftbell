@@ -21,6 +21,12 @@ type Action struct {
 
 type Actions map[string]Action
 
+type RequestParams struct {
+	Method      string
+	Href        string
+	ContentType string
+}
+
 type Home struct {
 	Links Links `json:"_links"`
 }
@@ -51,6 +57,13 @@ type GetChoresResult struct {
 	Collection ChoreCollection
 }
 
+type BrowseChoresParams struct {
+	Href   string
+	Search string
+	Status string
+	Limit  int
+}
+
 type ChoreCreationChoice struct {
 	Label string `json:"label"`
 	Href  string `json:"href"`
@@ -75,7 +88,6 @@ type GetChoreCreationStepResult struct {
 }
 
 type CreateChoreParams struct {
-	Action              Action `json:"-"`
 	Name                string `json:"name"`
 	Description         string `json:"description"`
 	Deadline            string `json:"deadline"`
@@ -139,7 +151,6 @@ type GetChoreTemplatesResult struct {
 }
 
 type CreateChoreTemplateParams struct {
-	Action      Action `json:"-"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
@@ -172,7 +183,6 @@ type GetChoreTemplateResult struct {
 }
 
 type EditChoreTemplateParams struct {
-	Action      Action `json:"-"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
@@ -186,10 +196,6 @@ type EditChoreTemplateResult struct {
 	StatusCode      int
 	SuccessResponse *EditChoreTemplateResponse
 	ErrorResponse   *ErrorResponse
-}
-
-type DeactivateChoreTemplateParams struct {
-	Action Action
 }
 
 type DeactivateChoreTemplateResult struct {

@@ -2,6 +2,7 @@ package chores
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -10,12 +11,30 @@ import (
 )
 
 func (h *Handler) browse(ctx *echo.Context) error {
+	offset, err := strconv.Atoi(ctx.QueryParamOr("offset", "0"))
+	if err != nil {
+		return hypermedia.JSON(
+			ctx,
+			http.StatusUnprocessableEntity,
+			apiErrorResponse{Error: "invalid offset"},
+		)
+	}
+	limit, err := strconv.Atoi(ctx.QueryParamOr("limit", "20"))
+	if err != nil {
+		return hypermedia.JSON(
+			ctx,
+			http.StatusUnprocessableEntity,
+			apiErrorResponse{Error: "invalid limit"},
+		)
+	}
+
 	page, err := h.service.Browse(
 		ctx.Request().Context(),
 		&choremodels.BrowseChoresParams{
-			Status: choremodels.ChoreStatusActive,
-			Offset: 0,
-			Limit:  20,
+			Status: choremodels.ChoreStatus(ctx.QueryParamOr("status", "active")),
+			Search: ctx.QueryParamOr("search", ""),
+			Offset: offset,
+			Limit:  limit,
 		},
 	)
 	if err != nil {
