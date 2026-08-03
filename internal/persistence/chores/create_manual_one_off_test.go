@@ -2,7 +2,6 @@ package chores_test
 
 import (
 	"database/sql"
-	"errors"
 	"time"
 
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
@@ -140,9 +139,7 @@ var _ = Describe("Create a manual one-off chore", func() {
 			)
 
 			Expect(result).To(BeNil())
-			var conflict *choretemplatemodels.NameConflictError
-			Expect(errors.As(err, &conflict)).To(BeTrue())
-			Expect(conflict.ExistingId).To(Equal(7))
+			Expect(err).To(MatchError(choretemplatemodels.ErrNameConflict))
 			var choreCount, templateCount int
 			Expect(
 				db.QueryRowContext(ctx, `select count(*) from chores`).Scan(&choreCount),

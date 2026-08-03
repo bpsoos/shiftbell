@@ -93,4 +93,27 @@ var _ = Describe("Create", func() {
 			Expect(count).To(Equal(2))
 		})
 	})
+
+	It("returns the active template when its name conflicts", func(ctx SpecContext) {
+		_, err := db.ExecContext(
+			ctx,
+			`insert into chore_templates (id, name) values (?, ?)`,
+			7,
+			"LAUNDRY",
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		created, err := persister.Create(ctx, &models.CreateChoreTemplateParams{
+			Name: "Laundry",
+		})
+
+		Expect(created).To(BeNil())
+		Expect(err).To(MatchError(models.ErrNameConflict))
+		var count int
+		Expect(db.QueryRowContext(
+			ctx,
+			`select count(*) from chore_templates`,
+		).Scan(&count)).To(Succeed())
+		Expect(count).To(Equal(1))
+	})
 })

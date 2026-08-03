@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bpsoos/shiftbell/internal/database"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	"github.com/jmoiron/sqlx"
@@ -83,7 +84,7 @@ func insertSavedChoreTemplate(
 		values (?, ?)
 	`, name, nullableText(description))
 	if err != nil {
-		return nil, resolveChoreTemplateInsertError(ctx, tx, name, err)
+		return nil, resolveChoreTemplateInsertError(err)
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
@@ -98,32 +99,12 @@ func insertSavedChoreTemplate(
 }
 
 func resolveChoreTemplateInsertError(
-	ctx context.Context,
-	tx *sqlx.Tx,
-	name string,
 	insertErr error,
 ) error {
-	existingId, err := findActiveChoreTemplateIDByName(ctx, tx, name)
-	if err == nil {
-		return &choretemplatemodels.NameConflictError{ExistingId: existingId}
+	if database.IsUniqueConstraintError(insertErr) {
+		return choretemplatemodels.ErrNameConflict
 	}
 	return fmt.Errorf("insert chore template: %w", insertErr)
-}
-
-func findActiveChoreTemplateIDByName(
-	ctx context.Context,
-	tx *sqlx.Tx,
-	name string,
-) (int, error) {
-	var id int
-	err := tx.QueryRowContext(ctx, `
-		select id
-		from chore_templates
-		where deactivated_at is null and lower(name) = lower(?)
-		order by id desc
-		limit 1
-	`, name).Scan(&id)
-	return id, err
 }
 
 func nullableText(value string) sql.NullString {

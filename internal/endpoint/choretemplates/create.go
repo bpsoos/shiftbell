@@ -39,11 +39,26 @@ func (h *Handler) Create(ctx *echo.Context) error {
 		},
 	)
 	if err != nil {
+		if errors.Is(err, models.ErrNameConflict) {
+			return hypermedia.JSON(
+				ctx,
+				http.StatusConflict,
+				errorResponse{
+					Error:   err.Error(),
+					Links:   map[string]hypermedia.Link{},
+					Actions: map[string]hypermedia.Action{"create": createAction()},
+				},
+			)
+		}
 		if isInvalidCreateRequestError(err) {
 			return hypermedia.JSON(
 				ctx,
 				http.StatusUnprocessableEntity,
-				errorResponse{Error: err.Error()},
+				errorResponse{
+					Error:   err.Error(),
+					Links:   collectionLink(),
+					Actions: map[string]hypermedia.Action{"create": createAction()},
+				},
 			)
 		}
 		logging.Default().Error("create chore template", "err", err)
@@ -54,12 +69,12 @@ func (h *Handler) Create(ctx *echo.Context) error {
 		)
 	}
 
-	response := newResponse(choreTemplate)
+	representation := newRepresentation(choreTemplate)
 	ctx.Response().Header().Set(
 		echo.HeaderLocation,
-		response.Links["self"].Href,
+		representation.Links["self"].Href,
 	)
-	return hypermedia.JSON(ctx, http.StatusCreated, response)
+	return hypermedia.JSON(ctx, http.StatusCreated, representation)
 }
 
 func isInvalidCreateRequestError(err error) bool {

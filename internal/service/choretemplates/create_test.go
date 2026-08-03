@@ -133,8 +133,7 @@ var _ = Describe("Create", func() {
 		Expect(errors.Is(err, persistErr)).To(BeTrue())
 	})
 
-	It("preserves the existing template for a name conflict", func(ctx SpecContext) {
-		conflict := &models.NameConflictError{ExistingId: 7}
+	It("preserves a name conflict", func(ctx SpecContext) {
 		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
 		normalizer.EXPECT().
 			NormalizeDescription("description").
@@ -145,7 +144,7 @@ var _ = Describe("Create", func() {
 				Name:        "Name",
 				Description: "Description",
 			}).
-			Return(nil, conflict).
+			Return(nil, models.ErrNameConflict).
 			Once()
 
 		result, err := service.Create(ctx, &models.CreateChoreTemplateParams{
@@ -154,8 +153,6 @@ var _ = Describe("Create", func() {
 		})
 
 		Expect(result).To(BeNil())
-		var actual *models.NameConflictError
-		Expect(errors.As(err, &actual)).To(BeTrue())
-		Expect(actual).To(BeIdenticalTo(conflict))
+		Expect(errors.Is(err, models.ErrNameConflict)).To(BeTrue())
 	})
 })

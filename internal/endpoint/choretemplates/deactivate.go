@@ -11,11 +11,7 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-func (h *Handler) Get(ctx *echo.Context) error {
-	if !hypermedia.Accepts(ctx.Request()) {
-		return ctx.NoContent(http.StatusNotAcceptable)
-	}
-
+func (h *Handler) Deactivate(ctx *echo.Context) error {
 	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
 	if err != nil || id <= 0 {
 		return hypermedia.JSON(
@@ -24,27 +20,21 @@ func (h *Handler) Get(ctx *echo.Context) error {
 			errorResponse{Error: "invalid chore template id"},
 		)
 	}
-
-	details, err := h.service.Get(ctx.Request().Context(), id)
+	deactivated, err := h.service.Deactivate(ctx.Request().Context(), id)
 	if err != nil {
 		if errors.Is(err, models.ErrNotFound) {
 			return hypermedia.JSON(
 				ctx,
 				http.StatusNotFound,
-				errorResponse{
-					Error:   models.ErrNotFound.Error(),
-					Links:   collectionLink(),
-					Actions: map[string]hypermedia.Action{},
-				},
+				errorResponse{Error: models.ErrNotFound.Error()},
 			)
 		}
-		logging.Default().Error("get chore template", "err", err)
+		logging.Default().Error("deactivate chore template", "err", err)
 		return hypermedia.JSON(
 			ctx,
 			http.StatusInternalServerError,
 			errorResponse{Error: "something went wrong"},
 		)
 	}
-
-	return hypermedia.JSON(ctx, http.StatusOK, newRepresentation(&details.ChoreTemplate))
+	return hypermedia.JSON(ctx, http.StatusOK, newRepresentation(deactivated))
 }

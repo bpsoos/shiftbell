@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/bpsoos/shiftbell/internal/database"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 )
 
@@ -19,13 +20,22 @@ func (p *Persister) Create(
 			Valid:  true,
 		}
 	}
-	result, err := p.db.ExecContext(ctx, `
-		insert into chore_templates (name, description)
-		values (?, ?)
-	`, params.Name, sqlDesc)
+	result, err := p.db.ExecContext(
+		ctx,
+		`
+			insert into chore_templates (name, description)
+			values (?, ?)
+		`,
+		params.Name,
+		sqlDesc,
+	)
 	if err != nil {
+		if database.IsUniqueConstraintError(err) {
+			return nil, models.ErrNameConflict
+		}
 		return nil, fmt.Errorf("insert chore template: %w", err)
 	}
+
 	id, err := result.LastInsertId()
 	if err != nil {
 		return nil, fmt.Errorf("read inserted chore template id: %w", err)

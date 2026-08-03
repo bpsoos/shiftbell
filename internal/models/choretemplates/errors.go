@@ -6,20 +6,12 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("chore template not found")
-	ErrInactive = errors.New("chore template inactive")
-)
-
-type NameConflictError struct {
-	ExistingId int
-}
-
-func (e *NameConflictError) Error() string {
-	return fmt.Sprintf(
-		"chore template name conflicts with active chore template %d",
-		e.ExistingId,
+	ErrNotFound     = errors.New("chore template not found")
+	ErrInactive     = errors.New("chore template inactive")
+	ErrNameConflict = errors.New(
+		"chore template name conflicts with an active chore template",
 	)
-}
+)
 
 type ActiveScheduleReference struct {
 	Id   int

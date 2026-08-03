@@ -18,19 +18,30 @@ func (p *Persister) Browse(
 		stateCondition = "deactivated_at is not null"
 	}
 
-	rows, err := p.db.QueryContext(ctx, fmt.Sprintf(`
-		select id, name, description, deactivated_at
-		from chore_templates
-		where %s
-			and (
-				? = ''
-				or instr(lower(name), lower(?)) > 0
-				or instr(lower(coalesce(description, '')), lower(?)) > 0
-			)
-		order by id desc
-		limit ?
-		offset ?
-	`, stateCondition), params.Search, params.Search, params.Search, params.Limit+1, params.Offset)
+	rows, err := p.db.QueryContext(
+		ctx,
+		fmt.Sprintf(
+			`
+				select id, name, description, deactivated_at
+				from chore_templates
+				where %s
+					and (
+						? = ''
+						or instr(lower(name), lower(?)) > 0
+						or instr(lower(coalesce(description, '')), lower(?)) > 0
+					)
+				order by id desc
+				limit ?
+				offset ?
+			`,
+			stateCondition,
+		),
+		params.Search,
+		params.Search,
+		params.Search,
+		params.Limit+1,
+		params.Offset,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("select chore templates: %w", err)
 	}

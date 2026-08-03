@@ -33,6 +33,9 @@ var _ = Describe("Chore template API", func() {
 				shiftbellapi.RelationSelf: gstruct.MatchAllFields(gstruct.Fields{
 					"Href": Equal("/"),
 				}),
+				shiftbellapi.RelationChores: gstruct.MatchAllFields(gstruct.Fields{
+					"Href": Equal("/chores"),
+				}),
 				shiftbellapi.RelationChoreTemplates: gstruct.MatchAllFields(
 					gstruct.Fields{
 						"Href": Equal("/chore-templates"),
@@ -47,11 +50,9 @@ var _ = Describe("Chore template API", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(collectionResult.Collection.Items).NotTo(BeNil())
 			Expect(
-				collectionResult.Collection.Links,
-			).To(gstruct.MatchAllKeys(gstruct.Keys{
-				shiftbellapi.RelationSelf: gstruct.MatchAllFields(gstruct.Fields{
-					"Href": Equal("/chore-templates"),
-				}),
+				collectionResult.Collection.Links[shiftbellapi.RelationSelf],
+			).To(gstruct.MatchAllFields(gstruct.Fields{
+				"Href": Equal("/chore-templates"),
 			}))
 			Expect(
 				collectionResult.Collection.Actions,
@@ -82,6 +83,7 @@ var _ = Describe("Chore template API", func() {
 			createAction := collectionResult.Collection.Actions[shiftbellapi.ActionCreateChoreTemplate]
 
 			By("creating a chore template")
+			name := uniqueChoreTemplateName("Laundry")
 			createResult, err := client.CreateChoreTemplate(
 				ctx,
 				shiftbellapi.RequestParams{
@@ -90,7 +92,7 @@ var _ = Describe("Chore template API", func() {
 					ContentType: createAction.ContentType,
 				},
 				shiftbellapi.CreateChoreTemplateParams{
-					Name:        "  Laundry  ",
+					Name:        "  " + name + "  ",
 					Description: "  Wash and fold weekly.  ",
 				},
 			)
@@ -102,7 +104,7 @@ var _ = Describe("Chore template API", func() {
 			Expect(created.Location).NotTo(BeEmpty())
 			Expect(created.ChoreTemplate).To(gstruct.MatchAllFields(gstruct.Fields{
 				"Id":            BeNumerically(">", 0),
-				"Name":          Equal("Laundry"),
+				"Name":          Equal(name),
 				"Description":   Equal("Wash and fold weekly."),
 				"DeactivatedAt": BeNil(),
 				"Links": gstruct.MatchAllKeys(gstruct.Keys{
@@ -225,11 +227,11 @@ var _ = Describe("Chore template API", func() {
 	)
 
 	It(
-		"rejects a case-insensitive duplicate name with a link to the existing template",
+		"rejects a case-insensitive duplicate name",
 		func(ctx SpecContext) {
 			collection := discoverChoreTemplateCollection(ctx, client)
 			name := uniqueChoreTemplateName("Duplicate")
-			existing := createChoreTemplate(
+			createChoreTemplate(
 				ctx,
 				client,
 				collection,
@@ -255,13 +257,7 @@ var _ = Describe("Chore template API", func() {
 			Expect(conflict.SuccessResponse).To(BeNil())
 			Expect(conflict.ErrorResponse).NotTo(BeNil())
 			Expect(conflict.ErrorResponse.Error).NotTo(BeEmpty())
-			Expect(conflict.ErrorResponse.Links).To(gstruct.MatchAllKeys(gstruct.Keys{
-				shiftbellapi.RelationExisting: gstruct.MatchAllFields(gstruct.Fields{
-					"Href": Equal(
-						existing.ChoreTemplate.Links[shiftbellapi.RelationSelf].Href,
-					),
-				}),
-			}))
+			Expect(conflict.ErrorResponse.Links).To(BeEmpty())
 			Expect(conflict.ErrorResponse.Actions).To(gstruct.MatchAllKeys(gstruct.Keys{
 				shiftbellapi.ActionCreateChoreTemplate: Equal(createAction),
 			}))
@@ -282,6 +278,7 @@ var _ = Describe("Chore template API", func() {
 			selfHref := created.ChoreTemplate.Links[shiftbellapi.RelationSelf].Href
 			expectActiveChoreTemplateActions(created.Actions, selfHref)
 			editAction := created.Actions[shiftbellapi.ActionEditChoreTemplate]
+			editedName := uniqueChoreTemplateName("Edited template")
 
 			editResult, err := client.EditChoreTemplate(
 				ctx,
@@ -291,7 +288,7 @@ var _ = Describe("Chore template API", func() {
 					ContentType: editAction.ContentType,
 				},
 				shiftbellapi.EditChoreTemplateParams{
-					Name:        "  Edited template  ",
+					Name:        "  " + editedName + "  ",
 					Description: "  Edited description  ",
 				},
 			)
@@ -302,7 +299,7 @@ var _ = Describe("Chore template API", func() {
 			edited := editResult.SuccessResponse
 			Expect(edited.ChoreTemplate).To(gstruct.MatchAllFields(gstruct.Fields{
 				"Id":            Equal(created.ChoreTemplate.Id),
-				"Name":          Equal("Edited template"),
+				"Name":          Equal(editedName),
 				"Description":   Equal("Edited description"),
 				"DeactivatedAt": BeNil(),
 				"Links":         Equal(created.ChoreTemplate.Links),
@@ -328,7 +325,7 @@ var _ = Describe("Chore template API", func() {
 	It("rejects editing a chore template to an existing name", func(ctx SpecContext) {
 		collection := discoverChoreTemplateCollection(ctx, client)
 		existingName := uniqueChoreTemplateName("Existing edit name")
-		existing := createChoreTemplate(
+		createChoreTemplate(
 			ctx,
 			client,
 			collection,
@@ -363,13 +360,7 @@ var _ = Describe("Chore template API", func() {
 		Expect(conflict.SuccessResponse).To(BeNil())
 		Expect(conflict.ErrorResponse).NotTo(BeNil())
 		Expect(conflict.ErrorResponse.Error).NotTo(BeEmpty())
-		Expect(conflict.ErrorResponse.Links).To(gstruct.MatchAllKeys(gstruct.Keys{
-			shiftbellapi.RelationExisting: gstruct.MatchAllFields(gstruct.Fields{
-				"Href": Equal(
-					existing.ChoreTemplate.Links[shiftbellapi.RelationSelf].Href,
-				),
-			}),
-		}))
+		Expect(conflict.ErrorResponse.Links).To(BeEmpty())
 		Expect(conflict.ErrorResponse.Actions).To(gstruct.MatchAllKeys(gstruct.Keys{
 			shiftbellapi.ActionEditChoreTemplate: Equal(editAction),
 		}))

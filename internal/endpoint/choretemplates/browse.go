@@ -2,6 +2,7 @@ package choretemplates
 
 import (
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
@@ -55,14 +56,35 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 		items[i] = newResponse(&page.ChoreTemplates[i])
 	}
 
+	links := map[string]hypermedia.Link{
+		"self": {Href: ctx.Request().URL.RequestURI()},
+	}
+	if page.More {
+		links["next"] = hypermedia.Link{
+			Href: choreTemplatePageHref(ctx.Request().URL, offset+limit),
+		}
+	}
+	if offset > 0 {
+		previousOffset := max(0, offset-limit)
+		links["previous"] = hypermedia.Link{
+			Href: choreTemplatePageHref(ctx.Request().URL, previousOffset),
+		}
+	}
+
 	return hypermedia.JSON(ctx, http.StatusOK, collectionResponse{
 		Items: items,
 		More:  page.More,
-		Links: map[string]hypermedia.Link{
-			"self": {Href: ctx.Request().URL.RequestURI()},
-		},
+		Links: links,
 		Actions: map[string]hypermedia.Action{
 			"create": createAction(),
 		},
 	})
+}
+
+func choreTemplatePageHref(requestURL *url.URL, offset int) string {
+	pageURL := *requestURL
+	query := pageURL.Query()
+	query.Set("offset", strconv.Itoa(offset))
+	pageURL.RawQuery = query.Encode()
+	return pageURL.RequestURI()
 }
