@@ -300,10 +300,6 @@ var _ = Describe("Chore API", func() {
 			Expect(retrieved.SuccessResponse.Actions).To(Equal(created.Actions))
 		})
 
-		It("stores a new template when save-as-template is enabled", func() {
-			Expect(true).To(BeTrue())
-		})
-
 		DescribeTable("rejects invalid values without creating a chore",
 			func() {
 				Expect(true).To(BeTrue())
