@@ -9,6 +9,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
+	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	"github.com/labstack/echo/v5"
 )
@@ -54,6 +55,23 @@ func (h *Handler) create(ctx *echo.Context) error {
 		},
 	)
 	if err != nil {
+		if errors.Is(err, choretemplatemodels.ErrNameConflict) {
+			return hypermedia.JSON(
+				ctx,
+				http.StatusConflict,
+				apiErrorResponse{
+					Error: choretemplatemodels.ErrNameConflict.Error(),
+					Links: map[string]hypermedia.Link{},
+					Actions: map[string]hypermedia.Action{
+						"create": {
+							Href:        "/chores",
+							Method:      http.MethodPost,
+							ContentType: "application/json",
+						},
+					},
+				},
+			)
+		}
 		if isInvalidChoreCreateRequest(err) {
 			return hypermedia.JSON(
 				ctx,

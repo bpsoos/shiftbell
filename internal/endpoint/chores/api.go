@@ -33,7 +33,9 @@ type choreCollectionResponse struct {
 }
 
 type apiErrorResponse struct {
-	Error string `json:"error"`
+	Error   string                       `json:"error"`
+	Links   map[string]hypermedia.Link   `json:"_links"`
+	Actions map[string]hypermedia.Action `json:"_actions"`
 }
 
 func newChoreResponse(chore *choremodels.Chore) choreResponse {

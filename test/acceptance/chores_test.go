@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/bpsoos/shiftbell/internal/testsupport/shiftbellapi"
@@ -300,18 +301,75 @@ var _ = Describe("Chore API", func() {
 			Expect(retrieved.SuccessResponse.Actions).To(Equal(created.Actions))
 		})
 
-		DescribeTable("rejects invalid values without creating a chore",
-			func() {
-				Expect(true).To(BeTrue())
-			},
-			Entry("blank name"),
-			Entry("missing deadline"),
-		)
-
 		It(
 			"does not create a chore when save-as-template conflicts with an active template",
-			func() {
-				Expect(true).To(BeTrue())
+			func(ctx SpecContext) {
+				templateCollection := discoverChoreTemplateCollection(ctx, client)
+				name := uniqueChoreName("Save conflict")
+				existing := createChoreTemplate(
+					ctx,
+					client,
+					templateCollection,
+					name,
+					"Existing template description",
+				)
+				collection := discoverChoreCollection(ctx, client)
+				form := getManualOneOffChoreForm(ctx, client, collection)
+
+				By("attempting to save the chore under the active template name")
+				conflict, err := client.CreateChore(
+					ctx,
+					shiftbellapi.RequestParams{
+						Method:      form.Action.Method,
+						Href:        form.Action.Href,
+						ContentType: form.Action.ContentType,
+					},
+					shiftbellapi.CreateChoreParams{
+						Name:                strings.ToUpper(name),
+						Description:         "Conflicting chore description",
+						Deadline:            "2020-02-06",
+						SaveAsChoreTemplate: true,
+					},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conflict.StatusCode).To(Equal(http.StatusConflict))
+				Expect(conflict.SuccessResponse).To(BeNil())
+				Expect(conflict.ErrorResponse).NotTo(BeNil())
+				Expect(conflict.ErrorResponse.Error).To(Equal(
+					"chore template name conflicts with an active chore template",
+				))
+				Expect(conflict.ErrorResponse.Links).To(BeEmpty())
+				Expect(
+					conflict.ErrorResponse.Actions,
+				).To(gstruct.MatchAllKeys(gstruct.Keys{
+					shiftbellapi.ActionCreateChore: Equal(*form.Action),
+				}))
+
+				By("proving no chore was created")
+				chores, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: name,
+					Status: "active",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(chores.Collection.Items).To(BeEmpty())
+
+				By("proving the original template is unchanged")
+				templates, err := client.BrowseChoreTemplates(
+					ctx,
+					shiftbellapi.BrowseChoreTemplatesParams{
+						Href:   templateCollection.Links[shiftbellapi.RelationSelf].Href,
+						Search: name,
+						State:  "active",
+						Limit:  20,
+					},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(templates.Collection.Items).To(gstruct.MatchAllElementsWithIndex(
+					gstruct.IndexIdentity,
+					gstruct.Elements{"0": Equal(existing.ChoreTemplate)},
+				))
 			},
 		)
 
