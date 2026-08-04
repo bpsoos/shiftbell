@@ -88,13 +88,13 @@ type GetChoreCreationStepResult struct {
 }
 
 type CreateChoreParams struct {
-	Name                string `json:"name"`
-	Description         string `json:"description"`
+	Name                string `json:"name,omitempty"`
+	Description         string `json:"description,omitempty"`
 	Deadline            string `json:"deadline"`
 	ChoreTemplateId     *int   `json:"chore_template_id,omitempty"`
 	ScheduleName        string `json:"schedule_name,omitempty"`
 	IntervalDays        *int   `json:"interval_days,omitempty"`
-	SaveAsChoreTemplate bool   `json:"save_as_chore_template"`
+	SaveAsChoreTemplate bool   `json:"save_as_chore_template,omitempty"`
 }
 
 type CreateChoreResponse struct {
@@ -148,6 +148,28 @@ type BrowseChoreTemplatesParams struct {
 
 type GetChoreTemplatesResult struct {
 	Collection ChoreTemplateCollection
+}
+
+type ChoreTemplatePickerItem struct {
+	Id     int    `json:"id"`
+	Name   string `json:"name"`
+	Select Link   `json:"select"`
+}
+
+type ChoreTemplatePickerCollection struct {
+	Items []ChoreTemplatePickerItem `json:"items"`
+	More  bool                      `json:"more"`
+	Links Links                     `json:"_links"`
+}
+
+type BrowseChoreTemplatePickerParams struct {
+	Href   string
+	Search string
+	Limit  int
+}
+
+type BrowseChoreTemplatePickerResult struct {
+	Collection ChoreTemplatePickerCollection
 }
 
 type CreateChoreTemplateParams struct {

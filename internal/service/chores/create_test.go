@@ -1,4 +1,4 @@
-package chores
+package chores_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
+	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -16,16 +17,16 @@ var _ = Describe("Create", func() {
 	var (
 		persister  *MockPersister
 		normalizer *MockNormalizer
-		service    *Service
+		service    *choresservice.Service
 	)
 
 	BeforeEach(func() {
 		persister = NewMockPersister(GinkgoT())
 		normalizer = NewMockNormalizer(GinkgoT())
-		service = NewService(&Deps{
+		service = choresservice.NewService(&choresservice.Deps{
 			Persister:  persister,
 			Normalizer: normalizer,
-		}, &Config{})
+		}, &choresservice.Config{})
 	})
 
 	DescribeTable(
@@ -104,6 +105,29 @@ var _ = Describe("Create", func() {
 			"details",
 		),
 	)
+
+	It("creates a template-based one-off chore", func(ctx SpecContext) {
+		choreTemplateId := 42
+		deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
+		persisted := &models.CreateChoreResult{
+			Chore: &models.Chore{Id: 1, Name: "Template snapshot"},
+		}
+		persister.EXPECT().
+			CreateTemplateOneOff(ctx, &models.CreateTemplateOneOffParams{
+				ChoreTemplateId: choreTemplateId,
+				Deadline:        deadline,
+			}).
+			Return(persisted, nil).
+			Once()
+
+		result, err := service.Create(ctx, &models.CreateChoreParams{
+			Deadline:        deadline,
+			ChoreTemplateId: &choreTemplateId,
+		})
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result).To(BeIdenticalTo(persisted))
+	})
 
 	It("rejects an invalid name without persisting", func() {
 		normalizer.EXPECT().

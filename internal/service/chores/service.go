@@ -49,6 +49,10 @@ type Persister interface {
 		context.Context,
 		*models.CreateManualOneOffParams,
 	) (*models.CreateChoreResult, error)
+	CreateTemplateOneOff(
+		context.Context,
+		*models.CreateTemplateOneOffParams,
+	) (*models.CreateChoreResult, error)
 	CreateManualScheduled(
 		context.Context,
 		*models.CreateManualScheduledParams,

@@ -101,6 +101,11 @@ type CreateManualOneOffParams struct {
 	SaveAsChoreTemplate bool
 }
 
+type CreateTemplateOneOffParams struct {
+	ChoreTemplateId int
+	Deadline        time.Time
+}
+
 type CreateManualScheduledParams struct {
 	Name         string
 	Description  string

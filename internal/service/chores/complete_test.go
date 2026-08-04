@@ -1,4 +1,4 @@
-package chores
+package chores_test
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
+	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -13,19 +14,19 @@ import (
 var _ = Describe("Complete", func() {
 	var (
 		persister *MockPersister
-		service   *Service
+		service   *choresservice.Service
 		now       time.Time
 	)
 
 	BeforeEach(func() {
 		now = time.Date(2026, time.July, 28, 21, 30, 0, 0, time.UTC)
 		persister = NewMockPersister(GinkgoT())
-		service = NewService(
-			&Deps{
+		service = choresservice.NewService(
+			&choresservice.Deps{
 				Persister: persister,
 				Now:       func() time.Time { return now },
 			},
-			&Config{AppTimezone: time.FixedZone("UTC+3", 3*60*60)},
+			&choresservice.Config{AppTimezone: time.FixedZone("UTC+3", 3*60*60)},
 		)
 	})
 

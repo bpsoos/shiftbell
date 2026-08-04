@@ -1,8 +1,9 @@
-package chores
+package chores_test
 
 import (
 	"errors"
 
+	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -10,12 +11,15 @@ import (
 var _ = Describe("Delete", func() {
 	var (
 		persister *MockPersister
-		service   *Service
+		service   *choresservice.Service
 	)
 
 	BeforeEach(func() {
 		persister = NewMockPersister(GinkgoT())
-		service = NewService(&Deps{Persister: persister}, &Config{})
+		service = choresservice.NewService(
+			&choresservice.Deps{Persister: persister},
+			&choresservice.Config{},
+		)
 	})
 
 	It("deletes a chore by ID", func(ctx SpecContext) {

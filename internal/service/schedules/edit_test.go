@@ -1,10 +1,11 @@
-package schedules
+package schedules_test
 
 import (
 	"errors"
 
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
+	schedulesservice "github.com/bpsoos/shiftbell/internal/service/schedules"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -13,15 +14,15 @@ var _ = Describe("Edit", func() {
 	var (
 		persister  *MockPersister
 		normalizer *MockNormalizer
-		service    *Service
+		service    *schedulesservice.Service
 	)
 
 	BeforeEach(func() {
 		persister = NewMockPersister(GinkgoT())
 		normalizer = NewMockNormalizer(GinkgoT())
-		service = NewService(
-			&Deps{Persister: persister, Normalizer: normalizer},
-			&Config{},
+		service = schedulesservice.NewService(
+			&schedulesservice.Deps{Persister: persister, Normalizer: normalizer},
+			&schedulesservice.Config{},
 		)
 	})
 

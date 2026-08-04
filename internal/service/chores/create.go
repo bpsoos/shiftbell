@@ -20,6 +20,20 @@ func (s *Service) Create(
 		return nil, validationerrors.ErrInvalidInterval
 	}
 
+	if s.isTemplateOneOff(input) {
+		result, err := s.persister.CreateTemplateOneOff(
+			ctx,
+			&models.CreateTemplateOneOffParams{
+				ChoreTemplateId: *input.ChoreTemplateId,
+				Deadline:        input.Deadline,
+			},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("create template one-off chore: %w", err)
+		}
+		return result, nil
+	}
+
 	if s.isTemplateScheduled(input) {
 		scheduleName, err := s.normalizer.NormalizeName(input.ScheduleName)
 		if err != nil {
@@ -93,6 +107,10 @@ func (s *Service) hasInvalidInterval(input *models.CreateChoreParams) bool {
 
 func (s *Service) isTemplateScheduled(input *models.CreateChoreParams) bool {
 	return input.ChoreTemplateId != nil && s.isScheduled(input)
+}
+
+func (s *Service) isTemplateOneOff(input *models.CreateChoreParams) bool {
+	return input.ChoreTemplateId != nil && !s.isScheduled(input)
 }
 
 func (s *Service) isScheduled(input *models.CreateChoreParams) bool {

@@ -21,10 +21,18 @@ func (p *Persister) CreateManualOneOff(
 		return nil, fmt.Errorf("begin manual one-off chore transaction: %w", err)
 	}
 	defer func() {
-		returnErr = combineManualOneOffRollbackError(returnErr, tx.Rollback())
+		returnErr = combineTransactionRollbackError(
+			returnErr,
+			tx.Rollback(),
+			"manual one-off chore",
+		)
 	}()
 
-	chore, err := insertManualOneOffChore(ctx, tx, params)
+	chore, err := insertOneOffChore(ctx, tx, &choremodels.CreateOneOffChoreParams{
+		Name:        params.Name,
+		Description: params.Description,
+		Deadline:    params.Deadline,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -47,17 +55,17 @@ func (p *Persister) CreateManualOneOff(
 	return created, nil
 }
 
-func insertManualOneOffChore(
+func insertOneOffChore(
 	ctx context.Context,
 	tx *sqlx.Tx,
-	params *choremodels.CreateManualOneOffParams,
+	params *choremodels.CreateOneOffChoreParams,
 ) (*choremodels.Chore, error) {
 	result, err := tx.ExecContext(ctx, `
 		insert into chores (name, description, is_complete, deadline)
 		values (?, ?, ?, ?)
 	`, params.Name, nullableText(params.Description), false, params.Deadline)
 	if err != nil {
-		return nil, fmt.Errorf("insert manual one-off chore: %w", err)
+		return nil, fmt.Errorf("insert one-off chore: %w", err)
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
@@ -111,12 +119,16 @@ func nullableText(value string) sql.NullString {
 	return sql.NullString{String: value, Valid: value != ""}
 }
 
-func combineManualOneOffRollbackError(operationErr error, rollbackErr error) error {
+func combineTransactionRollbackError(
+	operationErr error,
+	rollbackErr error,
+	transactionName string,
+) error {
 	if rollbackErr == nil || errors.Is(rollbackErr, sql.ErrTxDone) {
 		return operationErr
 	}
 	return errors.Join(
 		operationErr,
-		fmt.Errorf("rollback manual one-off chore transaction: %w", rollbackErr),
+		fmt.Errorf("rollback %s transaction: %w", transactionName, rollbackErr),
 	)
 }

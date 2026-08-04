@@ -1,4 +1,4 @@
-package schedules
+package schedules_test
 
 import (
 	"testing"

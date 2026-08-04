@@ -1,4 +1,4 @@
-package chores
+package chores_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
+	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -14,16 +15,16 @@ var _ = Describe("Browse", func() {
 	var (
 		persister  *MockPersister
 		normalizer *MockNormalizer
-		service    *Service
+		service    *choresservice.Service
 	)
 
 	BeforeEach(func() {
 		persister = NewMockPersister(GinkgoT())
 		normalizer = NewMockNormalizer(GinkgoT())
-		service = NewService(&Deps{
+		service = choresservice.NewService(&choresservice.Deps{
 			Persister:  persister,
 			Normalizer: normalizer,
-		}, &Config{})
+		}, &choresservice.Config{})
 	})
 
 	It("defaults to active chores", func(ctx SpecContext) {

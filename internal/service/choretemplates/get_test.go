@@ -1,9 +1,10 @@
-package choretemplates
+package choretemplates_test
 
 import (
 	"errors"
 
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	choretemplatesservice "github.com/bpsoos/shiftbell/internal/service/choretemplates"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -11,12 +12,15 @@ import (
 var _ = Describe("Get", func() {
 	var (
 		persister *MockPersister
-		service   *Service
+		service   *choretemplatesservice.Service
 	)
 
 	BeforeEach(func() {
 		persister = NewMockPersister(GinkgoT())
-		service = NewService(&Deps{Persister: persister}, &Config{})
+		service = choretemplatesservice.NewService(
+			&choretemplatesservice.Deps{Persister: persister},
+			&choretemplatesservice.Config{},
+		)
 	})
 
 	It("returns chore template details", func(ctx SpecContext) {

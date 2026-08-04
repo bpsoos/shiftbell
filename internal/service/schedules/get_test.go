@@ -1,9 +1,10 @@
-package schedules
+package schedules_test
 
 import (
 	"errors"
 
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
+	schedulesservice "github.com/bpsoos/shiftbell/internal/service/schedules"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -11,12 +12,15 @@ import (
 var _ = Describe("Get", func() {
 	var (
 		persister *MockPersister
-		service   *Service
+		service   *schedulesservice.Service
 	)
 
 	BeforeEach(func() {
 		persister = NewMockPersister(GinkgoT())
-		service = NewService(&Deps{Persister: persister}, &Config{})
+		service = schedulesservice.NewService(
+			&schedulesservice.Deps{Persister: persister},
+			&schedulesservice.Config{},
+		)
 	})
 
 	It("returns schedule details", func(ctx SpecContext) {

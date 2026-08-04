@@ -6,6 +6,7 @@ import (
 
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -94,6 +95,102 @@ var _ = Describe("Start chore creation", func() {
 					"type": "boolean",
 					"required": false
 				}
+			],
+			"action": {
+				"href": "/chores",
+				"method": "POST",
+				"content_type": "application/json",
+				"fields": null
+			}
+		}`))
+	})
+
+	It("offers recurrence choices for a selected template", func(ctx SpecContext) {
+		choreTemplatePersister := NewMockChoreTemplatePersister(GinkgoT())
+		choreTemplatePersister.EXPECT().
+			Get(ctx, 42).
+			Return(&choretemplatemodels.ChoreTemplateDetails{
+				ChoreTemplate: choretemplatemodels.ChoreTemplate{
+					Id:          42,
+					Name:        "Kitchen",
+					Description: "Reusable template steps.",
+				},
+			}, nil).
+			Once()
+		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+			ChoreTemplatePersister: choreTemplatePersister,
+		})
+		e := echo.New()
+		e.GET("/chores/new", handler.New)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores/new?template_id=42",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"step": "recurrence",
+			"template": {
+				"id": 42,
+				"name": "Kitchen",
+				"description": "Reusable template steps."
+			},
+			"choices": [
+				{
+					"label": "One-off",
+					"href": "/chores/new?template_id=42&recurrence=one-off"
+				},
+				{
+					"label": "Scheduled",
+					"href": "/chores/new?template_id=42&recurrence=scheduled"
+				}
+			]
+		}`))
+	})
+
+	It("returns the template-based one-off form", func(ctx SpecContext) {
+		choreTemplatePersister := NewMockChoreTemplatePersister(GinkgoT())
+		choreTemplatePersister.EXPECT().
+			Get(ctx, 42).
+			Return(&choretemplatemodels.ChoreTemplateDetails{
+				ChoreTemplate: choretemplatemodels.ChoreTemplate{
+					Id:          42,
+					Name:        "Kitchen",
+					Description: "Reusable template steps.",
+				},
+			}, nil).
+			Once()
+		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+			ChoreTemplatePersister: choreTemplatePersister,
+		})
+		e := echo.New()
+		e.GET("/chores/new", handler.New)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores/new?template_id=42&recurrence=one-off",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"step": "form",
+			"template": {
+				"id": 42,
+				"name": "Kitchen"
+			},
+			"fields": [
+				{"name": "deadline", "type": "date", "required": true}
 			],
 			"action": {
 				"href": "/chores",

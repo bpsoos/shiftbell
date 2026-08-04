@@ -33,10 +33,15 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 		)
 	}
 
+	pickerRequested := ctx.QueryParamOr("picker", "") == "1"
+	filter := models.ChoreTemplateFilter(ctx.QueryParamOr("state", ""))
+	if pickerRequested {
+		filter = models.ChoreTemplateFilterActive
+	}
 	page, err := h.service.Browse(
 		ctx.Request().Context(),
 		&models.BrowseChoreTemplatesParams{
-			Filter: models.ChoreTemplateFilter(ctx.QueryParamOr("state", "")),
+			Filter: filter,
 			Search: ctx.QueryParamOr("search", ""),
 			Offset: offset,
 			Limit:  limit,
@@ -49,11 +54,6 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 			http.StatusInternalServerError,
 			errorResponse{Error: "something went wrong"},
 		)
-	}
-
-	items := make([]response, len(page.ChoreTemplates))
-	for i := range page.ChoreTemplates {
-		items[i] = newResponse(&page.ChoreTemplates[i])
 	}
 
 	links := map[string]hypermedia.Link{
@@ -69,6 +69,22 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 		links["previous"] = hypermedia.Link{
 			Href: choreTemplatePageHref(ctx.Request().URL, previousOffset),
 		}
+	}
+	if pickerRequested {
+		items := make([]pickerItemResponse, len(page.ChoreTemplates))
+		for i := range page.ChoreTemplates {
+			items[i] = newPickerItemResponse(&page.ChoreTemplates[i])
+		}
+		return hypermedia.JSON(ctx, http.StatusOK, pickerCollectionResponse{
+			Items: items,
+			More:  page.More,
+			Links: links,
+		})
+	}
+
+	items := make([]response, len(page.ChoreTemplates))
+	for i := range page.ChoreTemplates {
+		items[i] = newResponse(&page.ChoreTemplates[i])
 	}
 
 	return hypermedia.JSON(ctx, http.StatusOK, collectionResponse{

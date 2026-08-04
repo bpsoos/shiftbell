@@ -1,4 +1,4 @@
-package chores
+package chores_test
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
+	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -13,17 +14,17 @@ import (
 var _ = Describe("CorrectCompletion", func() {
 	var (
 		persister *MockPersister
-		service   *Service
+		service   *choresservice.Service
 	)
 
 	BeforeEach(func() {
 		persister = NewMockPersister(GinkgoT())
-		service = NewService(&Deps{
+		service = choresservice.NewService(&choresservice.Deps{
 			Persister: persister,
 			Now: func() time.Time {
 				return time.Date(2026, time.July, 29, 10, 0, 0, 0, time.UTC)
 			},
-		}, &Config{AppTimezone: time.UTC})
+		}, &choresservice.Config{AppTimezone: time.UTC})
 	})
 
 	It("corrects a one-off chore completion date", func(ctx SpecContext) {

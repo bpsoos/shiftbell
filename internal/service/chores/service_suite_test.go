@@ -1,4 +1,4 @@
-package chores
+package chores_test
 
 import (
 	"testing"

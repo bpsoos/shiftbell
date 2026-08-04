@@ -55,6 +55,18 @@ type collectionResponse struct {
 	Actions map[string]hypermedia.Action `json:"_actions"`
 }
 
+type pickerItemResponse struct {
+	Id     int             `json:"id"`
+	Name   string          `json:"name"`
+	Select hypermedia.Link `json:"select"`
+}
+
+type pickerCollectionResponse struct {
+	Items []pickerItemResponse       `json:"items"`
+	More  bool                       `json:"more"`
+	Links map[string]hypermedia.Link `json:"_links"`
+}
+
 type errorResponse struct {
 	Error   string                       `json:"error"`
 	Links   map[string]hypermedia.Link   `json:"_links"`
@@ -85,6 +97,16 @@ func newRepresentation(choreTemplate *models.ChoreTemplate) representation {
 		actions = activeActions(response.Links["self"].Href)
 	}
 	return representation{response: response, Actions: actions}
+}
+
+func newPickerItemResponse(choreTemplate *models.ChoreTemplate) pickerItemResponse {
+	return pickerItemResponse{
+		Id:   choreTemplate.Id,
+		Name: choreTemplate.Name,
+		Select: hypermedia.Link{
+			Href: fmt.Sprintf("/chores/new?template_id=%d", choreTemplate.Id),
+		},
+	}
 }
 
 func activeActions(selfHref string) map[string]hypermedia.Action {

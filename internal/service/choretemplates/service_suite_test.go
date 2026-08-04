@@ -1,4 +1,4 @@
-package choretemplates
+package choretemplates_test
 
 import (
 	"testing"

@@ -1,4 +1,4 @@
-package choretemplates
+package choretemplates_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
+	choretemplatesservice "github.com/bpsoos/shiftbell/internal/service/choretemplates"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -14,16 +15,16 @@ var _ = Describe("Browse", func() {
 	var (
 		persister  *MockPersister
 		normalizer *MockNormalizer
-		service    *Service
+		service    *choretemplatesservice.Service
 	)
 
 	BeforeEach(func() {
 		persister = NewMockPersister(GinkgoT())
 		normalizer = NewMockNormalizer(GinkgoT())
-		service = NewService(&Deps{
+		service = choretemplatesservice.NewService(&choretemplatesservice.Deps{
 			Persister:  persister,
 			Normalizer: normalizer,
-		}, &Config{})
+		}, &choretemplatesservice.Config{})
 	})
 
 	It("normalizes search and defaults to active chore templates", func(ctx SpecContext) {

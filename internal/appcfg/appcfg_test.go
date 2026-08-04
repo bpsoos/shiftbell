@@ -1,4 +1,4 @@
-package appcfg
+package appcfg_test
 
 import (
 	"os"
@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bpsoos/shiftbell/internal/appcfg"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,7 +28,7 @@ var _ = Describe("Load", func() {
 	})
 
 	It("loads the database filepath", func() {
-		cfg, err := Load()
+		cfg, err := appcfg.Load()
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(cfg.DatabaseFilepath).To(Equal(databaseFilepath))
@@ -40,7 +41,7 @@ var _ = Describe("Load", func() {
 		})
 
 		It("defaults to UTC", func() {
-			cfg, err := Load()
+			cfg, err := appcfg.Load()
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cfg.AppTimezone).To(Equal(time.UTC))
@@ -53,7 +54,7 @@ var _ = Describe("Load", func() {
 		})
 
 		It("defaults to UTC", func() {
-			cfg, err := Load()
+			cfg, err := appcfg.Load()
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cfg.AppTimezone).To(Equal(time.UTC))
@@ -66,7 +67,7 @@ var _ = Describe("Load", func() {
 		})
 
 		It("loads the timezone", func() {
-			cfg, err := Load()
+			cfg, err := appcfg.Load()
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cfg.AppTimezone).To(Equal(mustLoadLocation("Europe/Budapest")))
@@ -79,7 +80,7 @@ var _ = Describe("Load", func() {
 		})
 
 		It("returns an error", func() {
-			cfg, err := Load()
+			cfg, err := appcfg.Load()
 
 			Expect(cfg).To(BeNil())
 			Expect(err).To(HaveOccurred())
@@ -92,7 +93,7 @@ var _ = Describe("Load", func() {
 		})
 
 		It("loads the text handler", func() {
-			cfg, err := Load()
+			cfg, err := appcfg.Load()
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cfg.LogHandler).To(Equal(logging.HandlerConsole))
@@ -105,7 +106,7 @@ var _ = Describe("Load", func() {
 		})
 
 		It("loads the JSON handler", func() {
-			cfg, err := Load()
+			cfg, err := appcfg.Load()
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cfg.LogHandler).To(Equal(logging.HandlerJSON))
@@ -118,7 +119,7 @@ var _ = Describe("Load", func() {
 		})
 
 		It("returns an error", func() {
-			cfg, err := Load()
+			cfg, err := appcfg.Load()
 
 			Expect(cfg).To(BeNil())
 			Expect(err).To(MatchError(`invalid LOG_FORMAT "xml": expected text or json`))

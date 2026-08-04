@@ -1,10 +1,11 @@
-package schedules
+package schedules_test
 
 import (
 	"errors"
 	"time"
 
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
+	schedulesservice "github.com/bpsoos/shiftbell/internal/service/schedules"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -12,19 +13,19 @@ import (
 var _ = Describe("Deactivate", func() {
 	var (
 		persister     *MockPersister
-		service       *Service
+		service       *schedulesservice.Service
 		deactivatedAt time.Time
 	)
 
 	BeforeEach(func() {
 		deactivatedAt = time.Date(2026, time.July, 29, 12, 30, 0, 0, time.UTC)
 		persister = NewMockPersister(GinkgoT())
-		service = NewService(
-			&Deps{
+		service = schedulesservice.NewService(
+			&schedulesservice.Deps{
 				Persister: persister,
 				Now:       func() time.Time { return deactivatedAt },
 			},
-			&Config{},
+			&schedulesservice.Config{},
 		)
 	})
 
