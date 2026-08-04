@@ -154,4 +154,56 @@ var _ = Describe("Create chore", func() {
 		}`))
 		},
 	)
+
+	It(
+		"returns recovery controls for an inactive source template",
+		func(ctx SpecContext) {
+			deadline := time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC)
+			templateId := 42
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				Deadline:        deadline,
+				ChoreTemplateId: &templateId,
+			}).Return(nil, fmt.Errorf(
+				"create template one-off chore: %w",
+				choretemplatemodels.ErrInactive,
+			)).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			e := echo.New()
+			e.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(`{
+				"chore_template_id": 42,
+				"deadline": "2020-02-03"
+			}`),
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			request.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+
+			e.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+			Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"error": "chore template inactive",
+			"_links": {
+				"collection": {"href": "/chores"}
+			},
+			"_actions": {
+				"create": {
+					"href": "/chores",
+					"method": "POST",
+					"content_type": "application/json",
+					"fields": null
+				}
+			}
+		}`))
+		},
+	)
 })

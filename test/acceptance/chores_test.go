@@ -373,8 +373,76 @@ var _ = Describe("Chore API", func() {
 			},
 		)
 
-		It("does not create a chore from a deactivated template", func() {
-			Expect(true).To(BeTrue())
+		It("does not create a chore from a deactivated template", func(ctx SpecContext) {
+			templateCollection := discoverChoreTemplateCollection(ctx, client)
+			template := createChoreTemplate(
+				ctx,
+				client,
+				templateCollection,
+				uniqueChoreName("Deactivated source"),
+				"Reusable template steps.",
+			)
+			selfHref := template.ChoreTemplate.Links[shiftbellapi.RelationSelf].Href
+			expectActiveChoreTemplateActions(template.Actions, selfHref)
+			collection := discoverChoreCollection(ctx, client)
+			form := getTemplateOneOffChoreForm(
+				ctx,
+				client,
+				collection,
+				template.ChoreTemplate,
+			)
+
+			By("deactivating the selected chore template")
+			deactivateAction := template.Actions[shiftbellapi.ActionDeactivateTemplate]
+			deactivated, err := client.DeactivateChoreTemplate(
+				ctx,
+				shiftbellapi.RequestParams{
+					Method:      deactivateAction.Method,
+					Href:        deactivateAction.Href,
+					ContentType: deactivateAction.ContentType,
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deactivated.ChoreTemplate.DeactivatedAt).NotTo(BeNil())
+			Expect(deactivated.Actions).To(BeEmpty())
+
+			By("submitting the previously advertised template-based form")
+			templateId := template.ChoreTemplate.Id
+			rejected, err := client.CreateChore(
+				ctx,
+				shiftbellapi.RequestParams{
+					Method:      form.Action.Method,
+					Href:        form.Action.Href,
+					ContentType: form.Action.ContentType,
+				},
+				shiftbellapi.CreateChoreParams{
+					ChoreTemplateId: &templateId,
+					Deadline:        "2020-02-07",
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rejected.StatusCode).To(Equal(http.StatusUnprocessableEntity))
+			Expect(rejected.SuccessResponse).To(BeNil())
+			Expect(rejected.ErrorResponse).NotTo(BeNil())
+			Expect(rejected.ErrorResponse.Error).To(Equal("chore template inactive"))
+			Expect(rejected.ErrorResponse.Links).To(gstruct.MatchAllKeys(gstruct.Keys{
+				shiftbellapi.RelationCollection: gstruct.MatchAllFields(gstruct.Fields{
+					"Href": Equal(collection.Links[shiftbellapi.RelationSelf].Href),
+				}),
+			}))
+			Expect(rejected.ErrorResponse.Actions).To(gstruct.MatchAllKeys(gstruct.Keys{
+				shiftbellapi.ActionCreateChore: Equal(*form.Action),
+			}))
+
+			By("proving no chore was created")
+			chores, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+				Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+				Search: template.ChoreTemplate.Name,
+				Status: "active",
+				Limit:  20,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chores.Collection.Items).To(BeEmpty())
 		})
 	})
 

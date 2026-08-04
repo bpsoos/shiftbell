@@ -72,6 +72,25 @@ func (h *Handler) create(ctx *echo.Context) error {
 				},
 			)
 		}
+		if errors.Is(err, choretemplatemodels.ErrInactive) {
+			return hypermedia.JSON(
+				ctx,
+				http.StatusUnprocessableEntity,
+				apiErrorResponse{
+					Error: choretemplatemodels.ErrInactive.Error(),
+					Links: map[string]hypermedia.Link{
+						"collection": {Href: "/chores"},
+					},
+					Actions: map[string]hypermedia.Action{
+						"create": {
+							Href:        "/chores",
+							Method:      http.MethodPost,
+							ContentType: "application/json",
+						},
+					},
+				},
+			)
+		}
 		if isInvalidChoreCreateRequest(err) {
 			return hypermedia.JSON(
 				ctx,
