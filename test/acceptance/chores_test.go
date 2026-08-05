@@ -453,6 +453,34 @@ var _ = Describe("Chore API", func() {
 	})
 
 	When("scheduled recurrence is requested", func() {
+		It("returns Not Implemented when posted directly", func(ctx SpecContext) {
+			intervalDays := 7
+
+			result, err := client.CreateChore(
+				ctx,
+				shiftbellapi.RequestParams{
+					Method:      http.MethodPost,
+					Href:        "/chores",
+					ContentType: "application/json",
+				},
+				shiftbellapi.CreateChoreParams{
+					Name:         uniqueChoreName("Direct scheduled recurrence"),
+					Description:  "Attempted without navigating the creation flow.",
+					Deadline:     "2020-02-03",
+					ScheduleName: "Weekly",
+					IntervalDays: &intervalDays,
+				},
+			)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.StatusCode).To(Equal(http.StatusNotImplemented))
+			Expect(result.SuccessResponse).To(BeNil())
+			Expect(result.ErrorResponse).NotTo(BeNil())
+			Expect(result.ErrorResponse.Error).To(Equal(
+				"scheduled recurrence is not implemented",
+			))
+		})
+
 		It(
 			"returns Not Implemented without persisting a manual scheduled chore",
 			func(ctx SpecContext) {

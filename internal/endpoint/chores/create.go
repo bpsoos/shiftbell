@@ -33,6 +33,9 @@ func (h *Handler) create(ctx *echo.Context) error {
 			apiErrorResponse{Error: "invalid JSON"},
 		)
 	}
+	if request.IntervalDays != nil {
+		return scheduledRecurrenceNotImplemented(ctx)
+	}
 	deadline, err := time.Parse(time.DateOnly, request.Deadline)
 	if err != nil {
 		return hypermedia.JSON(
