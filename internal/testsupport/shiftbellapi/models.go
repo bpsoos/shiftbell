@@ -126,6 +126,21 @@ type GetChoreResult struct {
 	ErrorResponse   *ErrorResponse
 }
 
+type CompleteChoreParams struct {
+	CompletedOn string `json:"completed_on"`
+}
+
+type CompleteChoreResponse struct {
+	Chore   Chore
+	Actions Actions
+}
+
+type CompleteChoreResult struct {
+	StatusCode      int
+	SuccessResponse *CompleteChoreResponse
+	ErrorResponse   *ErrorResponse
+}
+
 type ChoreTemplate struct {
 	Id            int     `json:"id"`
 	Name          string  `json:"name"`

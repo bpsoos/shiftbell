@@ -49,13 +49,6 @@ func (p *Persister) EditScheduled(
 	return nil, nil
 }
 
-func (p *Persister) Complete(
-	_ context.Context,
-	_ *models.CompleteChoreParams,
-) (*models.CompleteChoreResult, error) {
-	return nil, nil
-}
-
 func (p *Persister) CorrectCompletion(
 	_ context.Context,
 	_ *models.CorrectCompletionParams,

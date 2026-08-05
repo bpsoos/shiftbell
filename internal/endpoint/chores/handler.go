@@ -74,6 +74,10 @@ type Service interface {
 		context.Context,
 		*choremodels.CreateChoreParams,
 	) (*choremodels.CreateChoreResult, error)
+	Complete(
+		context.Context,
+		*choremodels.CompleteChoreParams,
+	) (*choremodels.CompleteChoreResult, error)
 	Get(context.Context, int) (*choremodels.ChoreDetails, error)
 }
 

@@ -93,3 +93,20 @@ func activeOneOffActions(selfHref string) map[string]hypermedia.Action {
 		},
 	}
 }
+
+func completedOneOffActions(selfHref string) map[string]hypermedia.Action {
+	return map[string]hypermedia.Action{
+		"correct_completion": {
+			Href:        selfHref + "/completion",
+			Method:      http.MethodPatch,
+			ContentType: "application/json",
+			Fields: []hypermedia.ActionField{
+				{Name: "completed_on", Type: "date", Required: true},
+			},
+		},
+		"delete": {
+			Href:   selfHref,
+			Method: http.MethodDelete,
+		},
+	}
+}
