@@ -790,16 +790,200 @@ var _ = Describe("Chore API", func() {
 	})
 
 	When("completing an active one-off chore", func() {
-		It("moves the chore from the active collection to completed history", func() {
-			Expect(true).To(BeTrue())
-		})
-		It("treats repeated completion requests as successful no-ops", func() {
-			Expect(true).To(BeTrue())
-		})
+		It(
+			"moves the chore from the active collection to completed history",
+			func(ctx SpecContext) {
+				collection := discoverChoreCollection(ctx, client)
+				form := getManualOneOffChoreForm(ctx, client, collection)
+				scope := uniqueChoreName("Complete one-off")
+				created := createManualOneOffChore(
+					ctx,
+					client,
+					form,
+					scope,
+					"Complete this chore.",
+					"2020-06-01",
+				)
 
-		It("rejects a completion date after the application-local current date", func() {
-			Expect(true).To(BeTrue())
-		})
+				By("proving the chore starts in the active collection")
+				active, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: scope,
+					Status: "active",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(active.Collection.Items).To(gstruct.MatchAllElementsWithIndex(
+					gstruct.IndexIdentity,
+					gstruct.Elements{"0": Equal(created.Chore)},
+				))
+
+				By("completing through the advertised action")
+				completed := completeOneOffChore(ctx, client, created, "2020-06-02")
+				expectCompletedOneOffActions(
+					completed.Actions,
+					created.Chore.Links[shiftbellapi.RelationSelf].Href,
+				)
+
+				By("proving the chore moved between status collections")
+				active, err = client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: scope,
+					Status: "active",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(active.Collection.Items).To(BeEmpty())
+				history, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: scope,
+					Status: "completed",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(history.Collection.Items).To(gstruct.MatchAllElementsWithIndex(
+					gstruct.IndexIdentity,
+					gstruct.Elements{"0": Equal(completed.Chore)},
+				))
+			},
+		)
+
+		It(
+			"treats repeated completion requests as successful no-ops",
+			func(ctx SpecContext) {
+				collection := discoverChoreCollection(ctx, client)
+				form := getManualOneOffChoreForm(ctx, client, collection)
+				scope := uniqueChoreName("Repeat completion")
+				created := createManualOneOffChore(
+					ctx,
+					client,
+					form,
+					scope,
+					"Complete repeatedly.",
+					"2020-06-01",
+				)
+
+				By("reusing the captured completion action")
+				action := created.Actions[shiftbellapi.ActionCompleteChore]
+				requestParams := shiftbellapi.RequestParams{
+					Method:      action.Method,
+					Href:        action.Href,
+					ContentType: action.ContentType,
+				}
+				first := completeOneOffChore(ctx, client, created, "2020-06-02")
+				secondResult, err := client.CompleteChore(
+					ctx,
+					requestParams,
+					shiftbellapi.CompleteChoreParams{CompletedOn: "2020-06-03"},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(secondResult.StatusCode).To(Equal(http.StatusOK))
+				Expect(secondResult.ErrorResponse).To(BeNil())
+				Expect(secondResult.SuccessResponse).To(Equal(first))
+				thirdResult, err := client.CompleteChore(
+					ctx,
+					requestParams,
+					shiftbellapi.CompleteChoreParams{CompletedOn: "2020-06-04"},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(thirdResult.StatusCode).To(Equal(http.StatusOK))
+				Expect(thirdResult.ErrorResponse).To(BeNil())
+				Expect(thirdResult.SuccessResponse).To(Equal(first))
+				expectCompletedOneOffActions(
+					first.Actions,
+					created.Chore.Links[shiftbellapi.RelationSelf].Href,
+				)
+
+				By("retrieving the stable completed chore")
+				retrieved, err := client.GetChore(ctx, shiftbellapi.GetChoreParams{
+					Link: created.Chore.Links[shiftbellapi.RelationSelf],
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrieved.StatusCode).To(Equal(http.StatusOK))
+				Expect(retrieved.ErrorResponse).To(BeNil())
+				Expect(retrieved.SuccessResponse).NotTo(BeNil())
+				Expect(retrieved.SuccessResponse.Chore).To(Equal(first.Chore))
+				Expect(retrieved.SuccessResponse.Actions).To(Equal(first.Actions))
+
+				By("proving completed history contains one stable resource")
+				history, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: scope,
+					Status: "completed",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(history.Collection.Items).To(gstruct.MatchAllElementsWithIndex(
+					gstruct.IndexIdentity,
+					gstruct.Elements{"0": Equal(first.Chore)},
+				))
+			},
+		)
+
+		It(
+			"rejects a completion date after the application-local current date",
+			func(ctx SpecContext) {
+				collection := discoverChoreCollection(ctx, client)
+				form := getManualOneOffChoreForm(ctx, client, collection)
+				scope := uniqueChoreName("Future completion")
+				created := createManualOneOffChore(
+					ctx,
+					client,
+					form,
+					scope,
+					"Remain active.",
+					"2020-06-01",
+				)
+				action := created.Actions[shiftbellapi.ActionCompleteChore]
+				futureDate := time.Now().UTC().AddDate(0, 0, 2).Format(time.DateOnly)
+
+				By("submitting a future completion date")
+				result, err := client.CompleteChore(
+					ctx,
+					shiftbellapi.RequestParams{
+						Method:      action.Method,
+						Href:        action.Href,
+						ContentType: action.ContentType,
+					},
+					shiftbellapi.CompleteChoreParams{CompletedOn: futureDate},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.StatusCode).To(Equal(http.StatusUnprocessableEntity))
+				Expect(result.SuccessResponse).To(BeNil())
+				Expect(result.ErrorResponse).NotTo(BeNil())
+				Expect(result.ErrorResponse.Error).To(Equal("invalid completion date"))
+
+				By("proving the chore remains active")
+				retrieved, err := client.GetChore(ctx, shiftbellapi.GetChoreParams{
+					Link: created.Chore.Links[shiftbellapi.RelationSelf],
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrieved.StatusCode).To(Equal(http.StatusOK))
+				Expect(retrieved.ErrorResponse).To(BeNil())
+				Expect(retrieved.SuccessResponse).NotTo(BeNil())
+				Expect(retrieved.SuccessResponse.Chore).To(Equal(created.Chore))
+				Expect(retrieved.SuccessResponse.Actions).To(Equal(created.Actions))
+				active, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: scope,
+					Status: "active",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(active.Collection.Items).To(gstruct.MatchAllElementsWithIndex(
+					gstruct.IndexIdentity,
+					gstruct.Elements{"0": Equal(created.Chore)},
+				))
+				history, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: scope,
+					Status: "completed",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(history.Collection.Items).To(BeEmpty())
+			},
+		)
 	})
 
 	When("correcting a one-off chore completion", func() {
@@ -911,6 +1095,26 @@ func completeOneOffChore(
 		"Links":       Equal(created.Chore.Links),
 	}))
 	return completed
+}
+
+func expectCompletedOneOffActions(actions shiftbellapi.Actions, selfHref string) {
+	GinkgoHelper()
+	Expect(actions).To(gstruct.MatchAllKeys(gstruct.Keys{
+		shiftbellapi.ActionCorrectCompletion: gstruct.MatchAllFields(gstruct.Fields{
+			"Href":        Equal(selfHref + "/completion"),
+			"Method":      Equal(http.MethodPatch),
+			"ContentType": Equal("application/json"),
+			"Fields": Equal([]shiftbellapi.ActionField{
+				{Name: "completed_on", Type: "date", Required: true},
+			}),
+		}),
+		shiftbellapi.ActionDeleteChore: gstruct.MatchAllFields(gstruct.Fields{
+			"Href":        Equal(selfHref),
+			"Method":      Equal(http.MethodDelete),
+			"ContentType": BeEmpty(),
+			"Fields":      BeEmpty(),
+		}),
+	}))
 }
 
 func getManualOneOffChoreForm(

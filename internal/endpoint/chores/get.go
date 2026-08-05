@@ -38,8 +38,12 @@ func (h *Handler) get(ctx *echo.Context) error {
 	}
 
 	response := newChoreResponse(chore)
+	actions := activeOneOffActions(response.Links["self"].Href)
+	if chore.Status == choremodels.ChoreStatusCompleted {
+		actions = completedOneOffActions(response.Links["self"].Href)
+	}
 	return hypermedia.JSON(ctx, http.StatusOK, choreRepresentation{
 		choreResponse: response,
-		Actions:       activeOneOffActions(response.Links["self"].Href),
+		Actions:       actions,
 	})
 }

@@ -24,6 +24,7 @@ const (
 	ActionCreateChore         = "create"
 	ActionEditChore           = "edit"
 	ActionCompleteChore       = "complete"
+	ActionCorrectCompletion   = "correct_completion"
 	ActionDeleteChore         = "delete"
 	ActionEditChoreTemplate   = "edit"
 	ActionDeactivateTemplate  = "deactivate"
