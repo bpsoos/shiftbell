@@ -126,6 +126,23 @@ type GetChoreResult struct {
 	ErrorResponse   *ErrorResponse
 }
 
+type EditChoreParams struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Deadline    string `json:"deadline"`
+}
+
+type EditChoreResponse struct {
+	Chore   Chore
+	Actions Actions
+}
+
+type EditChoreResult struct {
+	StatusCode      int
+	SuccessResponse *EditChoreResponse
+	ErrorResponse   *ErrorResponse
+}
+
 type CompleteChoreParams struct {
 	CompletedOn string `json:"completed_on"`
 }

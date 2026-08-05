@@ -78,6 +78,10 @@ type Service interface {
 		context.Context,
 		*choremodels.CompleteChoreParams,
 	) (*choremodels.CompleteChoreResult, error)
+	Edit(
+		context.Context,
+		*choremodels.EditChoreParams,
+	) (*choremodels.ChoreDetails, error)
 	Get(context.Context, int) (*choremodels.ChoreDetails, error)
 }
 
@@ -210,6 +214,10 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 }
 
 func (h *Handler) Patch(ctx *echo.Context) error {
+	if hypermedia.Accepts(ctx.Request()) {
+		return h.edit(ctx)
+	}
+
 	idStr := ctx.ParamOr("id", "")
 	if idStr == "" {
 		return ctx.String(http.StatusUnprocessableEntity, "id missing")

@@ -728,9 +728,65 @@ var _ = Describe("Chore API", func() {
 	})
 
 	When("editing an active one-off chore", func() {
-		It("updates its normalized name, description, and deadline", func() {
-			Expect(true).To(BeTrue())
-		})
+		It(
+			"updates its normalized name, description, and deadline",
+			func(ctx SpecContext) {
+				collection := discoverChoreCollection(ctx, client)
+				form := getManualOneOffChoreForm(ctx, client, collection)
+				scope := uniqueChoreName("Edit active one-off")
+				created := createManualOneOffChore(
+					ctx,
+					client,
+					form,
+					scope+" Original",
+					"Original description.",
+					"2020-05-01",
+				)
+				editAction := created.Actions[shiftbellapi.ActionEditChore]
+
+				By("editing through the advertised action")
+				result, err := client.EditChore(
+					ctx,
+					shiftbellapi.RequestParams{
+						Method:      editAction.Method,
+						Href:        editAction.Href,
+						ContentType: editAction.ContentType,
+					},
+					shiftbellapi.EditChoreParams{
+						Name:        "  " + scope + " Cafe\u0301  ",
+						Description: "  First line\r\nCafe\u0301  ",
+						Deadline:    "2020-05-03",
+					},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.StatusCode).To(Equal(http.StatusOK))
+				Expect(result.ErrorResponse).To(BeNil())
+				Expect(result.SuccessResponse).NotTo(BeNil())
+				edited := result.SuccessResponse
+				Expect(edited.Chore).To(gstruct.MatchAllFields(gstruct.Fields{
+					"Id":          Equal(created.Chore.Id),
+					"ScheduleId":  BeNil(),
+					"Status":      Equal("active"),
+					"Name":        Equal(scope + " Caf\u00e9"),
+					"Description": Equal("First line\nCaf\u00e9"),
+					"Deadline":    Equal("2020-05-03"),
+					"CompletedOn": BeNil(),
+					"Links":       Equal(created.Chore.Links),
+				}))
+				Expect(edited.Actions).To(Equal(created.Actions))
+
+				By("retrieving the edited chore")
+				retrieved, err := client.GetChore(ctx, shiftbellapi.GetChoreParams{
+					Link: edited.Chore.Links[shiftbellapi.RelationSelf],
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrieved.StatusCode).To(Equal(http.StatusOK))
+				Expect(retrieved.ErrorResponse).To(BeNil())
+				Expect(retrieved.SuccessResponse).NotTo(BeNil())
+				Expect(retrieved.SuccessResponse.Chore).To(Equal(edited.Chore))
+				Expect(retrieved.SuccessResponse.Actions).To(Equal(edited.Actions))
+			},
+		)
 	})
 
 	When("completing an active one-off chore", func() {

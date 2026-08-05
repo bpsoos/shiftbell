@@ -35,13 +35,6 @@ func (p *Persister) CreateTemplateScheduled(
 	return nil, nil
 }
 
-func (p *Persister) EditOneOff(
-	_ context.Context,
-	_ *models.EditOneOffChoreParams,
-) (*models.EditChoreResult, error) {
-	return nil, nil
-}
-
 func (p *Persister) EditScheduled(
 	_ context.Context,
 	_ *models.EditScheduledChoreParams,
