@@ -21,6 +21,7 @@ type ChoreHandler interface {
 	New(*echo.Context) error
 	Create(*echo.Context) error
 	Complete(*echo.Context) error
+	CorrectCompletion(*echo.Context) error
 }
 
 type RouterDeps struct {

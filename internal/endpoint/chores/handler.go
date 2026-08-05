@@ -78,6 +78,10 @@ type Service interface {
 		context.Context,
 		*choremodels.CompleteChoreParams,
 	) (*choremodels.CompleteChoreResult, error)
+	CorrectCompletion(
+		context.Context,
+		*choremodels.CorrectCompletionParams,
+	) (*choremodels.ChoreDetails, error)
 	Edit(
 		context.Context,
 		*choremodels.EditChoreParams,
