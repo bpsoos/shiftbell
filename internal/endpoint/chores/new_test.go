@@ -68,6 +68,30 @@ var _ = Describe("Start chore creation", func() {
 		},
 	)
 
+	It("returns Not Implemented for manual scheduled recurrence", func(ctx SpecContext) {
+		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{})
+		e := echo.New()
+		e.GET("/chores/new", handler.New)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores/new?source=manual&recurrence=scheduled",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusNotImplemented))
+		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+		Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"error": "scheduled recurrence is not implemented",
+			"_links": null,
+			"_actions": null
+		}`))
+	})
+
 	It("returns the manual one-off form", func(ctx SpecContext) {
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{})
 		e := echo.New()
@@ -153,6 +177,46 @@ var _ = Describe("Start chore creation", func() {
 			]
 		}`))
 	})
+
+	It(
+		"returns Not Implemented for template-based scheduled recurrence",
+		func(ctx SpecContext) {
+			choreTemplatePersister := NewMockChoreTemplatePersister(GinkgoT())
+			choreTemplatePersister.EXPECT().
+				Get(ctx, 42).
+				Return(&choretemplatemodels.ChoreTemplateDetails{
+					ChoreTemplate: choretemplatemodels.ChoreTemplate{
+						Id:          42,
+						Name:        "Kitchen",
+						Description: "Reusable template steps.",
+					},
+				}, nil).
+				Once()
+			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+				ChoreTemplatePersister: choreTemplatePersister,
+			})
+			e := echo.New()
+			e.GET("/chores/new", handler.New)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores/new?template_id=42&recurrence=scheduled",
+				nil,
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
+
+			e.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusNotImplemented))
+			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+			Expect(response.Body.Bytes()).To(MatchJSON(`{
+				"error": "scheduled recurrence is not implemented",
+				"_links": null,
+				"_actions": null
+			}`))
+		},
+	)
 
 	It("returns the template-based one-off form", func(ctx SpecContext) {
 		choreTemplatePersister := NewMockChoreTemplatePersister(GinkgoT())

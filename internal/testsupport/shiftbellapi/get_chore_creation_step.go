@@ -15,13 +15,22 @@ func (c *APIClient) GetChoreCreationStep(
 	if err != nil {
 		return nil, fmt.Errorf("create get chore creation step request: %w", err)
 	}
-	_, responseBody, err := c.do(request, http.StatusOK)
+	statusCode, _, responseBody, err := c.doResponse(request)
 	if err != nil {
 		return nil, err
+	}
+	result := &GetChoreCreationStepResult{StatusCode: statusCode}
+	if statusCode != http.StatusOK {
+		result.ErrorResponse, err = decodeErrorResponse(responseBody)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
 	}
 	var step ChoreCreationStep
 	if err := json.Unmarshal(responseBody, &step); err != nil {
 		return nil, fmt.Errorf("decode chore creation step response: %w", err)
 	}
-	return &GetChoreCreationStepResult{Step: step}, nil
+	result.SuccessResponse = &step
+	return result, nil
 }

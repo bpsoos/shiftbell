@@ -40,6 +40,11 @@ func (h *Handler) newChore(ctx *echo.Context) error {
 
 func (h *Handler) newManualChore(ctx *echo.Context) error {
 	if ctx.QueryParamOr("source", "") == "manual" &&
+		ctx.QueryParamOr("recurrence", "") == "scheduled" {
+		return scheduledRecurrenceNotImplemented(ctx)
+	}
+
+	if ctx.QueryParamOr("source", "") == "manual" &&
 		ctx.QueryParamOr("recurrence", "") == "one-off" {
 		return hypermedia.JSON(ctx, http.StatusOK, choreCreationResponse{
 			Step: "form",
@@ -83,6 +88,14 @@ func (h *Handler) newManualChore(ctx *echo.Context) error {
 	})
 }
 
+func scheduledRecurrenceNotImplemented(ctx *echo.Context) error {
+	return hypermedia.JSON(
+		ctx,
+		http.StatusNotImplemented,
+		apiErrorResponse{Error: "scheduled recurrence is not implemented"},
+	)
+}
+
 func (h *Handler) newTemplateBasedChore(ctx *echo.Context, rawTemplateId string) error {
 	templateId, err := strconv.Atoi(rawTemplateId)
 	if err != nil || templateId <= 0 {
@@ -117,6 +130,9 @@ func (h *Handler) newTemplateBasedChore(ctx *echo.Context, rawTemplateId string)
 		)
 	}
 	recurrence := ctx.QueryParamOr("recurrence", "")
+	if recurrence == "scheduled" {
+		return scheduledRecurrenceNotImplemented(ctx)
+	}
 	if recurrence == "" {
 		return templateRecurrenceChoices(ctx, &template)
 	}

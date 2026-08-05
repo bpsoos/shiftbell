@@ -447,12 +447,107 @@ var _ = Describe("Chore API", func() {
 	})
 
 	When("scheduled recurrence is requested", func() {
-		DescribeTable("returns Not Implemented without persisting resources",
-			func() {
-				Expect(true).To(BeTrue())
+		It(
+			"returns Not Implemented without persisting a manual scheduled chore",
+			func(ctx SpecContext) {
+				collection := discoverChoreCollection(ctx, client)
+				templateCollection := discoverChoreTemplateCollection(ctx, client)
+				scope := uniqueChoreName("Manual scheduled recurrence")
+				recurrence := getManualChoreRecurrence(ctx, client, collection)
+
+				By("choosing scheduled recurrence")
+				result, err := client.GetChoreCreationStep(
+					ctx,
+					recurrence.Choices[1].Href,
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.StatusCode).To(Equal(http.StatusNotImplemented))
+				Expect(result.SuccessResponse).To(BeNil())
+				Expect(result.ErrorResponse).NotTo(BeNil())
+				Expect(result.ErrorResponse.Error).NotTo(BeEmpty())
+
+				By("proving no chore was created")
+				chores, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: scope,
+					Status: "active",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(chores.Collection.Items).To(BeEmpty())
+
+				By("proving no chore template was created")
+				templates, err := client.BrowseChoreTemplates(
+					ctx,
+					shiftbellapi.BrowseChoreTemplatesParams{
+						Href:   templateCollection.Links[shiftbellapi.RelationSelf].Href,
+						Search: scope,
+						State:  "active",
+						Limit:  20,
+					},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(templates.Collection.Items).To(BeEmpty())
 			},
-			Entry("manual scheduled chore"),
-			Entry("template-based scheduled chore"),
+		)
+
+		It(
+			"returns Not Implemented without changing a template-based scheduled chore source",
+			func(ctx SpecContext) {
+				templateCollection := discoverChoreTemplateCollection(ctx, client)
+				scope := uniqueChoreName("Template scheduled recurrence")
+				template := createChoreTemplate(
+					ctx,
+					client,
+					templateCollection,
+					scope,
+					"Reusable scheduled steps.",
+				).ChoreTemplate
+				collection := discoverChoreCollection(ctx, client)
+				recurrence := getTemplateChoreRecurrence(
+					ctx,
+					client,
+					collection,
+					template,
+				)
+
+				By("choosing scheduled recurrence")
+				result, err := client.GetChoreCreationStep(
+					ctx,
+					recurrence.Choices[1].Href,
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.StatusCode).To(Equal(http.StatusNotImplemented))
+				Expect(result.SuccessResponse).To(BeNil())
+				Expect(result.ErrorResponse).NotTo(BeNil())
+				Expect(result.ErrorResponse.Error).NotTo(BeEmpty())
+
+				By("proving no chore was created")
+				chores, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: scope,
+					Status: "active",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(chores.Collection.Items).To(BeEmpty())
+
+				By("proving the selected chore template is unchanged")
+				templates, err := client.BrowseChoreTemplates(
+					ctx,
+					shiftbellapi.BrowseChoreTemplatesParams{
+						Href:   templateCollection.Links[shiftbellapi.RelationSelf].Href,
+						Search: scope,
+						State:  "active",
+						Limit:  20,
+					},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(templates.Collection.Items).To(gstruct.MatchAllElementsWithIndex(
+					gstruct.IndexIdentity,
+					gstruct.Elements{"0": Equal(template)},
+				))
+			},
 		)
 	})
 
@@ -538,46 +633,15 @@ func getManualOneOffChoreForm(
 	collection shiftbellapi.ChoreCollection,
 ) shiftbellapi.ChoreCreationStep {
 	GinkgoHelper()
-	By("choosing to specify a new chore")
-	source, err := client.GetChoreCreationStep(
-		ctx,
-		collection.Actions[shiftbellapi.ActionCreateChore].Href,
-	)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(source.Step).To(gstruct.MatchAllFields(gstruct.Fields{
-		"Step":     Equal("source"),
-		"Template": BeNil(),
-		"Choices": Equal([]shiftbellapi.ChoreCreationChoice{
-			{Label: "Specify new", Href: "/chores/new?source=manual"},
-			{Label: "Select template", Href: "/chore-templates?picker=1"},
-		}),
-		"Fields": BeEmpty(),
-		"Action": BeNil(),
-	}))
-
-	recurrence, err := client.GetChoreCreationStep(ctx, source.Step.Choices[0].Href)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(recurrence.Step).To(gstruct.MatchAllFields(gstruct.Fields{
-		"Step":     Equal("recurrence"),
-		"Template": BeNil(),
-		"Choices": Equal([]shiftbellapi.ChoreCreationChoice{
-			{
-				Label: "One-off",
-				Href:  "/chores/new?source=manual&recurrence=one-off",
-			},
-			{
-				Label: "Scheduled",
-				Href:  "/chores/new?source=manual&recurrence=scheduled",
-			},
-		}),
-		"Fields": BeEmpty(),
-		"Action": BeNil(),
-	}))
+	recurrence := getManualChoreRecurrence(ctx, client, collection)
 
 	By("choosing one-off and retrieving the final form")
-	form, err := client.GetChoreCreationStep(ctx, recurrence.Step.Choices[0].Href)
+	form, err := client.GetChoreCreationStep(ctx, recurrence.Choices[0].Href)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(form.Step).To(gstruct.MatchAllFields(gstruct.Fields{
+	Expect(form.StatusCode).To(Equal(http.StatusOK))
+	Expect(form.ErrorResponse).To(BeNil())
+	Expect(form.SuccessResponse).NotTo(BeNil())
+	Expect(*form.SuccessResponse).To(gstruct.MatchAllFields(gstruct.Fields{
 		"Step":     Equal("form"),
 		"Template": BeNil(),
 		"Choices":  BeEmpty(),
@@ -593,10 +657,97 @@ func getManualOneOffChoreForm(
 			ContentType: "application/json",
 		}),
 	}))
-	return form.Step
+	return *form.SuccessResponse
+}
+
+func getManualChoreRecurrence(
+	ctx context.Context,
+	client *shiftbellapi.APIClient,
+	collection shiftbellapi.ChoreCollection,
+) shiftbellapi.ChoreCreationStep {
+	GinkgoHelper()
+	By("choosing to specify a new chore")
+	source, err := client.GetChoreCreationStep(
+		ctx,
+		collection.Actions[shiftbellapi.ActionCreateChore].Href,
+	)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(source.StatusCode).To(Equal(http.StatusOK))
+	Expect(source.ErrorResponse).To(BeNil())
+	Expect(source.SuccessResponse).NotTo(BeNil())
+	Expect(*source.SuccessResponse).To(gstruct.MatchAllFields(gstruct.Fields{
+		"Step":     Equal("source"),
+		"Template": BeNil(),
+		"Choices": Equal([]shiftbellapi.ChoreCreationChoice{
+			{Label: "Specify new", Href: "/chores/new?source=manual"},
+			{Label: "Select template", Href: "/chore-templates?picker=1"},
+		}),
+		"Fields": BeEmpty(),
+		"Action": BeNil(),
+	}))
+
+	recurrence, err := client.GetChoreCreationStep(
+		ctx,
+		source.SuccessResponse.Choices[0].Href,
+	)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(recurrence.StatusCode).To(Equal(http.StatusOK))
+	Expect(recurrence.ErrorResponse).To(BeNil())
+	Expect(recurrence.SuccessResponse).NotTo(BeNil())
+	Expect(*recurrence.SuccessResponse).To(gstruct.MatchAllFields(gstruct.Fields{
+		"Step":     Equal("recurrence"),
+		"Template": BeNil(),
+		"Choices": Equal([]shiftbellapi.ChoreCreationChoice{
+			{
+				Label: "One-off",
+				Href:  "/chores/new?source=manual&recurrence=one-off",
+			},
+			{
+				Label: "Scheduled",
+				Href:  "/chores/new?source=manual&recurrence=scheduled",
+			},
+		}),
+		"Fields": BeEmpty(),
+		"Action": BeNil(),
+	}))
+	return *recurrence.SuccessResponse
 }
 
 func getTemplateOneOffChoreForm(
+	ctx context.Context,
+	client *shiftbellapi.APIClient,
+	collection shiftbellapi.ChoreCollection,
+	template shiftbellapi.ChoreTemplate,
+) shiftbellapi.ChoreCreationStep {
+	GinkgoHelper()
+	recurrence := getTemplateChoreRecurrence(ctx, client, collection, template)
+
+	By("choosing one-off and retrieving the template-based form")
+	form, err := client.GetChoreCreationStep(ctx, recurrence.Choices[0].Href)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(form.StatusCode).To(Equal(http.StatusOK))
+	Expect(form.ErrorResponse).To(BeNil())
+	Expect(form.SuccessResponse).NotTo(BeNil())
+	Expect(*form.SuccessResponse).To(gstruct.MatchAllFields(gstruct.Fields{
+		"Step": Equal("form"),
+		"Template": Equal(&shiftbellapi.ChoreCreationTemplate{
+			Id:   template.Id,
+			Name: template.Name,
+		}),
+		"Choices": BeEmpty(),
+		"Fields": Equal([]shiftbellapi.ActionField{
+			{Name: "deadline", Type: "date", Required: true},
+		}),
+		"Action": Equal(&shiftbellapi.Action{
+			Href:        "/chores",
+			Method:      http.MethodPost,
+			ContentType: "application/json",
+		}),
+	}))
+	return *form.SuccessResponse
+}
+
+func getTemplateChoreRecurrence(
 	ctx context.Context,
 	client *shiftbellapi.APIClient,
 	collection shiftbellapi.ChoreCollection,
@@ -609,7 +760,10 @@ func getTemplateOneOffChoreForm(
 		collection.Actions[shiftbellapi.ActionCreateChore].Href,
 	)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(source.Step).To(gstruct.MatchAllFields(gstruct.Fields{
+	Expect(source.StatusCode).To(Equal(http.StatusOK))
+	Expect(source.ErrorResponse).To(BeNil())
+	Expect(source.SuccessResponse).NotTo(BeNil())
+	Expect(*source.SuccessResponse).To(gstruct.MatchAllFields(gstruct.Fields{
 		"Step":     Equal("source"),
 		"Template": BeNil(),
 		"Choices": Equal([]shiftbellapi.ChoreCreationChoice{
@@ -624,7 +778,7 @@ func getTemplateOneOffChoreForm(
 	picker, err := client.BrowseChoreTemplatePicker(
 		ctx,
 		shiftbellapi.BrowseChoreTemplatePickerParams{
-			Href:   source.Step.Choices[1].Href,
+			Href:   source.SuccessResponse.Choices[1].Href,
 			Search: template.Name,
 			Limit:  20,
 		},
@@ -647,7 +801,10 @@ func getTemplateOneOffChoreForm(
 
 	recurrence, err := client.GetChoreCreationStep(ctx, selectHref)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(recurrence.Step).To(gstruct.MatchAllFields(gstruct.Fields{
+	Expect(recurrence.StatusCode).To(Equal(http.StatusOK))
+	Expect(recurrence.ErrorResponse).To(BeNil())
+	Expect(recurrence.SuccessResponse).NotTo(BeNil())
+	Expect(*recurrence.SuccessResponse).To(gstruct.MatchAllFields(gstruct.Fields{
 		"Step": Equal("recurrence"),
 		"Template": Equal(&shiftbellapi.ChoreCreationTemplate{
 			Id:          template.Id,
@@ -673,25 +830,5 @@ func getTemplateOneOffChoreForm(
 		"Fields": BeEmpty(),
 		"Action": BeNil(),
 	}))
-
-	By("choosing one-off and retrieving the template-based form")
-	form, err := client.GetChoreCreationStep(ctx, recurrence.Step.Choices[0].Href)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(form.Step).To(gstruct.MatchAllFields(gstruct.Fields{
-		"Step": Equal("form"),
-		"Template": Equal(&shiftbellapi.ChoreCreationTemplate{
-			Id:   template.Id,
-			Name: template.Name,
-		}),
-		"Choices": BeEmpty(),
-		"Fields": Equal([]shiftbellapi.ActionField{
-			{Name: "deadline", Type: "date", Required: true},
-		}),
-		"Action": Equal(&shiftbellapi.Action{
-			Href:        "/chores",
-			Method:      http.MethodPost,
-			ContentType: "application/json",
-		}),
-	}))
-	return form.Step
+	return *recurrence.SuccessResponse
 }

@@ -84,7 +84,9 @@ type ChoreCreationStep struct {
 }
 
 type GetChoreCreationStepResult struct {
-	Step ChoreCreationStep
+	StatusCode      int
+	SuccessResponse *ChoreCreationStep
+	ErrorResponse   *ErrorResponse
 }
 
 type CreateChoreParams struct {
