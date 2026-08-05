@@ -41,7 +41,3 @@ func (p *Persister) EditScheduled(
 ) (*models.EditChoreResult, error) {
 	return nil, nil
 }
-
-func (p *Persister) Delete(_ context.Context, _ int) error {
-	return nil
-}

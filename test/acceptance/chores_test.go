@@ -14,6 +14,12 @@ import (
 	"github.com/onsi/gomega/gstruct"
 )
 
+type prepareOneOffChoreForDeletion func(
+	context.Context,
+	*shiftbellapi.APIClient,
+	*shiftbellapi.CreateChoreResponse,
+) (shiftbellapi.Chore, shiftbellapi.Actions)
+
 var _ = Describe("Chore API", func() {
 	var client *shiftbellapi.APIClient
 
@@ -1103,20 +1109,95 @@ var _ = Describe("Chore API", func() {
 
 	When("permanently deleting a one-off chore", func() {
 		DescribeTable("deletes the chore",
-			func() {
-				Expect(true).To(BeTrue())
+			func(ctx SpecContext, prepare prepareOneOffChoreForDeletion) {
+				collection := discoverChoreCollection(ctx, client)
+				form := getManualOneOffChoreForm(ctx, client, collection)
+				scope := uniqueChoreName("Delete one-off")
+				created := createManualOneOffChore(
+					ctx,
+					client,
+					form,
+					scope,
+					"Delete this chore permanently.",
+					"2020-08-01",
+				)
+				chore, actions := prepare(ctx, client, created)
+				deleteAction := actions[shiftbellapi.ActionDeleteChore]
+
+				By("deleting through the state-appropriate advertised action")
+				deleted, err := client.DeleteChore(
+					ctx,
+					shiftbellapi.RequestParams{
+						Method:      deleteAction.Method,
+						Href:        deleteAction.Href,
+						ContentType: deleteAction.ContentType,
+					},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(deleted.StatusCode).To(Equal(http.StatusNoContent))
+				Expect(deleted.ErrorResponse).To(BeNil())
+
+				By("proving the former resource is missing")
+				missing, err := client.GetChore(ctx, shiftbellapi.GetChoreParams{
+					Link: chore.Links[shiftbellapi.RelationSelf],
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(missing.StatusCode).To(Equal(http.StatusNotFound))
+				Expect(missing.SuccessResponse).To(BeNil())
+				Expect(missing.ErrorResponse).NotTo(BeNil())
+				Expect(missing.ErrorResponse.Error).To(Equal("chore not found"))
+				Expect(missing.ErrorResponse.Links).To(gstruct.MatchAllKeys(gstruct.Keys{
+					shiftbellapi.RelationCollection: gstruct.MatchAllFields(
+						gstruct.Fields{
+							"Href": Equal(
+								collection.Links[shiftbellapi.RelationSelf].Href,
+							),
+						},
+					),
+				}))
+				Expect(missing.ErrorResponse.Actions).To(BeEmpty())
+
+				By("proving the chore is absent from both status collections")
+				active, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: scope,
+					Status: "active",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(active.Collection.Items).To(BeEmpty())
+				history, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href:   collection.Links[shiftbellapi.RelationSelf].Href,
+					Search: scope,
+					Status: "completed",
+					Limit:  20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(history.Collection.Items).To(BeEmpty())
 			},
-			Entry("active one-off chore"),
-			Entry("completed one-off chore"),
+			Entry("active one-off chore", prepareActiveOneOffChoreForDeletion),
+			Entry("completed one-off chore", prepareCompletedOneOffChoreForDeletion),
 		)
 	})
-
-	When("retrieving a missing chore", func() {
-		It("returns collection navigation and no mutation actions", func() {
-			Expect(true).To(BeTrue())
-		})
-	})
 })
+
+func prepareActiveOneOffChoreForDeletion(
+	_ context.Context,
+	_ *shiftbellapi.APIClient,
+	created *shiftbellapi.CreateChoreResponse,
+) (shiftbellapi.Chore, shiftbellapi.Actions) {
+	return created.Chore, created.Actions
+}
+
+func prepareCompletedOneOffChoreForDeletion(
+	ctx context.Context,
+	client *shiftbellapi.APIClient,
+	created *shiftbellapi.CreateChoreResponse,
+) (shiftbellapi.Chore, shiftbellapi.Actions) {
+	GinkgoHelper()
+	completed := completeOneOffChore(ctx, client, created, "2020-08-02")
+	return completed.Chore, completed.Actions
+}
 
 func discoverChoreCollection(
 	ctx context.Context,

@@ -104,6 +104,9 @@ func (c *APIClient) doResponse(request *http.Request) (int, http.Header, []byte,
 	if closeErr != nil {
 		return 0, nil, nil, fmt.Errorf("close response: %w", closeErr)
 	}
+	if response.StatusCode == http.StatusNoContent {
+		return response.StatusCode, response.Header, responseBody, nil
+	}
 	mediaType, _, err := mime.ParseMediaType(response.Header.Get("Content-Type"))
 	if err != nil {
 		return 0, nil, nil, fmt.Errorf("parse response content type: %w", err)

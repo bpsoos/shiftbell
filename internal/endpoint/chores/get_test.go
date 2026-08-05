@@ -1,6 +1,7 @@
 package chores_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -14,6 +15,39 @@ import (
 )
 
 var _ = Describe("Get chore", func() {
+	It("returns recovery controls when the chore is missing", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		service.EXPECT().Get(ctx, 42).Return(
+			nil,
+			errors.Join(errors.New("get chore"), choremodels.ErrNotFound),
+		).Once()
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: service},
+		)
+		e := echo.New()
+		e.GET("/chores/:id", handler.Get)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores/42",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusNotFound))
+		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+		Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"error": "chore not found",
+			"_links": {
+				"collection": {"href": "/chores"}
+			},
+			"_actions": {}
+		}`))
+	})
+
 	It(
 		"returns an active manual one-off with its mutation controls",
 		func(ctx SpecContext) {

@@ -86,6 +86,7 @@ type Service interface {
 		context.Context,
 		*choremodels.EditChoreParams,
 	) (*choremodels.ChoreDetails, error)
+	Delete(context.Context, int) error
 	Get(context.Context, int) (*choremodels.ChoreDetails, error)
 }
 

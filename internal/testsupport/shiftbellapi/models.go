@@ -173,6 +173,11 @@ type CorrectChoreCompletionResult struct {
 	ErrorResponse   *ErrorResponse
 }
 
+type DeleteChoreResult struct {
+	StatusCode    int
+	ErrorResponse *ErrorResponse
+}
+
 type ChoreTemplate struct {
 	Id            int     `json:"id"`
 	Name          string  `json:"name"`

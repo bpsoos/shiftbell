@@ -20,6 +20,7 @@ func (r *Router) Setup(app *echo.Echo) error {
 	app.POST("/chores", r.choreHandler.Create)
 	app.GET("/chores/:id", r.choreHandler.Get)
 	app.PATCH("/chores/:id", r.choreHandler.Patch)
+	app.DELETE("/chores/:id", r.choreHandler.Delete)
 	app.PUT("/chores/:id/completion", r.choreHandler.Complete)
 	app.PATCH("/chores/:id/completion", r.choreHandler.CorrectCompletion)
 

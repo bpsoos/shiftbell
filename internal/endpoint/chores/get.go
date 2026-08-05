@@ -26,7 +26,13 @@ func (h *Handler) get(ctx *echo.Context) error {
 			return hypermedia.JSON(
 				ctx,
 				http.StatusNotFound,
-				apiErrorResponse{Error: choremodels.ErrNotFound.Error()},
+				apiErrorResponse{
+					Error: choremodels.ErrNotFound.Error(),
+					Links: map[string]hypermedia.Link{
+						"collection": {Href: "/chores"},
+					},
+					Actions: map[string]hypermedia.Action{},
+				},
 			)
 		}
 		logging.Default().Error("get chore", "err", err)
