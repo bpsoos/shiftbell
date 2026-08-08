@@ -24,7 +24,9 @@ TODO: See [development](#development) for now.
 
 ## development
 
-Use the `justfile` (see [just](https://just.systems/man/en/installation.html)) recipes. The main command is:
+Use the `justfile` (see [just](https://just.systems/man/en/installation.html)) recipes.
+
+Start a local dockerized instance listening on `localhost:8080`:
 
 ```sh
 just up
