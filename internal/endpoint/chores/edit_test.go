@@ -15,6 +15,32 @@ import (
 )
 
 var _ = Describe("Edit chore", func() {
+	It("rejects an HTML representation", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: service},
+		)
+		e := echo.New()
+		e.PATCH("/chores/:id", handler.Patch)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodPatch,
+			"/chores/42",
+			strings.NewReader(`{
+				"name": "Kitchen",
+				"deadline": "2020-02-03"
+			}`),
+		)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusNotAcceptable))
+		Expect(response.Body.String()).To(BeEmpty())
+	})
+
 	It(
 		"edits an active one-off chore through its advertised action",
 		func(ctx SpecContext) {

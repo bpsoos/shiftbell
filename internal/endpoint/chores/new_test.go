@@ -130,8 +130,8 @@ var _ = Describe("Start chore creation", func() {
 	})
 
 	It("offers recurrence choices for a selected template", func(ctx SpecContext) {
-		choreTemplatePersister := NewMockChoreTemplatePersister(GinkgoT())
-		choreTemplatePersister.EXPECT().
+		choreTemplateService := NewMockChoreTemplateService(GinkgoT())
+		choreTemplateService.EXPECT().
 			Get(ctx, 42).
 			Return(&choretemplatemodels.ChoreTemplateDetails{
 				ChoreTemplate: choretemplatemodels.ChoreTemplate{
@@ -142,7 +142,7 @@ var _ = Describe("Start chore creation", func() {
 			}, nil).
 			Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
-			ChoreTemplatePersister: choreTemplatePersister,
+			ChoreTemplateService: choreTemplateService,
 		})
 		e := echo.New()
 		e.GET("/chores/new", handler.New)
@@ -181,8 +181,8 @@ var _ = Describe("Start chore creation", func() {
 	It(
 		"returns Not Implemented for template-based scheduled recurrence",
 		func(ctx SpecContext) {
-			choreTemplatePersister := NewMockChoreTemplatePersister(GinkgoT())
-			choreTemplatePersister.EXPECT().
+			choreTemplateService := NewMockChoreTemplateService(GinkgoT())
+			choreTemplateService.EXPECT().
 				Get(ctx, 42).
 				Return(&choretemplatemodels.ChoreTemplateDetails{
 					ChoreTemplate: choretemplatemodels.ChoreTemplate{
@@ -193,7 +193,7 @@ var _ = Describe("Start chore creation", func() {
 				}, nil).
 				Once()
 			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
-				ChoreTemplatePersister: choreTemplatePersister,
+				ChoreTemplateService: choreTemplateService,
 			})
 			e := echo.New()
 			e.GET("/chores/new", handler.New)
@@ -219,8 +219,8 @@ var _ = Describe("Start chore creation", func() {
 	)
 
 	It("returns the template-based one-off form", func(ctx SpecContext) {
-		choreTemplatePersister := NewMockChoreTemplatePersister(GinkgoT())
-		choreTemplatePersister.EXPECT().
+		choreTemplateService := NewMockChoreTemplateService(GinkgoT())
+		choreTemplateService.EXPECT().
 			Get(ctx, 42).
 			Return(&choretemplatemodels.ChoreTemplateDetails{
 				ChoreTemplate: choretemplatemodels.ChoreTemplate{
@@ -231,7 +231,7 @@ var _ = Describe("Start chore creation", func() {
 			}, nil).
 			Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
-			ChoreTemplatePersister: choreTemplatePersister,
+			ChoreTemplateService: choreTemplateService,
 		})
 		e := echo.New()
 		e.GET("/chores/new", handler.New)
@@ -251,7 +251,8 @@ var _ = Describe("Start chore creation", func() {
 			"step": "form",
 			"template": {
 				"id": 42,
-				"name": "Kitchen"
+				"name": "Kitchen",
+				"description": "Reusable template steps."
 			},
 			"fields": [
 				{"name": "deadline", "type": "date", "required": true}

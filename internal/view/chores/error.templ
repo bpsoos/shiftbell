@@ -1,0 +1,40 @@
+package chores
+
+import choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+
+templ errorContent(model choreviewmodels.Error) {
+	<section aria-labelledby="error-heading">
+		<style>
+			me { margin-inline: auto; max-width: 42rem; }
+			me > .card { box-shadow: var(--bs-box-shadow-sm); }
+			me > .card > .card-body { padding: 1.5rem; }
+			me [data-actions] { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+		</style>
+		<div class="card border-danger">
+			<div class="card-body">
+				<h1 id="error-heading" class="h3">Unable to continue</h1>
+				<div class="alert alert-danger" role="alert">{ model.Message }</div>
+				if len(model.Links) > 0 {
+					<div data-actions>
+						for index, link := range model.Links {
+							if link.Href != "" {
+								<a
+									if index == 0 {
+										class="btn btn-primary"
+									} else {
+										class="btn btn-outline-secondary"
+									}
+									href={ link.Href }
+									hx-get={ link.Href }
+									hx-target="#main"
+									hx-swap="outerHTML"
+									hx-push-url="true"
+								>{ link.Label }</a>
+							}
+						}
+					</div>
+				}
+			</div>
+		</div>
+	</section>
+}

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	"github.com/labstack/echo/v5"
 )
@@ -14,7 +14,7 @@ import (
 func (h *Handler) get(ctx *echo.Context) error {
 	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
 	if err != nil || id <= 0 {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			apiErrorResponse{Error: "invalid chore id"},
@@ -23,20 +23,20 @@ func (h *Handler) get(ctx *echo.Context) error {
 	chore, err := h.service.Get(ctx.Request().Context(), id)
 	if err != nil {
 		if errors.Is(err, choremodels.ErrNotFound) {
-			return hypermedia.JSON(
+			return h.renderError(
 				ctx,
 				http.StatusNotFound,
 				apiErrorResponse{
 					Error: choremodels.ErrNotFound.Error(),
-					Links: map[string]hypermedia.Link{
+					Links: map[string]api.Link{
 						"collection": {Href: "/chores"},
 					},
-					Actions: map[string]hypermedia.Action{},
+					Actions: map[string]api.Action{},
 				},
 			)
 		}
 		logging.Default().Error("get chore", "err", err)
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusInternalServerError,
 			apiErrorResponse{Error: "something went wrong"},
@@ -48,8 +48,8 @@ func (h *Handler) get(ctx *echo.Context) error {
 	if chore.Status == choremodels.ChoreStatusCompleted {
 		actions = completedOneOffActions(response.Links["self"].Href)
 	}
-	return hypermedia.JSON(ctx, http.StatusOK, choreRepresentation{
-		choreResponse: response,
-		Actions:       actions,
+	return h.renderDetail(ctx, http.StatusOK, choreRepresentation{
+		Response: response,
+		Actions:  actions,
 	})
 }

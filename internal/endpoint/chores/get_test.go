@@ -6,9 +6,13 @@ import (
 	"net/http/httptest"
 	"time"
 
+	"github.com/a-h/templ"
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
+	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
+	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -185,5 +189,70 @@ var _ = Describe("Get chore", func() {
 				}
 			}
 		}`))
+	})
+
+	It("renders an active chore as read-only HTML", func(ctx SpecContext) {
+		deadline := time.Date(2026, time.August, 15, 0, 0, 0, 0, time.UTC)
+		service := NewMockService(GinkgoT())
+		service.EXPECT().Get(ctx, 42).Return(&choremodels.ChoreDetails{
+			Id:          42,
+			Status:      choremodels.ChoreStatusActive,
+			Name:        "Kitchen",
+			Description: "Wash and fold",
+			Deadline:    deadline,
+		}, nil).Once()
+		chore := choreapimodels.Representation{
+			Response: choreapimodels.Response{
+				Id:          42,
+				Status:      choremodels.ChoreStatusActive,
+				Name:        "Kitchen",
+				Description: "Wash and fold",
+				Deadline:    "2026-08-15",
+				Links: map[string]api.Link{
+					"self":       {Href: "/chores/42"},
+					"collection": {Href: "/chores"},
+				},
+			},
+			Actions: map[string]api.Action{
+				"edit": {
+					Href:        "/chores/42",
+					Method:      http.MethodPatch,
+					ContentType: "application/json",
+					Fields: []api.ActionField{
+						{Name: "name", Type: "string", Required: true},
+						{Name: "description", Type: "string"},
+						{Name: "deadline", Type: "date", Required: true},
+					},
+				},
+				"complete": {
+					Href:        "/chores/42/completion",
+					Method:      http.MethodPut,
+					ContentType: "application/json",
+					Fields: []api.ActionField{
+						{Name: "completed_on", Type: "date", Required: true},
+					},
+				},
+				"delete": {Href: "/chores/42", Method: http.MethodDelete},
+			},
+		}
+		view := NewMockView(GinkgoT())
+		view.EXPECT().Detail(choreviewmodels.Detail{
+			Chore:    chore,
+			BackHref: "/chores",
+		}, true).Return(templ.Raw("detail sentinel")).Once()
+		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+			Service: service,
+			View:    view,
+		})
+		e := echo.New()
+		e.GET("/chores/:id", handler.Get)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/chores/42", nil)
+		request.Header.Set("Accept", "text/html")
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(Equal("detail sentinel"))
 	})
 })

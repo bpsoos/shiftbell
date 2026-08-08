@@ -5,9 +5,13 @@ import (
 	"net/http/httptest"
 	"time"
 
+	"github.com/a-h/templ"
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
+	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
+	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -99,6 +103,74 @@ var _ = Describe("Browse chores", func() {
 				}
 			}
 		}`))
+		},
+	)
+
+	It(
+		"ignores search and status filters in the HTML collection",
+		func(ctx SpecContext) {
+			deadline := time.Date(2026, time.August, 15, 0, 0, 0, 0, time.UTC)
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
+				Status: choremodels.ChoreStatusActive,
+				Offset: 4,
+				Limit:  7,
+			}).Return(&choremodels.ChorePage{
+				Chores: []choremodels.Chore{{
+					Id:          42,
+					Status:      choremodels.ChoreStatusActive,
+					Name:        "Kitchen",
+					Description: "Wash and fold",
+					Deadline:    deadline,
+				}},
+			}, nil).Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().Collection(choreviewmodels.Collection{
+				Collection: choreapimodels.CollectionResponse{
+					Items: []choreapimodels.Response{{
+						Id:          42,
+						Status:      choremodels.ChoreStatusActive,
+						Name:        "Kitchen",
+						Description: "Wash and fold",
+						Deadline:    "2026-08-15",
+						Links: map[string]api.Link{
+							"self":       {Href: "/chores/42"},
+							"collection": {Href: "/chores"},
+						},
+					}},
+					Links: map[string]api.Link{
+						"self": {
+							Href: "/chores?limit=7&offset=4",
+						},
+						"previous": {
+							Href: "/chores?limit=7&offset=0",
+						},
+					},
+					Actions: map[string]api.Action{
+						"create": {Href: "/chores/new", Method: http.MethodGet},
+					},
+				},
+			}, false).Return(templ.Raw("collection sentinel")).Once()
+			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+				Service: service,
+				View:    view,
+			})
+			e := echo.New()
+			e.GET("/chores", handler.GetBatch)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores?status=completed&search=Kitchen&offset=4&limit=7",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+
+			e.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.String()).To(Equal("collection sentinel"))
 		},
 	)
 })

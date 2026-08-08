@@ -1,0 +1,125 @@
+package chores
+
+import (
+	"time"
+
+	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
+	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+)
+
+templ collectionContent(t *Templater, model choreviewmodels.Collection, today time.Time) {
+	<section aria-labelledby="chores-heading">
+		<style>
+			me > header { align-items: center; display: flex; gap: 1rem; justify-content: space-between; margin-bottom: 1rem; }
+			me > header h1 { margin: 0; }
+			me [data-chore-list] { display: grid; gap: 1rem; }
+			me [data-chore-card] { box-shadow: var(--bs-box-shadow-sm); }
+			me [data-chore-card] > header { align-items: center; border-bottom: 0; display: flex; padding: 0.25rem; }
+			me [data-chore-id] { margin-left: auto; }
+			me [data-chore-card] h2 { margin-bottom: 0.5rem; }
+			me [data-chore-card] h2 a { text-decoration: none; }
+			me [data-chore-card] p { margin-bottom: 0; }
+			me [data-empty] { box-shadow: var(--bs-box-shadow-sm); padding: 3rem 1rem; text-align: center; }
+			me [data-empty] h2 { margin-bottom: 0.5rem; }
+			me [data-empty] p { color: var(--bs-secondary-color); margin: 0; }
+			me [data-pagination] { display: grid; gap: 1rem; grid-template-columns: 1fr 4fr 1fr; margin-top: 1rem; }
+			me [data-pagination] a { width: 100%; }
+		</style>
+		<header>
+			<h1 id="chores-heading" class="h2">Upcoming chores</h1>
+			if href := model.Collection.Actions["create"].Href; href != "" {
+				<a
+					class="btn btn-primary"
+					href={ href }
+					hx-get={ href }
+					hx-target="#main"
+					hx-swap="outerHTML"
+					hx-push-url="true"
+				>New chore</a>
+			}
+		</header>
+		if len(model.Collection.Items) == 0 {
+			@collectionEmptyState(model)
+		} else {
+			<div data-chore-list>
+				for _, chore := range model.Collection.Items {
+					@choreSummary(t, chore, today)
+				}
+			</div>
+		}
+		@collectionPagination(model)
+	</section>
+}
+
+templ choreSummary(t *Templater, chore choreapimodels.Response, today time.Time) {
+	<article class="card" data-chore-card>
+		<header class="card-header">
+			<span class={ "badge text-bg-" + t.deadlineBadgeVariant(chore.Deadline, today) }>
+				Due: { chore.Deadline }
+			</span>
+			<span data-chore-id>#{ chore.Id }</span>
+		</header>
+		<div class="card-body">
+			<h2 class="h5">
+				if href := chore.Links["self"].Href; href != "" {
+					<a
+						class="stretched-link"
+						href={ href }
+						hx-get={ href }
+						hx-target="#main"
+						hx-swap="outerHTML"
+						hx-push-url="true"
+					>{ chore.Name }</a>
+				} else {
+					{ chore.Name }
+				}
+			</h2>
+			if chore.Description != "" {
+				<p>{ chore.Description }</p>
+			}
+		</div>
+	</article>
+}
+
+templ collectionEmptyState(model choreviewmodels.Collection) {
+	<div class="card" data-empty>
+		<div>
+			<h2 class="h5">No upcoming chores</h2>
+			<p>Create a chore to get started.</p>
+		</div>
+	</div>
+}
+
+templ collectionPagination(model choreviewmodels.Collection) {
+	if model.HasPagination() {
+		<nav data-pagination aria-label="Chore pages">
+			<div>
+				if previousHref := model.Collection.Links["previous"].Href; previousHref != "" {
+					<a
+						class="btn btn-secondary"
+						href={ previousHref }
+						hx-get={ previousHref }
+						hx-target="#main"
+						hx-swap="outerHTML"
+						hx-push-url="true"
+						rel="prev"
+					>←</a>
+				}
+			</div>
+			<div></div>
+			<div>
+				if nextHref := model.Collection.Links["next"].Href; nextHref != "" {
+					<a
+						class="btn btn-secondary"
+						href={ nextHref }
+						hx-get={ nextHref }
+						hx-target="#main"
+						hx-swap="outerHTML"
+						hx-push-url="true"
+						rel="next"
+					>→</a>
+				}
+			</div>
+		</nav>
+	}
+}

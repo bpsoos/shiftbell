@@ -1,0 +1,28 @@
+package choretemplates
+
+import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
+
+templ errorContent(model viewmodels.Error) {
+	<section aria-labelledby="chore-template-error-heading">
+		<style>
+			me > .card { box-shadow: var(--bs-box-shadow-sm); margin-inline: auto; width: 100%; }
+			me [data-actions] { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+			@media lg { me > .card { width: 50%; } }
+		</style>
+		<div class="card border-danger">
+			<div class="card-body">
+				<h1 id="chore-template-error-heading" class="h4">Unable to continue</h1>
+				<p role="alert">{ model.Message }</p>
+				if len(model.Links) != 0 {
+					<div data-actions>
+						for _, link := range model.Links {
+							if link.Href != "" {
+								<a class="btn btn-secondary" href={ link.Href } hx-get={ link.Href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">{ link.Label }</a>
+							}
+						}
+					</div>
+				}
+			</div>
+		</div>
+	</section>
+}

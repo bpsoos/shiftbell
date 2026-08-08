@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/bpsoos/shiftbell/internal/appcfg"
 	"github.com/bpsoos/shiftbell/internal/database"
@@ -17,6 +18,7 @@ import (
 	choretemplatesservice "github.com/bpsoos/shiftbell/internal/service/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/service/normalization"
 	choresview "github.com/bpsoos/shiftbell/internal/view/chores"
+	choretemplatesview "github.com/bpsoos/shiftbell/internal/view/choretemplates"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -67,31 +69,39 @@ func execute() int {
 		&choretemplatesservice.Deps{
 			Persister:  choreTemplatePersister,
 			Normalizer: normalizer,
+			Now:        time.Now,
 		},
 		&choretemplatesservice.Config{},
+	)
+	choreTemplatesTemplater := choretemplatesview.NewTemplater(
+		choretemplatesview.Config{AppTimezone: appConfig.AppTimezone},
 	)
 	choreTemplatesHandler := choretemplatesendpoint.NewHandler(
 		&choretemplatesendpoint.HandlerDeps{
 			Service: choreTemplateService,
+			View:    choreTemplatesTemplater,
 		},
 	)
 
 	choresPersister := chorespersistence.NewPersister(
 		&chorespersistence.PersisterDeps{Db: db},
 	)
-	choresTemplater := choresview.NewTemplater()
+	choresTemplater := choresview.NewTemplater(choresview.Config{
+		AppTimezone: appConfig.AppTimezone,
+		Now:         time.Now,
+	})
 	choresService := choresservice.NewService(
 		&choresservice.Deps{
 			Persister:  choresPersister,
 			Normalizer: normalizer,
+			Now:        time.Now,
 		},
 		&choresservice.Config{AppTimezone: appConfig.AppTimezone},
 	)
 	choresHandler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
-		Templater:              choresTemplater,
-		Persister:              choresPersister,
-		Service:                choresService,
-		ChoreTemplatePersister: choreTemplatePersister,
+		View:                 choresTemplater,
+		Service:              choresService,
+		ChoreTemplateService: choreTemplateService,
 	})
 
 	router := routing.NewRouter(&routing.RouterDeps{

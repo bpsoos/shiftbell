@@ -8,11 +8,11 @@ import (
 )
 
 func (r *Router) Setup(app *echo.Echo) error {
-	stylesFs, err := static.Styles()
+	assetsFS, err := static.Assets()
 	if err != nil {
-		return fmt.Errorf("styles: %w", err)
+		return fmt.Errorf("assets: %w", err)
 	}
-	app.StaticFS("/styles", stylesFs)
+	app.StaticFS("/assets", assetsFS)
 
 	app.GET("/", r.homeHandler.Get)
 	app.GET("/chores", r.choreHandler.GetBatch)

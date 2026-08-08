@@ -1,117 +1,103 @@
 package chores
 
 import (
-	"context"
-	"io"
+	"time"
 
 	"github.com/a-h/templ"
-	"github.com/bpsoos/shiftbell/internal/logging"
-	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
-	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
 
-type Templater struct{}
-
-func NewTemplater() *Templater {
-	return &Templater{}
+type Config struct {
+	AppTimezone *time.Location
+	Now         func() time.Time
 }
 
-func (t *Templater) Table(
-	ctx context.Context,
-	w io.Writer,
-	offset int,
-	limit int,
-	chores *choremodels.GetChoreBatchResult,
-) error {
-	return table(offset, limit, chores).Render(ctx, w)
+type Templater struct {
+	timezone *time.Location
+	now      func() time.Time
 }
 
-func (t *Templater) Page(
-	ctx context.Context,
-	w io.Writer,
-	offset int,
-	limit int,
-	chores *choremodels.GetChoreBatchResult,
-	choreTemplates *choretemplatemodels.GetChoreTemplateBatchResult,
-	selectedChoreTemplate *choretemplatemodels.ChoreTemplate,
-) error {
-	return page(
-		offset,
-		limit,
-		chores,
-		choreTemplates,
-		selectedChoreTemplate,
-	).Render(ctx, w)
+func NewTemplater(config Config) *Templater {
+	return &Templater{timezone: config.AppTimezone, now: config.Now}
 }
 
-func (t *Templater) Chore(
-	ctx context.Context,
-	w io.Writer,
-	chore *choremodels.Chore,
-) error {
-	return choreCard(chore).Render(ctx, w)
+func (t *Templater) Collection(
+	model choreviewmodels.Collection,
+	fullPage bool,
+) templ.Component {
+	today := t.today()
+	return layouts.Frame("chores", fullPage, collectionContent(t, model, today))
 }
 
-func (t *Templater) NewChorePage(
-	ctx context.Context,
-	w io.Writer,
-) error {
-	return layouts.Main().Render(
-		templ.WithChildren(
-			ctx,
-			newChorePage(),
-		),
-		w,
-	)
+func (t *Templater) Detail(
+	model choreviewmodels.Detail,
+	fullPage bool,
+) templ.Component {
+	today := t.today()
+	return layouts.Frame("chores", fullPage, detailContent(t, model, today))
 }
 
-func (t *Templater) PageWithLayout(
-	ctx context.Context,
-	w io.Writer,
-	offset int,
-	limit int,
-	chores *choremodels.GetChoreBatchResult,
-) error {
-	return layouts.Main().Render(
-		templ.WithChildren(
-			ctx,
-			page(offset, limit, chores, nil, nil),
-		),
-		w,
-	)
+func (t *Templater) Creation(
+	model choreviewmodels.Creation,
+	fullPage bool,
+) templ.Component {
+	return layouts.Frame("chores", fullPage, creationContent(model))
 }
 
-func (t *Templater) JoinedComponents(
-	ctx context.Context,
-	w io.Writer,
-	componentSpecifiers ...choremodels.NewChoreTemplateComponent,
-) error {
-	components := make([]templ.Component, 0)
-	for i := range componentSpecifiers {
-		attrs := templ.Attributes{}
-		if i != 0 {
-			attrs["hx-swap-oob"] = "true"
-		}
-		switch componentSpecifiers[i] {
-		case choremodels.NewChoreTemplateComponentBaseInputs:
-			components = append(components, baseInputs(attrs))
-		case choremodels.NewChoreTemplateComponentInputTypeSelector:
-			components = append(components, selectInputTypeButtonGroup(attrs))
-		default:
-			logging.Default().
-				Error("unknown new chore template component", "component", componentSpecifiers[i])
-		}
+func (t *Templater) ManualOneOffForm(
+	form choreviewmodels.ManualOneOffForm,
+	fullPage bool,
+) templ.Component {
+	if form.NeedsDefaultDeadline() {
+		form.Deadline.Value = t.localDate()
 	}
-	components = append(components, submitRow(templ.Attributes{"hx-swap-oob": "true"}))
-
-	return templ.Join(components...).Render(ctx, w)
+	return layouts.Frame("chores", fullPage, manualOneOffFormContent(form))
 }
 
-func isManual(ctx context.Context) bool {
-	return choremodels.GetIsManual(ctx)
+func (t *Templater) TemplateOneOffForm(
+	form choreviewmodels.TemplateOneOffForm,
+	fullPage bool,
+) templ.Component {
+	if form.NeedsDefaultDeadline() {
+		form.Deadline.Value = t.localDate()
+	}
+	return layouts.Frame("chores", fullPage, templateOneOffFormContent(form))
 }
 
-func selectedChoreTemplate(ctx context.Context) *choretemplatemodels.ChoreTemplate {
-	return choremodels.GetSelectedChoreTemplate(ctx)
+func (t *Templater) Error(
+	model choreviewmodels.Error,
+	fullPage bool,
+) templ.Component {
+	return layouts.Frame("chores", fullPage, errorContent(model))
+}
+
+func (t *Templater) localDate() string {
+	return t.now().In(t.timezone).Format(time.DateOnly)
+}
+
+func (t *Templater) today() time.Time {
+	now := t.now().In(t.timezone)
+	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, t.timezone)
+}
+
+func (t *Templater) deadlineBadgeVariant(value string, today time.Time) string {
+	deadline, err := time.ParseInLocation(time.DateOnly, value, t.timezone)
+	if err != nil {
+		return "secondary"
+	}
+	if !deadline.After(today) {
+		return "danger"
+	}
+	if !deadline.After(today.AddDate(0, 0, 7)) {
+		return "warning"
+	}
+	return "secondary"
+}
+
+func formControlClass(className string, errorMessage string) string {
+	if errorMessage != "" {
+		className += " is-invalid"
+	}
+	return className
 }

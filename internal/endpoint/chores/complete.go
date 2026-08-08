@@ -19,6 +19,9 @@ type completeChoreRequest struct {
 }
 
 func (h *Handler) Complete(ctx *echo.Context) error {
+	if !hypermedia.Accepts(ctx.Request()) {
+		return hypermedia.NotAcceptable(ctx)
+	}
 	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
 	if err != nil || id <= 0 {
 		return hypermedia.JSON(
@@ -71,9 +74,17 @@ func (h *Handler) Complete(ctx *echo.Context) error {
 			apiErrorResponse{Error: "something went wrong"},
 		)
 	}
+	if result == nil || result.Chore == nil {
+		logging.Default().Error("complete chore returned no chore")
+		return hypermedia.JSON(
+			ctx,
+			http.StatusInternalServerError,
+			apiErrorResponse{Error: "something went wrong"},
+		)
+	}
 	response := newChoreResponse(result.Chore)
 	return hypermedia.JSON(ctx, http.StatusOK, choreRepresentation{
-		choreResponse: response,
-		Actions:       completedOneOffActions(response.Links["self"].Href),
+		Response: response,
+		Actions:  completedOneOffActions(response.Links["self"].Href),
 	})
 }

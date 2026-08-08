@@ -1,0 +1,70 @@
+package choretemplates
+
+import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
+
+templ picker(model viewmodels.Picker) {
+	<section aria-labelledby="chore-template-picker-heading">
+		<style>
+			me > [data-picker] { margin-inline: auto; max-width: 48rem; }
+			me [data-back] { display: inline-block; margin-bottom: 1rem; }
+			me [data-picker] > .card { box-shadow: var(--bs-box-shadow-sm); }
+			me [data-picker] > .card > header { background: var(--bs-body-bg); }
+			me [data-picker] > .card > header h1 { margin: 0; }
+			me [data-empty] { padding: 3rem 1rem; text-align: center; }
+			me [data-empty] p { margin: 0; }
+			me [data-template-option] { align-items: center; display: flex; gap: 1rem; justify-content: space-between; }
+			me [data-pagination] { display: flex; gap: 1rem; justify-content: space-between; }
+			me [data-manual] { text-align: center; }
+			@media sm { me [data-template-option] { padding: 1rem; } }
+		</style>
+		<div data-picker>
+			if model.BackHref != "" {
+				<a class="link-secondary" data-back href={ model.BackHref } hx-get={ model.BackHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">← Add chore</a>
+			}
+			<div class="card">
+				<header class="card-header">
+					<h1 id="chore-template-picker-heading" class="h5">Select a chore template</h1>
+				</header>
+				if len(model.Collection.Items) == 0 {
+					<div class="card-body" data-empty>
+						<p>No active chore templates are available.</p>
+					</div>
+				} else {
+					<div class="list-group list-group-flush">
+						for _, item := range model.Collection.Items {
+							if item.Select.Href != "" {
+								<a class="list-group-item list-group-item-action" data-template-option href={ item.Select.Href } hx-get={ item.Select.Href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">
+									<span>{ item.Name }</span>
+									<span class="btn btn-sm btn-primary" aria-hidden="true">Select</span>
+								</a>
+							} else {
+								<div class="list-group-item" data-template-option>{ item.Name }</div>
+							}
+						}
+					</div>
+				}
+				@pickerPagination(model)
+				if model.ManualHref != "" {
+					<div class="card-footer" data-manual>
+						<a href={ model.ManualHref } hx-get={ model.ManualHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">Continue without a template</a>
+					</div>
+				}
+			</div>
+		</div>
+	</section>
+}
+
+templ pickerPagination(model viewmodels.Picker) {
+	if model.HasPagination() {
+		<nav class="card-footer" data-pagination aria-label="Chore template picker pages">
+			if previous := knownLink(model.Collection.Links, "previous"); previous != "" {
+				<a class="btn btn-secondary" href={ previous } hx-get={ previous } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="prev" aria-label="Previous page">←</a>
+			} else {
+				<span></span>
+			}
+			if next := knownLink(model.Collection.Links, "next"); next != "" {
+				<a class="btn btn-secondary" href={ next } hx-get={ next } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="next" aria-label="Next page">→</a>
+			}
+		</nav>
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
+	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
@@ -13,6 +14,28 @@ import (
 )
 
 var _ = Describe("Delete chore", func() {
+	It("rejects an HTML representation", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: service},
+		)
+		e := echo.New()
+		e.DELETE("/chores/:id", handler.Delete)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodDelete,
+			"/chores/42",
+			nil,
+		)
+		request.Header.Set("Accept", "text/html")
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusNotAcceptable))
+		Expect(response.Body.String()).To(BeEmpty())
+	})
+
 	It("permanently deletes the chore", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Delete(ctx, 42).Return(nil).Once()
@@ -27,6 +50,7 @@ var _ = Describe("Delete chore", func() {
 			"/chores/42",
 			nil,
 		)
+		request.Header.Set("Accept", hypermedia.MediaType)
 		response := httptest.NewRecorder()
 
 		e.ServeHTTP(response, request)
@@ -52,6 +76,7 @@ var _ = Describe("Delete chore", func() {
 			"/chores/42",
 			nil,
 		)
+		request.Header.Set("Accept", hypermedia.MediaType)
 		response := httptest.NewRecorder()
 
 		e.ServeHTTP(response, request)

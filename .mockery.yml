@@ -25,6 +25,9 @@ packages:
   github.com/bpsoos/shiftbell/internal/endpoint/chores:
     config:
       all: true
+  github.com/bpsoos/shiftbell/internal/endpoint/choretemplates:
+    config:
+      all: true
   github.com/bpsoos/shiftbell/internal/service/choretemplates:
     config:
       all: true

@@ -6,9 +6,9 @@ COPY go.sum go.mod ./
 COPY cmd cmd
 COPY internal internal
 
+RUN go tool templ generate
 RUN CGO_ENABLED=0 go build -o /app ./cmd/serve
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /app /app
 ENTRYPOINT ["/app"]
-

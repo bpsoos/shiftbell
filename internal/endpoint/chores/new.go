@@ -6,30 +6,18 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
+	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	"github.com/labstack/echo/v5"
 )
 
-type choreCreationChoice struct {
-	Label string `json:"label"`
-	Href  string `json:"href"`
-}
-
-type choreCreationTemplate struct {
-	Id          int    `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-}
-
-type choreCreationResponse struct {
-	Step     string                   `json:"step"`
-	Template *choreCreationTemplate   `json:"template,omitempty"`
-	Choices  []choreCreationChoice    `json:"choices,omitempty"`
-	Fields   []hypermedia.ActionField `json:"fields,omitempty"`
-	Action   *hypermedia.Action       `json:"action,omitempty"`
-}
+type (
+	choreCreationChoice   = choreapimodels.CreationChoice
+	choreCreationTemplate = choreapimodels.CreationTemplate
+	choreCreationResponse = choreapimodels.CreationResponse
+)
 
 func (h *Handler) newChore(ctx *echo.Context) error {
 	if templateId := ctx.QueryParamOr("template_id", ""); templateId != "" {
@@ -41,30 +29,27 @@ func (h *Handler) newChore(ctx *echo.Context) error {
 func (h *Handler) newManualChore(ctx *echo.Context) error {
 	if ctx.QueryParamOr("source", "") == "manual" &&
 		ctx.QueryParamOr("recurrence", "") == "scheduled" {
-		return scheduledRecurrenceNotImplemented(ctx)
+		return h.scheduledRecurrenceNotImplemented(ctx)
 	}
 
 	if ctx.QueryParamOr("source", "") == "manual" &&
 		ctx.QueryParamOr("recurrence", "") == "one-off" {
-		return hypermedia.JSON(ctx, http.StatusOK, choreCreationResponse{
+		action := createChoreSubmissionAction()
+		return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
 			Step: "form",
-			Fields: []hypermedia.ActionField{
+			Fields: []api.ActionField{
 				{Name: "name", Type: "string", Required: true},
 				{Name: "description", Type: "string", Required: false},
 				{Name: "deadline", Type: "date", Required: true},
 				{Name: "save_as_chore_template", Type: "boolean", Required: false},
 			},
-			Action: &hypermedia.Action{
-				Href:        "/chores",
-				Method:      http.MethodPost,
-				ContentType: "application/json",
-			},
+			Action: &action,
 		})
 	}
 
 	if ctx.QueryParamOr("source", "") == "manual" &&
 		ctx.QueryParamOr("recurrence", "") == "" {
-		return hypermedia.JSON(ctx, http.StatusOK, choreCreationResponse{
+		return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
 			Step: "recurrence",
 			Choices: []choreCreationChoice{
 				{
@@ -79,7 +64,7 @@ func (h *Handler) newManualChore(ctx *echo.Context) error {
 		})
 	}
 
-	return hypermedia.JSON(ctx, http.StatusOK, choreCreationResponse{
+	return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
 		Step: "source",
 		Choices: []choreCreationChoice{
 			{Label: "Specify new", Href: "/chores/new?source=manual"},
@@ -88,8 +73,8 @@ func (h *Handler) newManualChore(ctx *echo.Context) error {
 	})
 }
 
-func scheduledRecurrenceNotImplemented(ctx *echo.Context) error {
-	return hypermedia.JSON(
+func (h *Handler) scheduledRecurrenceNotImplemented(ctx *echo.Context) error {
+	return h.renderError(
 		ctx,
 		http.StatusNotImplemented,
 		apiErrorResponse{Error: "scheduled recurrence is not implemented"},
@@ -99,23 +84,23 @@ func scheduledRecurrenceNotImplemented(ctx *echo.Context) error {
 func (h *Handler) newTemplateBasedChore(ctx *echo.Context, rawTemplateId string) error {
 	templateId, err := strconv.Atoi(rawTemplateId)
 	if err != nil || templateId <= 0 {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			apiErrorResponse{Error: "invalid chore template id"},
 		)
 	}
-	details, err := h.choreTemplatePersister.Get(ctx.Request().Context(), templateId)
+	details, err := h.choreTemplateService.Get(ctx.Request().Context(), templateId)
 	if err != nil {
 		if errors.Is(err, choretemplatemodels.ErrNotFound) {
-			return hypermedia.JSON(
+			return h.renderError(
 				ctx,
 				http.StatusNotFound,
 				apiErrorResponse{Error: choretemplatemodels.ErrNotFound.Error()},
 			)
 		}
 		logging.Default().Error("get chore template for chore creation", "err", err)
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusInternalServerError,
 			apiErrorResponse{Error: "something went wrong"},
@@ -123,7 +108,7 @@ func (h *Handler) newTemplateBasedChore(ctx *echo.Context, rawTemplateId string)
 	}
 	template := details.ChoreTemplate
 	if template.DeactivatedAt != nil {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			apiErrorResponse{Error: choretemplatemodels.ErrInactive.Error()},
@@ -131,22 +116,22 @@ func (h *Handler) newTemplateBasedChore(ctx *echo.Context, rawTemplateId string)
 	}
 	recurrence := ctx.QueryParamOr("recurrence", "")
 	if recurrence == "scheduled" {
-		return scheduledRecurrenceNotImplemented(ctx)
+		return h.scheduledRecurrenceNotImplemented(ctx)
 	}
 	if recurrence == "" {
-		return templateRecurrenceChoices(ctx, &template)
+		return h.templateRecurrenceChoices(ctx, &template)
 	}
 	if recurrence == "one-off" {
-		return templateOneOffForm(ctx, &template)
+		return h.templateOneOffForm(ctx, &template)
 	}
-	return templateRecurrenceChoices(ctx, &template)
+	return h.templateRecurrenceChoices(ctx, &template)
 }
 
-func templateRecurrenceChoices(
+func (h *Handler) templateRecurrenceChoices(
 	ctx *echo.Context,
 	template *choretemplatemodels.ChoreTemplate,
 ) error {
-	return hypermedia.JSON(ctx, http.StatusOK, choreCreationResponse{
+	return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
 		Step: "recurrence",
 		Template: &choreCreationTemplate{
 			Id:          template.Id,
@@ -172,23 +157,21 @@ func templateRecurrenceChoices(
 	})
 }
 
-func templateOneOffForm(
+func (h *Handler) templateOneOffForm(
 	ctx *echo.Context,
 	template *choretemplatemodels.ChoreTemplate,
 ) error {
-	return hypermedia.JSON(ctx, http.StatusOK, choreCreationResponse{
+	action := createChoreSubmissionAction()
+	return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
 		Step: "form",
 		Template: &choreCreationTemplate{
-			Id:   template.Id,
-			Name: template.Name,
+			Id:          template.Id,
+			Name:        template.Name,
+			Description: template.Description,
 		},
-		Fields: []hypermedia.ActionField{
+		Fields: []api.ActionField{
 			{Name: "deadline", Type: "date", Required: true},
 		},
-		Action: &hypermedia.Action{
-			Href:        "/chores",
-			Method:      http.MethodPost,
-			ContentType: "application/json",
-		},
+		Action: &action,
 	})
 }

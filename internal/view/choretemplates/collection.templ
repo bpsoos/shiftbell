@@ -1,0 +1,95 @@
+package choretemplates
+
+import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
+
+templ collection(model viewmodels.Collection) {
+	<section aria-labelledby="chore-templates-heading">
+		<style>
+			me > header { margin-bottom: 1rem; }
+			me > header h1 { margin: 0; }
+			me > [data-results-card] { box-shadow: var(--bs-box-shadow-sm); }
+			me [data-empty] { padding: 3rem 1rem; text-align: center; }
+			me [data-empty] h2 { margin-bottom: 0.5rem; }
+			me [data-empty] p { color: var(--bs-secondary-color); margin: 0; }
+			me table { margin-bottom: 0; vertical-align: middle; }
+			me tbody a { text-decoration: none; }
+			me [data-muted] { color: var(--bs-secondary-color); }
+			me [data-pagination] { display: grid; gap: 1rem; grid-template-columns: 1fr 4fr 1fr; }
+			me [data-pagination] a { width: 100%; }
+			@media sm- { me th:nth-child(2), me td:nth-child(2) { display: none; } }
+		</style>
+		<header>
+			<h1 id="chore-templates-heading" class="h2">Chore templates</h1>
+		</header>
+		<div class="card" data-results-card>
+			@collectionResults(model)
+		</div>
+	</section>
+}
+
+templ collectionResults(model viewmodels.Collection) {
+	if len(model.Collection.Items) == 0 {
+		<div class="card-body" data-empty>
+			<h2 class="h5">No chore templates</h2>
+			<p>No chore templates are available.</p>
+		</div>
+	} else {
+		<div class="table-responsive">
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th scope="col">Name</th>
+						<th scope="col">Description</th>
+						<th scope="col">State</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, item := range model.Collection.Items {
+						<tr>
+							<th scope="row">
+								if href := knownLink(item.Links, "self"); href != "" {
+									<a href={ href } hx-get={ href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">{ item.Name }</a>
+								} else {
+									{ item.Name }
+								}
+							</th>
+							<td>
+								if item.Description != "" {
+									{ item.Description }
+								} else {
+									<span data-muted>No description</span>
+								}
+							</td>
+							<td>
+								if item.DeactivatedAt == nil {
+									<span class="badge text-bg-success">Active</span>
+								} else {
+									<span class="badge text-bg-secondary">Deactivated</span>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+	@collectionPagination(model)
+}
+
+templ collectionPagination(model viewmodels.Collection) {
+	if model.HasPagination() {
+		<nav class="card-footer" data-pagination aria-label="Chore template pages">
+			<div>
+				if previous := knownLink(model.Collection.Links, "previous"); previous != "" {
+					<a class="btn btn-secondary" href={ previous } hx-get={ previous } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="prev" aria-label="Previous page">←</a>
+				}
+			</div>
+			<div></div>
+			<div>
+				if next := knownLink(model.Collection.Links, "next"); next != "" {
+					<a class="btn btn-secondary" href={ next } hx-get={ next } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="next" aria-label="Next page">→</a>
+				}
+			</div>
+		</nav>
+	}
+}

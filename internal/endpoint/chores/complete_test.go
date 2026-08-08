@@ -15,6 +15,29 @@ import (
 )
 
 var _ = Describe("Complete chore", func() {
+	It("rejects an HTML representation", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: service},
+		)
+		e := echo.New()
+		e.PUT("/chores/:id/completion", handler.Complete)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodPut,
+			"/chores/42/completion",
+			strings.NewReader(`{"completed_on":"2020-02-03"}`),
+		)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusNotAcceptable))
+		Expect(response.Body.String()).To(BeEmpty())
+	})
+
 	It("completes a one-off chore through its advertised action", func(ctx SpecContext) {
 		completedOn := time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC)
 		deadline := time.Date(2020, time.February, 1, 0, 0, 0, 0, time.UTC)

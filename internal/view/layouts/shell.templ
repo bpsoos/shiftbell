@@ -1,0 +1,73 @@
+package layouts
+
+templ Frame(active string, fullPage bool, content templ.Component) {
+	if fullPage {
+		@page(active, content)
+	} else {
+		@main(content)
+	}
+}
+
+templ page(active string, content templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en" data-bs-theme="dark">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<meta name="color-scheme" content="dark"/>
+			<title>ShiftBell</title>
+			@dependencies()
+		</head>
+		<body>
+			<a class="shiftbell-skip-link" href="#main">Skip to content</a>
+			@nav(active)
+			@main(content)
+		</body>
+	</html>
+}
+
+templ main(content templ.Component) {
+	<main id="main" class="container" tabindex="-1">
+		@content
+	</main>
+}
+
+templ dependencies() {
+	<link href="/assets/bootstrap.min.css" rel="stylesheet"/>
+	<link href="/assets/shiftbell.css" rel="stylesheet"/>
+	@cssScopeInline()
+	<script defer src="/assets/bootstrap.bundle.min.js"></script>
+	<script defer src="/assets/htmx.min.js"></script>
+	<script defer src="/assets/shiftbell.js"></script>
+}
+
+templ cssScopeInline() {
+	<script>
+		window.cssScopeCount ??= 1
+		window.cssScope ??= new MutationObserver(() => {
+			document?.body?.querySelectorAll('style:not([ready])').forEach(node => {
+				var scope = 'me__' + window.cssScopeCount++
+				node.parentNode.classList.add(scope)
+				node.textContent = node.textContent
+					.replace(/(?:^|\.|(\s|[^a-zA-Z0-9\-\_]))(me|this|self)(?![a-zA-Z\/])/g, '$1.' + scope)
+					.replace(/((@keyframes|animation:|animation-name:)[^{};]*)\.me__/g, '$1me__')
+					.replace(/(?:@media)\s(xs-|sm-|md-|lg-|xl-|sm|md|lg|xl|xx)/g, (match, breakpoint) => {
+						return '@media ' + {
+							sm: '(min-width: 640px)',
+							md: '(min-width: 768px)',
+							lg: '(min-width: 1024px)',
+							xl: '(min-width: 1280px)',
+							xx: '(min-width: 1536px)',
+							'xs-': '(max-width: 639px)',
+							'sm-': '(max-width: 767px)',
+							'md-': '(max-width: 1023px)',
+							'lg-': '(max-width: 1279px)',
+							'xl-': '(max-width: 1535px)',
+						}[breakpoint]
+					})
+				node.setAttribute('ready', '')
+			})
+		})
+		window.cssScope.observe(document.documentElement, { childList: true, subtree: true })
+	</script>
+}

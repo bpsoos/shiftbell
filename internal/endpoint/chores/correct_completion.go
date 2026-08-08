@@ -15,6 +15,9 @@ import (
 )
 
 func (h *Handler) CorrectCompletion(ctx *echo.Context) error {
+	if !hypermedia.Accepts(ctx.Request()) {
+		return hypermedia.NotAcceptable(ctx)
+	}
 	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
 	if err != nil || id <= 0 {
 		return hypermedia.JSON(
@@ -67,9 +70,17 @@ func (h *Handler) CorrectCompletion(ctx *echo.Context) error {
 			apiErrorResponse{Error: "something went wrong"},
 		)
 	}
+	if corrected == nil {
+		logging.Default().Error("correct chore completion returned no chore")
+		return hypermedia.JSON(
+			ctx,
+			http.StatusInternalServerError,
+			apiErrorResponse{Error: "something went wrong"},
+		)
+	}
 	response := newChoreResponse(corrected)
 	return hypermedia.JSON(ctx, http.StatusOK, choreRepresentation{
-		choreResponse: response,
-		Actions:       completedOneOffActions(response.Links["self"].Href),
+		Response: response,
+		Actions:  completedOneOffActions(response.Links["self"].Href),
 	})
 }

@@ -5,38 +5,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
+	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 )
 
-type choreResponse struct {
-	Id          int                        `json:"id"`
-	ScheduleId  *int                       `json:"schedule_id"`
-	Status      choremodels.ChoreStatus    `json:"status"`
-	Name        string                     `json:"name"`
-	Description string                     `json:"description"`
-	Deadline    string                     `json:"deadline"`
-	CompletedOn *string                    `json:"completed_on"`
-	Links       map[string]hypermedia.Link `json:"_links"`
-}
-
-type choreRepresentation struct {
-	choreResponse
-	Actions map[string]hypermedia.Action `json:"_actions"`
-}
-
-type choreCollectionResponse struct {
-	Items   []choreResponse              `json:"items"`
-	More    bool                         `json:"more"`
-	Links   map[string]hypermedia.Link   `json:"_links"`
-	Actions map[string]hypermedia.Action `json:"_actions"`
-}
-
-type apiErrorResponse struct {
-	Error   string                       `json:"error"`
-	Links   map[string]hypermedia.Link   `json:"_links"`
-	Actions map[string]hypermedia.Action `json:"_actions"`
-}
+type (
+	choreResponse           = choreapimodels.Response
+	choreRepresentation     = choreapimodels.Representation
+	choreCollectionResponse = choreapimodels.CollectionResponse
+	apiErrorResponse        = api.ErrorResponse
+)
 
 func newChoreResponse(chore *choremodels.Chore) choreResponse {
 	var completedOn *string
@@ -53,27 +32,35 @@ func newChoreResponse(chore *choremodels.Chore) choreResponse {
 		Description: chore.Description,
 		Deadline:    chore.Deadline.Format(time.DateOnly),
 		CompletedOn: completedOn,
-		Links: map[string]hypermedia.Link{
+		Links: map[string]api.Link{
 			"self":       {Href: fmt.Sprintf("/chores/%d", chore.Id)},
 			"collection": {Href: "/chores"},
 		},
 	}
 }
 
-func createChoreNavigationAction() hypermedia.Action {
-	return hypermedia.Action{
+func createChoreNavigationAction() api.Action {
+	return api.Action{
 		Href:   "/chores/new",
 		Method: http.MethodGet,
 	}
 }
 
-func activeOneOffActions(selfHref string) map[string]hypermedia.Action {
-	return map[string]hypermedia.Action{
+func createChoreSubmissionAction() api.Action {
+	return api.Action{
+		Href:        "/chores",
+		Method:      http.MethodPost,
+		ContentType: "application/json",
+	}
+}
+
+func activeOneOffActions(selfHref string) map[string]api.Action {
+	return map[string]api.Action{
 		"edit": {
 			Href:        selfHref,
 			Method:      http.MethodPatch,
 			ContentType: "application/json",
-			Fields: []hypermedia.ActionField{
+			Fields: []api.ActionField{
 				{Name: "name", Type: "string", Required: true},
 				{Name: "description", Type: "string", Required: false},
 				{Name: "deadline", Type: "date", Required: true},
@@ -83,7 +70,7 @@ func activeOneOffActions(selfHref string) map[string]hypermedia.Action {
 			Href:        selfHref + "/completion",
 			Method:      http.MethodPut,
 			ContentType: "application/json",
-			Fields: []hypermedia.ActionField{
+			Fields: []api.ActionField{
 				{Name: "completed_on", Type: "date", Required: true},
 			},
 		},
@@ -94,13 +81,13 @@ func activeOneOffActions(selfHref string) map[string]hypermedia.Action {
 	}
 }
 
-func completedOneOffActions(selfHref string) map[string]hypermedia.Action {
-	return map[string]hypermedia.Action{
+func completedOneOffActions(selfHref string) map[string]api.Action {
+	return map[string]api.Action{
 		"correct_completion": {
 			Href:        selfHref + "/completion",
 			Method:      http.MethodPatch,
 			ContentType: "application/json",
-			Fields: []hypermedia.ActionField{
+			Fields: []api.ActionField{
 				{Name: "completed_on", Type: "date", Required: true},
 			},
 		},

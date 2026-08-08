@@ -2,18 +2,12 @@ package static
 
 import (
 	"embed"
-	"fmt"
 	"io/fs"
 )
 
-//go:embed styles/*.css
-var styles embed.FS
+//go:embed assets/*
+var content embed.FS
 
-func Styles() (fs.FS, error) {
-	styles, err := fs.Sub(styles, "styles")
-	if err != nil {
-		return nil, fmt.Errorf("fs sub: %w", err)
-	}
-
-	return styles, nil
+func Assets() (fs.FS, error) {
+	return fs.Sub(content, "assets")
 }

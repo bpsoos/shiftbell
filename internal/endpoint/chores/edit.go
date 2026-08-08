@@ -63,12 +63,15 @@ func (h *Handler) edit(ctx *echo.Context) error {
 	}
 	response := newChoreResponse(edited)
 	return hypermedia.JSON(ctx, http.StatusOK, choreRepresentation{
-		choreResponse: response,
-		Actions:       activeOneOffActions(response.Links["self"].Href),
+		Response: response,
+		Actions:  activeOneOffActions(response.Links["self"].Href),
 	})
 }
 
-func (h *Handler) editChoreError(ctx *echo.Context, err error) error {
+func (h *Handler) editChoreError(
+	ctx *echo.Context,
+	err error,
+) error {
 	if isEditChoreValidationError(err) {
 		return hypermedia.JSON(
 			ctx,

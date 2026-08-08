@@ -7,6 +7,7 @@ import (
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	"github.com/labstack/echo/v5"
@@ -19,15 +20,20 @@ type createRequest struct {
 
 func (h *Handler) Create(ctx *echo.Context) error {
 	if !hypermedia.Accepts(ctx.Request()) {
-		return ctx.NoContent(http.StatusNotAcceptable)
+		return hypermedia.NotAcceptable(ctx)
 	}
 
 	var request createRequest
 	if err := json.NewDecoder(ctx.Request().Body).Decode(&request); err != nil {
+		action := createAction()
 		return hypermedia.JSON(
 			ctx,
 			http.StatusBadRequest,
-			errorResponse{Error: "invalid JSON"},
+			errorResponse{
+				Error:   "invalid request body",
+				Links:   collectionLink(),
+				Actions: map[string]api.Action{"create": action},
+			},
 		)
 	}
 
@@ -40,24 +46,22 @@ func (h *Handler) Create(ctx *echo.Context) error {
 	)
 	if err != nil {
 		if errors.Is(err, models.ErrNameConflict) {
-			return hypermedia.JSON(
-				ctx,
-				http.StatusConflict,
-				errorResponse{
-					Error:   err.Error(),
-					Links:   map[string]hypermedia.Link{},
-					Actions: map[string]hypermedia.Action{"create": createAction()},
-				},
-			)
+			action := createAction()
+			return hypermedia.JSON(ctx, http.StatusConflict, errorResponse{
+				Error:   err.Error(),
+				Links:   map[string]api.Link{},
+				Actions: map[string]api.Action{"create": action},
+			})
 		}
 		if isInvalidCreateRequestError(err) {
+			action := createAction()
 			return hypermedia.JSON(
 				ctx,
 				http.StatusUnprocessableEntity,
 				errorResponse{
 					Error:   err.Error(),
 					Links:   collectionLink(),
-					Actions: map[string]hypermedia.Action{"create": createAction()},
+					Actions: map[string]api.Action{"create": action},
 				},
 			)
 		}
@@ -65,15 +69,12 @@ func (h *Handler) Create(ctx *echo.Context) error {
 		return hypermedia.JSON(
 			ctx,
 			http.StatusInternalServerError,
-			errorResponse{Error: "something went wrong"},
+			errorResponse{Error: "something went wrong", Links: collectionLink()},
 		)
 	}
 
 	representation := newRepresentation(choreTemplate)
-	ctx.Response().Header().Set(
-		echo.HeaderLocation,
-		representation.Links["self"].Href,
-	)
+	ctx.Response().Header().Set(echo.HeaderLocation, representation.Links["self"].Href)
 	return hypermedia.JSON(ctx, http.StatusCreated, representation)
 }
 
@@ -82,12 +83,12 @@ func isInvalidCreateRequestError(err error) bool {
 		errors.Is(err, validationerrors.ErrInvalidDescription)
 }
 
-func createAction() hypermedia.Action {
-	return hypermedia.Action{
+func createAction() api.Action {
+	return api.Action{
 		Href:        "/chore-templates",
 		Method:      http.MethodPost,
 		ContentType: "application/json",
-		Fields: []hypermedia.ActionField{
+		Fields: []api.ActionField{
 			{Name: "name", Type: "string", Required: true},
 			{Name: "description", Type: "string", Required: false},
 		},

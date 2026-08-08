@@ -24,6 +24,7 @@ var _ = Describe("Get home", func() {
 
 		Expect(response.Code).To(Equal(http.StatusOK))
 		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+		Expect(response.Header().Get("Vary")).To(Equal("Accept"))
 		Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"_links": {
 				"self": {"href": "/"},
@@ -31,5 +32,34 @@ var _ = Describe("Get home", func() {
 				"chore_templates": {"href": "/chore-templates"}
 			}
 		}`))
+	})
+
+	It("redirects browser navigation to the chore collection", func(ctx SpecContext) {
+		handler := home.NewHandler()
+		e := echo.New()
+		e.GET("/", handler.Get)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusSeeOther))
+		Expect(response.Header().Get("Location")).To(Equal("/chores"))
+		Expect(response.Header().Get("Vary")).To(Equal("Accept, HX-Request"))
+	})
+
+	It("rejects unsupported representations", func(ctx SpecContext) {
+		handler := home.NewHandler()
+		e := echo.New()
+		e.GET("/", handler.Get)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
+		request.Header.Set("Accept", "application/json")
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusNotAcceptable))
+		Expect(response.Header().Get("Vary")).To(Equal("Accept"))
+		Expect(response.Body.String()).To(BeEmpty())
 	})
 })

@@ -1,57 +1,61 @@
 package choretemplates
 
 import (
-	"context"
-	"io"
+	"time"
 
 	"github.com/a-h/templ"
-	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
 
-type Templater struct{}
-
-func NewTemplater() *Templater {
-	return &Templater{}
+type Config struct {
+	AppTimezone *time.Location
 }
 
-func (t *Templater) Page(
-	ctx context.Context,
-	w io.Writer,
-	offset int,
-	limit int,
-	choreTemplates *models.GetChoreTemplateBatchResult,
-) error {
-	return page(offset, limit, choreTemplates).Render(ctx, w)
+type Templater struct {
+	appTimezone *time.Location
 }
 
-func (t *Templater) PageWithLayout(
-	ctx context.Context,
-	w io.Writer,
-	offset int,
-	limit int,
-	choreTemplates *models.GetChoreTemplateBatchResult,
-) error {
-	return layouts.Main().
-		Render(templ.WithChildren(ctx, page(offset, limit, choreTemplates)), w)
+func NewTemplater(config Config) *Templater {
+	return &Templater{appTimezone: config.AppTimezone}
 }
 
-func (t *Templater) Table(
-	ctx context.Context,
-	w io.Writer,
-	offset int,
-	limit int,
-	choreTemplates *models.GetChoreTemplateBatchResult,
-) error {
-	return table(offset, limit, choreTemplates).Render(ctx, w)
+func (t *Templater) Collection(
+	model viewmodels.Collection,
+	fullPage bool,
+) templ.Component {
+	return layouts.Frame("chore-templates", fullPage, collection(model))
 }
 
-func (t *Templater) Selector(
-	ctx context.Context,
-	w io.Writer,
-	offset int,
-	limit int,
-	choreTemplates *models.GetChoreTemplateBatchResult,
-) error {
-	return selector(offset, limit, choreTemplates).Render(ctx, w)
+func (t *Templater) Picker(
+	model viewmodels.Picker,
+	fullPage bool,
+) templ.Component {
+	return layouts.Frame("chores", fullPage, picker(model))
+}
+
+func (t *Templater) Detail(
+	model viewmodels.Detail,
+	fullPage bool,
+) templ.Component {
+	return layouts.Frame("chore-templates", fullPage, detail(t, model))
+}
+
+func (t *Templater) Error(
+	model viewmodels.Error,
+	fullPage bool,
+) templ.Component {
+	return layouts.Frame("chore-templates", fullPage, errorContent(model))
+}
+
+func (t *Templater) formatTime(value time.Time) string {
+	return value.In(t.appTimezone).Format("2 Jan 2006, 15:04 MST")
+}
+
+func knownLink(links map[string]api.Link, relation string) string {
+	if link, ok := links[relation]; ok {
+		return link.Href
+	}
+	return ""
 }

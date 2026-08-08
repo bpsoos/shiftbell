@@ -1,0 +1,66 @@
+package chores
+
+import (
+	"time"
+
+	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
+	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+)
+
+templ detailContent(t *Templater, model choreviewmodels.Detail, today time.Time) {
+	<section aria-labelledby="chore-heading">
+		<style>
+			me > [data-back] { display: inline-block; margin-bottom: 1rem; }
+			me > [data-chore-card] { box-shadow: var(--bs-box-shadow-sm); }
+			me > [data-chore-card] > header { align-items: center; border-bottom: 0; display: flex; padding: 0.25rem; }
+			me [data-chore-id] { margin-left: auto; }
+			me h1 { margin-bottom: 0.75rem; }
+			me [data-description] { margin-bottom: 1rem; }
+			me [data-description][data-empty] { color: var(--bs-secondary-color); }
+			me [data-badges] { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+			me [data-completed] { color: var(--bs-secondary-color); font-size: 0.875rem; margin: 1rem 0 0; }
+		</style>
+		if model.BackHref != "" {
+			<a
+				class="link-secondary"
+				data-back
+				href={ model.BackHref }
+				hx-get={ model.BackHref }
+				hx-target="#main"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+			>← Chores</a>
+		}
+		@detailCard(t, model.Chore, today)
+	</section>
+}
+
+templ detailCard(t *Templater, chore choreapimodels.Representation, today time.Time) {
+	<article class="card" data-chore-card>
+		<header class="card-header">
+			<span class={ "badge text-bg-" + t.deadlineBadgeVariant(chore.Deadline, today) }>
+				Due: { chore.Deadline }
+			</span>
+			<span data-chore-id>#{ chore.Id }</span>
+		</header>
+		<div class="card-body">
+			<h1 id="chore-heading" class="h4">{ chore.Name }</h1>
+			if chore.Description != "" {
+				<p data-description>{ chore.Description }</p>
+			} else {
+				<p data-description data-empty>No description.</p>
+			}
+			<div data-badges>
+				<span class="badge text-bg-secondary">{ string(chore.Status) }</span>
+				if chore.ScheduleId != nil {
+					<span class="badge text-bg-secondary">Scheduled</span>
+				} else {
+					<span class="badge text-bg-secondary">One-off</span>
+				}
+			</div>
+			if chore.CompletedOn != nil {
+				<p data-completed>Completed: { *chore.CompletedOn }</p>
+			}
+		</div>
+	</article>
+}

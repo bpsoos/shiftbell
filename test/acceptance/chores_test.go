@@ -1435,8 +1435,9 @@ func getTemplateOneOffChoreForm(
 	Expect(*form.SuccessResponse).To(gstruct.MatchAllFields(gstruct.Fields{
 		"Step": Equal("form"),
 		"Template": Equal(&shiftbellapi.ChoreCreationTemplate{
-			Id:   template.Id,
-			Name: template.Name,
+			Id:          template.Id,
+			Name:        template.Name,
+			Description: template.Description,
 		}),
 		"Choices": BeEmpty(),
 		"Fields": Equal([]shiftbellapi.ActionField{

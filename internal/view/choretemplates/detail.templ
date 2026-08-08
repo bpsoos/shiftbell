@@ -1,0 +1,40 @@
+package choretemplates
+
+import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
+
+templ detail(t *Templater, model viewmodels.Detail) {
+	<section aria-labelledby="chore-template-heading">
+		<style>
+			me > [data-back] { display: inline-block; margin-bottom: 1rem; }
+			me > article { box-shadow: var(--bs-box-shadow-sm); }
+			me > article > header { align-items: center; background: var(--bs-body-bg); display: flex; gap: 1rem; justify-content: space-between; }
+			me > article > header h1 { margin: 0; }
+			me [data-description] { margin: 0; }
+			me [data-description][data-empty] { color: var(--bs-secondary-color); }
+			me [data-deactivated] { color: var(--bs-secondary-color); font-size: 0.875rem; margin: 1rem 0 0; }
+		</style>
+		if model.CollectionHref != "" {
+			<a class="link-secondary" data-back href={ model.CollectionHref } hx-get={ model.CollectionHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">← Chore templates</a>
+		}
+		<article class="card">
+			<header class="card-header">
+				<h1 id="chore-template-heading" class="h5">{ model.ChoreTemplate.Name }</h1>
+				if model.ChoreTemplate.DeactivatedAt == nil {
+					<span class="badge text-bg-success">Active</span>
+				} else {
+					<span class="badge text-bg-secondary">Deactivated</span>
+				}
+			</header>
+			<div class="card-body">
+				if model.ChoreTemplate.Description != "" {
+					<p data-description>{ model.ChoreTemplate.Description }</p>
+				} else {
+					<p data-description data-empty>No description.</p>
+				}
+				if model.ChoreTemplate.DeactivatedAt != nil {
+					<p data-deactivated>Deactivated { t.formatTime(*model.ChoreTemplate.DeactivatedAt) }</p>
+				}
+			</div>
+		</article>
+	</section>
+}

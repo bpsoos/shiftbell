@@ -22,15 +22,10 @@ type Deps struct {
 }
 
 func NewService(deps *Deps, config *Config) *Service {
-	now := deps.Now
-	if now == nil {
-		now = time.Now
-	}
-
 	return &Service{
 		persister:  deps.Persister,
 		normalizer: deps.Normalizer,
-		now:        now,
+		now:        deps.Now,
 	}
 }
 

@@ -1,0 +1,145 @@
+package chores
+
+import (
+	"strconv"
+
+	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+)
+
+templ manualOneOffFormContent(form choreviewmodels.ManualOneOffForm) {
+	@creationPage(form.CancelHref) {
+		@oneOffFormPanel(form.ActionHref, form.CancelHref, form.SummaryError) {
+			@createNameField(form.Name)
+			@createDescriptionField(form.Description)
+			@createDeadlineField(form.Deadline)
+		}
+	}
+}
+
+templ templateOneOffFormContent(form choreviewmodels.TemplateOneOffForm) {
+	@creationPage(form.CancelHref) {
+		@oneOffFormPanel(form.ActionHref, form.CancelHref, form.SummaryError) {
+			if form.HasSelectedTemplate() {
+				<div data-selected>
+					<div data-caption>Using chore template</div>
+					if form.ChoreTemplateName != "" {
+						<strong>{ form.ChoreTemplateName }</strong>
+					} else {
+						<strong>#{ strconv.Itoa(form.ChoreTemplateId) }</strong>
+					}
+					if form.ChoreTemplateDescription != "" {
+						<p>{ form.ChoreTemplateDescription }</p>
+					}
+				</div>
+			}
+			<input type="hidden" name="chore_template_id" value={ strconv.Itoa(form.ChoreTemplateId) }/>
+			@createDeadlineField(form.Deadline)
+		}
+	}
+}
+
+templ oneOffFormPanel(actionHref string, cancelHref string, summaryError string) {
+	<div data-panel>
+		<div class="card">
+			<header class="card-header">
+				<h1 id="create-chore-heading" class="h5">Add one-off chore</h1>
+			</header>
+			<div class="card-body">
+				if actionHref == "" {
+					<div class="alert alert-danger" data-unavailable role="alert">The creation action is not available.</div>
+				} else {
+					<form
+						id="create-chore-form"
+						action={ actionHref }
+						method="post"
+						hx-post={ actionHref }
+						hx-target="#main"
+						hx-swap="outerHTML"
+						if summaryError != "" {
+							aria-describedby="create-chore-form-summary"
+						}
+					>
+						@formSummary("create-chore-form-summary", summaryError)
+						{ children... }
+						<div data-actions>
+							if cancelHref != "" {
+								<a
+									class="btn btn-secondary"
+									href={ cancelHref }
+									hx-get={ cancelHref }
+									hx-target="#main"
+									hx-swap="outerHTML"
+									hx-push-url="true"
+								>Cancel</a>
+							}
+							<button class="btn btn-primary" type="submit">
+								if summaryError != "" {
+									Try again
+								} else {
+									Add
+								}
+							</button>
+						</div>
+					</form>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ createNameField(field choreviewmodels.Field) {
+	<div data-field>
+		<label class="form-label" for="create-chore-name">Name</label>
+		<input
+			class={ formControlClass("form-control", field.Error) }
+			type="text"
+			id="create-chore-name"
+			name="name"
+			value={ field.Value }
+			maxlength="200"
+			if field.Error != "" {
+				aria-describedby="create-chore-name-error"
+				aria-invalid="true"
+			}
+			required
+		/>
+		@fieldFeedback("create-chore-name-error", field.Error)
+	</div>
+}
+
+templ createDescriptionField(field choreviewmodels.Field) {
+	<div data-field>
+		<label class="form-label" for="create-chore-description">Description</label>
+		<textarea
+			class={ formControlClass("form-control", field.Error) }
+			id="create-chore-description"
+			name="description"
+			rows="4"
+			maxlength="2000"
+			if field.Error != "" {
+				aria-describedby="create-chore-description-error"
+				aria-invalid="true"
+			}
+		>{ field.Value }</textarea>
+		@fieldFeedback("create-chore-description-error", field.Error)
+	</div>
+}
+
+templ createDeadlineField(field choreviewmodels.Field) {
+	<div data-field>
+		<label class="form-label" for="create-chore-deadline">Deadline</label>
+		<input
+			class={ formControlClass("form-control", field.Error) }
+			type="date"
+			id="create-chore-deadline"
+			name="deadline"
+			value={ field.Value }
+			if field.Error != "" {
+				aria-describedby="create-chore-deadline-error"
+				aria-invalid="true"
+			}
+			required
+		/>
+		@fieldFeedback("create-chore-deadline-error", field.Error)
+	</div>
+}

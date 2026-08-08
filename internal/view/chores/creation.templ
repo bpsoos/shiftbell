@@ -1,0 +1,124 @@
+package chores
+
+import choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+
+templ creationContent(model choreviewmodels.Creation) {
+	@creationPage(model.BackHref) {
+		switch model.Creation.Step {
+			case "source":
+				@creationSource(model)
+			case "recurrence":
+				@creationRecurrence(model)
+			default:
+				<div class="alert alert-danger" data-unavailable role="alert">
+					<h1 id="create-chore-heading" class="h4">Unable to create chore</h1>
+					<p>The creation step is not available.</p>
+				</div>
+		}
+	}
+}
+
+templ creationPage(backHref string) {
+	<section aria-labelledby="create-chore-heading">
+		<style>
+			me > [data-back] { display: inline-block; margin-bottom: 1rem; }
+			me [data-panel] { margin-inline: auto; width: 100%; }
+			me [data-panel] > .card { box-shadow: var(--bs-box-shadow-sm); }
+			me [data-panel] > .card > header { background: var(--bs-body-bg); }
+			me [data-panel] > .card > header h1 { margin: 0; }
+			me [data-options] { display: grid; gap: 0.5rem; }
+			me [data-option] { text-align: left; }
+			me [data-selected] { margin-bottom: 1.5rem; }
+			me [data-caption] { color: var(--bs-secondary-color); font-size: 0.875rem; }
+			me [data-selected] p { margin-bottom: 0; }
+			me [data-field] { margin-bottom: 1rem; }
+			me .invalid-feedback[data-visible] { display: block; }
+			me [data-actions] { display: flex; gap: 0.75rem; justify-content: flex-end; }
+			me [data-unavailable] { margin-bottom: 0; }
+			me [data-unavailable] p { margin-bottom: 0; }
+			@media lg { me [data-panel] { width: 50%; } }
+		</style>
+		if backHref != "" {
+			<a
+				class="link-secondary"
+				data-back
+				href={ backHref }
+				hx-get={ backHref }
+				hx-target="#main"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+			>← Chores</a>
+		}
+		{ children... }
+	</section>
+}
+
+templ creationSource(model choreviewmodels.Creation) {
+	<div data-panel>
+		<div class="card">
+			<header class="card-header">
+				<h1 id="create-chore-heading" class="h5">Add chore</h1>
+			</header>
+			<div class="card-body">
+				<p>Choose how to define this chore.</p>
+				if model.HasSourceOptions() {
+					<div data-options>
+						if model.SpecifyNewHref != "" {
+							@creationOption(model.SpecifyNewHref, "Specify new")
+						}
+						if model.SelectTemplateHref != "" {
+							@creationOption(model.SelectTemplateHref, "Select template")
+						}
+					</div>
+				} else {
+					<div class="alert alert-danger" data-unavailable role="alert">No creation source is available.</div>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ creationRecurrence(model choreviewmodels.Creation) {
+	<div data-panel>
+		<div class="card">
+			<header class="card-header">
+				<h1 id="create-chore-heading" class="h5">Choose recurrence</h1>
+			</header>
+			<div class="card-body">
+				if model.Creation.Template != nil {
+					<div data-selected>
+						<div data-caption>Selected chore template</div>
+						<strong>{ model.Creation.Template.Name }</strong>
+						if model.Creation.Template.Description != "" {
+							<p>{ model.Creation.Template.Description }</p>
+						}
+					</div>
+				}
+				if model.HasRecurrenceOptions() {
+					<div data-options>
+						if model.OneOffHref != "" {
+							@creationOption(model.OneOffHref, "One-off")
+						}
+						if model.ScheduledHref != "" {
+							@creationOption(model.ScheduledHref, "Scheduled")
+						}
+					</div>
+				} else {
+					<div class="alert alert-danger" data-unavailable role="alert">No recurrence option is available.</div>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ creationOption(href string, label string) {
+	<a
+		class="btn btn-outline-secondary"
+		data-option
+		href={ href }
+		hx-get={ href }
+		hx-target="#main"
+		hx-swap="outerHTML"
+		hx-push-url="true"
+	>{ label }</a>
+}

@@ -1,0 +1,20 @@
+package chores
+
+templ formSummary(id string, message string) {
+	if message != "" {
+		<div id={ id } class="alert alert-danger" role="alert" tabindex="-1">
+			<strong>Could not submit the form.</strong>
+			<div>{ message }</div>
+		</div>
+	} else {
+		<div id={ id } hidden></div>
+	}
+}
+
+templ fieldFeedback(id string, message string) {
+	if message != "" {
+		<div id={ id } class="invalid-feedback" data-visible role="alert">{ message }</div>
+	} else {
+		<div id={ id } class="invalid-feedback"></div>
+	}
+}

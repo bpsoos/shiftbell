@@ -25,20 +25,11 @@ type Deps struct {
 }
 
 func NewService(deps *Deps, config *Config) *Service {
-	now := deps.Now
-	if now == nil {
-		now = time.Now
-	}
-	timezone := time.UTC
-	if config != nil && config.AppTimezone != nil {
-		timezone = config.AppTimezone
-	}
-
 	return &Service{
 		persister:  deps.Persister,
 		normalizer: deps.Normalizer,
-		now:        now,
-		timezone:   timezone,
+		now:        deps.Now,
+		timezone:   config.AppTimezone,
 	}
 }
 

@@ -1,13 +1,15 @@
 package chores
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/bpsoos/shiftbell/internal/endpoint/binding"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
@@ -15,33 +17,50 @@ import (
 )
 
 type createChoreRequest struct {
-	Name                string `json:"name"`
-	Description         string `json:"description"`
-	Deadline            string `json:"deadline"`
-	ChoreTemplateId     *int   `json:"chore_template_id,omitempty"`
-	ScheduleName        string `json:"schedule_name,omitempty"`
-	IntervalDays        *int   `json:"interval_days,omitempty"`
-	SaveAsChoreTemplate bool   `json:"save_as_chore_template"`
+	Name                string `form:"name"              json:"name"`
+	Description         string `form:"description"       json:"description"`
+	Deadline            string `form:"deadline"          json:"deadline"`
+	ChoreTemplateId     *int   `form:"chore_template_id" json:"chore_template_id,omitempty"`
+	ScheduleName        string `form:"schedule_name"     json:"schedule_name,omitempty"`
+	IntervalDays        *int   `form:"interval_days"     json:"interval_days,omitempty"`
+	SaveAsChoreTemplate bool   `                         json:"save_as_chore_template"`
 }
 
 func (h *Handler) create(ctx *echo.Context) error {
 	var request createChoreRequest
-	if err := json.NewDecoder(ctx.Request().Body).Decode(&request); err != nil {
-		return hypermedia.JSON(
+	if err := binding.Bind(ctx, &request); err != nil {
+		if errors.Is(err, binding.ErrUnsupportedMediaType) {
+			return h.renderError(
+				ctx,
+				http.StatusUnsupportedMediaType,
+				apiErrorResponse{Error: binding.ErrUnsupportedMediaType.Error()},
+			)
+		}
+		return h.renderCreateFormError(
 			ctx,
 			http.StatusBadRequest,
-			apiErrorResponse{Error: "invalid JSON"},
+			request,
+			formFeedback{Error: apiErrorResponse{Error: "invalid JSON"}},
 		)
 	}
+	if hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML {
+		request.SaveAsChoreTemplate = false
+	}
 	if request.IntervalDays != nil {
-		return scheduledRecurrenceNotImplemented(ctx)
+		return h.scheduledRecurrenceNotImplemented(ctx)
 	}
 	deadline, err := time.Parse(time.DateOnly, request.Deadline)
 	if err != nil {
-		return hypermedia.JSON(
+		response := apiErrorResponse{Error: validationerrors.ErrInvalidDeadline.Error()}
+		return h.renderCreateFormError(
 			ctx,
 			http.StatusUnprocessableEntity,
-			apiErrorResponse{Error: validationerrors.ErrInvalidDeadline.Error()},
+			request,
+			formFeedback{
+				Values:      createFormValues(request),
+				FieldErrors: map[string]string{"deadline": response.Error},
+				Error:       response,
+			},
 		)
 	}
 
@@ -59,50 +78,67 @@ func (h *Handler) create(ctx *echo.Context) error {
 	)
 	if err != nil {
 		if errors.Is(err, choretemplatemodels.ErrNameConflict) {
-			return hypermedia.JSON(
+			response := apiErrorResponse{
+				Error: choretemplatemodels.ErrNameConflict.Error(),
+				Links: map[string]api.Link{},
+				Actions: map[string]api.Action{
+					"create": {
+						Href:        "/chores",
+						Method:      http.MethodPost,
+						ContentType: "application/json",
+					},
+				},
+			}
+			return h.renderCreateFormError(
 				ctx,
 				http.StatusConflict,
-				apiErrorResponse{
-					Error: choretemplatemodels.ErrNameConflict.Error(),
-					Links: map[string]hypermedia.Link{},
-					Actions: map[string]hypermedia.Action{
-						"create": {
-							Href:        "/chores",
-							Method:      http.MethodPost,
-							ContentType: "application/json",
-						},
-					},
+				request,
+				formFeedback{
+					Values:      createFormValues(request),
+					FieldErrors: map[string]string{"name": response.Error},
+					Error:       response,
 				},
 			)
 		}
 		if errors.Is(err, choretemplatemodels.ErrInactive) {
-			return hypermedia.JSON(
+			response := apiErrorResponse{
+				Error: choretemplatemodels.ErrInactive.Error(),
+				Links: map[string]api.Link{
+					"collection": {Href: "/chores"},
+				},
+				Actions: map[string]api.Action{
+					"create": {
+						Href:        "/chores",
+						Method:      http.MethodPost,
+						ContentType: "application/json",
+					},
+				},
+			}
+			return h.renderCreateFormError(
 				ctx,
 				http.StatusUnprocessableEntity,
-				apiErrorResponse{
-					Error: choretemplatemodels.ErrInactive.Error(),
-					Links: map[string]hypermedia.Link{
-						"collection": {Href: "/chores"},
-					},
-					Actions: map[string]hypermedia.Action{
-						"create": {
-							Href:        "/chores",
-							Method:      http.MethodPost,
-							ContentType: "application/json",
-						},
-					},
+				request,
+				formFeedback{
+					Values: createFormValues(request),
+					Error:  response,
 				},
 			)
 		}
 		if isInvalidChoreCreateRequest(err) {
-			return hypermedia.JSON(
+			response := apiErrorResponse{Error: err.Error()}
+			return h.renderCreateFormError(
 				ctx,
 				http.StatusUnprocessableEntity,
-				apiErrorResponse{Error: err.Error()},
+				request,
+				formFeedback{
+					Values:      createFormValues(request),
+					FieldErrors: createFieldErrors(err),
+					Error:       response,
+				},
 			)
 		}
 		logging.Default().Error("create chore", "err", err)
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusInternalServerError,
 			apiErrorResponse{Error: "something went wrong"},
@@ -110,7 +146,7 @@ func (h *Handler) create(ctx *echo.Context) error {
 	}
 	if result == nil || result.Chore == nil {
 		logging.Default().Error("create chore returned no chore")
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusInternalServerError,
 			apiErrorResponse{Error: "something went wrong"},
@@ -118,11 +154,39 @@ func (h *Handler) create(ctx *echo.Context) error {
 	}
 
 	response := newChoreResponse(result.Chore)
-	ctx.Response().Header().Set(echo.HeaderLocation, response.Links["self"].Href)
-	return hypermedia.JSON(ctx, http.StatusCreated, choreRepresentation{
-		choreResponse: response,
-		Actions:       activeOneOffActions(response.Links["self"].Href),
+	return h.renderCreated(ctx, choreRepresentation{
+		Response: response,
+		Actions:  activeOneOffActions(response.Links["self"].Href),
 	})
+}
+
+func createFormValues(request createChoreRequest) map[string]string {
+	values := map[string]string{
+		"name":          request.Name,
+		"description":   request.Description,
+		"deadline":      request.Deadline,
+		"schedule_name": request.ScheduleName,
+	}
+	if request.ChoreTemplateId != nil {
+		values["chore_template_id"] = strconv.Itoa(*request.ChoreTemplateId)
+	}
+	return values
+}
+
+func createFieldErrors(err error) map[string]string {
+	field := ""
+	switch {
+	case errors.Is(err, validationerrors.ErrInvalidName):
+		field = "name"
+	case errors.Is(err, validationerrors.ErrInvalidDescription):
+		field = "description"
+	case errors.Is(err, validationerrors.ErrInvalidDeadline):
+		field = "deadline"
+	}
+	if field == "" {
+		return nil
+	}
+	return map[string]string{field: err.Error()}
 }
 
 func isInvalidChoreCreateRequest(err error) bool {
