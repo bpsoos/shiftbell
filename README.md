@@ -1,6 +1,6 @@
 # shiftbell
 
-Self-hosted chore tracker for a homelab.
+A self-hosted chore manager.
 
 Currently pre-v1 and under development.
 
