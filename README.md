@@ -32,4 +32,4 @@ Start a local dockerized instance listening on `localhost:8080`:
 just up
 ```
 
-Other useful recipes include `just down`, `just fmt`, and `just test`.
+Other useful recipes: `down`, `fmt`, `lint`, and `test`.
