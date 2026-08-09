@@ -2,6 +2,7 @@ package chores
 
 import (
 	"errors"
+	"mime"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,13 +18,13 @@ import (
 )
 
 type createChoreRequest struct {
-	Name                string `form:"name"              json:"name"`
-	Description         string `form:"description"       json:"description"`
-	Deadline            string `form:"deadline"          json:"deadline"`
-	ChoreTemplateId     *int   `form:"chore_template_id" json:"chore_template_id,omitempty"`
-	ScheduleName        string `form:"schedule_name"     json:"schedule_name,omitempty"`
-	IntervalDays        *int   `form:"interval_days"     json:"interval_days,omitempty"`
-	SaveAsChoreTemplate bool   `                         json:"save_as_chore_template"`
+	Name                string `form:"name"                   json:"name"`
+	Description         string `form:"description"            json:"description"`
+	Deadline            string `form:"deadline"               json:"deadline"`
+	ChoreTemplateId     *int   `form:"chore_template_id"      json:"chore_template_id,omitempty"`
+	ScheduleName        string `form:"schedule_name"          json:"schedule_name,omitempty"`
+	IntervalDays        *int   `form:"interval_days"          json:"interval_days,omitempty"`
+	SaveAsChoreTemplate bool   `form:"save_as_chore_template" json:"save_as_chore_template"`
 }
 
 func (h *Handler) create(ctx *echo.Context) error {
@@ -43,7 +44,12 @@ func (h *Handler) create(ctx *echo.Context) error {
 			formFeedback{Error: apiErrorResponse{Error: "invalid JSON"}},
 		)
 	}
-	if hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML {
+	requestMediaType, _, _ := mime.ParseMediaType(
+		ctx.Request().Header.Get(echo.HeaderContentType),
+	)
+	if hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML &&
+		requestMediaType != echo.MIMEApplicationForm &&
+		requestMediaType != echo.MIMEMultipartForm {
 		request.SaveAsChoreTemplate = false
 	}
 	if request.IntervalDays != nil {
@@ -144,6 +150,10 @@ func (h *Handler) create(ctx *echo.Context) error {
 			apiErrorResponse{Error: "something went wrong"},
 		)
 	}
+	if request.SaveAsChoreTemplate &&
+		hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML {
+		setFlashCookie(ctx, choreAndTemplateCreatedFlashValue)
+	}
 
 	response := newChoreResponse(result.Chore)
 	return h.renderCreated(ctx, choreRepresentation{
@@ -154,10 +164,11 @@ func (h *Handler) create(ctx *echo.Context) error {
 
 func createFormValues(request createChoreRequest) map[string]string {
 	values := map[string]string{
-		"name":          request.Name,
-		"description":   request.Description,
-		"deadline":      request.Deadline,
-		"schedule_name": request.ScheduleName,
+		"name":                   request.Name,
+		"description":            request.Description,
+		"deadline":               request.Deadline,
+		"schedule_name":          request.ScheduleName,
+		"save_as_chore_template": strconv.FormatBool(request.SaveAsChoreTemplate),
 	}
 	if request.ChoreTemplateId != nil {
 		values["chore_template_id"] = strconv.Itoa(*request.ChoreTemplateId)

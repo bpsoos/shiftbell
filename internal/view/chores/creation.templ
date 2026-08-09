@@ -44,6 +44,12 @@ templ creationPage(backHref string) {
 			me [data-selected] p { margin-bottom: 0; }
 			me [data-field] { margin-bottom: 1rem; }
 			me .form-control { background: var(--sb-background); border-color: var(--sb-border); color: var(--sb-text); }
+			me [data-save-template] { align-items: flex-start; background: rgb(255 255 255 / 2%); border-radius: var(--sb-radius-sm); cursor: pointer; display: flex; gap: 0.625rem; padding: 0.625rem 0.75rem; }
+			me [data-save-template] .form-check-input { background-color: var(--sb-surface); border-color: var(--sb-border); flex: 0 0 auto; margin: 0.2rem 0 0; }
+			me [data-save-template] .form-check-input:checked { background-color: var(--sb-accent); border-color: var(--sb-accent); }
+			me [data-save-template-copy] { display: block; }
+			me [data-save-template-title] { display: block; font-size: 0.875rem; font-weight: 600; }
+			me [data-save-template-help] { color: var(--sb-muted); display: block; font-size: 0.8125rem; line-height: 1.35; margin-top: 0.125rem; }
 			me .invalid-feedback[data-visible] { display: block; }
 			me [data-actions] { display: flex; gap: 0.75rem; justify-content: flex-end; }
 			me [data-primary-action] { align-items: center; background: var(--sb-accent); border-color: var(--sb-accent); color: var(--sb-accent-text); display: inline-flex; font-weight: 700; gap: 0.375rem; }

@@ -16,11 +16,13 @@ func (h *Handler) renderCollection(
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, status, collection)
 	case hypermedia.RepresentationHTML:
+		model := collectionViewModel(collection)
+		model.Notice = consumeFlashCookie(ctx)
 		return hypermedia.HTML(
 			ctx,
 			status,
 			h.view.Collection(
-				collectionViewModel(collection),
+				model,
 				fullPage(ctx),
 			),
 		)

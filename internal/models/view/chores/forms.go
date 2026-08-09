@@ -6,13 +6,14 @@ type Field struct {
 }
 
 type ManualOneOffForm struct {
-	ActionHref   string
-	CancelHref   string
-	SummaryError string
-	Submitted    bool
-	Name         Field
-	Description  Field
-	Deadline     Field
+	ActionHref     string
+	CancelHref     string
+	SummaryError   string
+	Submitted      bool
+	Name           Field
+	Description    Field
+	Deadline       Field
+	SaveAsTemplate bool
 }
 
 func (form ManualOneOffForm) NeedsDefaultDeadline() bool {

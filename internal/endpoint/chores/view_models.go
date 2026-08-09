@@ -76,13 +76,14 @@ func manualOneOffFormErrorViewModel(
 	feedback formFeedback,
 ) choreviewmodels.ManualOneOffForm {
 	return choreviewmodels.ManualOneOffForm{
-		ActionHref:   feedback.Action.Href,
-		CancelHref:   feedback.CancelHref,
-		SummaryError: formFeedbackMessage(feedback),
-		Submitted:    true,
-		Name:         fieldViewModel(feedback, "name"),
-		Description:  fieldViewModel(feedback, "description"),
-		Deadline:     fieldViewModel(feedback, "deadline"),
+		ActionHref:     feedback.Action.Href,
+		CancelHref:     feedback.CancelHref,
+		SummaryError:   formFeedbackMessage(feedback),
+		Submitted:      true,
+		Name:           fieldViewModel(feedback, "name"),
+		Description:    fieldViewModel(feedback, "description"),
+		Deadline:       fieldViewModel(feedback, "deadline"),
+		SaveAsTemplate: feedback.Values["save_as_chore_template"] == "true",
 	}
 }
 

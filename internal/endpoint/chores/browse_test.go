@@ -162,4 +162,46 @@ var _ = Describe("Browse chores", func() {
 			Expect(response.Body.String()).To(Equal("collection sentinel"))
 		},
 	)
+
+	It("consumes the chore-and-template success flash", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
+			Status: choremodels.ChoreStatusActive,
+			Offset: 0,
+			Limit:  20,
+		}).Return(&choremodels.ChorePage{}, nil).Once()
+		view := NewMockView(GinkgoT())
+		view.EXPECT().Collection(choreviewmodels.Collection{
+			Collection: choreapimodels.CollectionResponse{
+				Items: []choreapimodels.Response{},
+				Links: api.Relations{{Rel: "self", Href: "/chores"}},
+				Actions: api.Relations{
+					{Rel: "create", Href: "/chores/new"},
+				},
+			},
+			Notice: "Chore added and template saved.",
+		}, true).Return(templ.Raw("collection sentinel")).Once()
+		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+			Service: service,
+			View:    view,
+		})
+		e := echo.New()
+		e.GET("/chores", handler.GetBatch)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/chores", nil)
+		request.Header.Set("Accept", "text/html")
+		request.AddCookie(&http.Cookie{
+			Name:  "shiftbell_flash",
+			Value: "chore-and-template-created",
+		})
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(Equal("collection sentinel"))
+		cookies := response.Result().Cookies()
+		Expect(cookies).To(HaveLen(1))
+		Expect(cookies[0].Name).To(Equal("shiftbell_flash"))
+		Expect(cookies[0].MaxAge).To(Equal(-1))
+	})
 })

@@ -208,51 +208,58 @@ var _ = Describe("Create chore", func() {
 		},
 	)
 
-	It("maps a failed manual HTML submission to the typed form", func(ctx SpecContext) {
-		service := NewMockService(GinkgoT())
-		view := NewMockView(GinkgoT())
-		view.EXPECT().ManualOneOffForm(choreviewmodels.ManualOneOffForm{
-			ActionHref:   "/chores",
-			CancelHref:   "/chores",
-			SummaryError: "invalid deadline",
-			Submitted:    true,
-			Name:         choreviewmodels.Field{Value: "Kitchen"},
-			Description:  choreviewmodels.Field{Value: "Wash and fold"},
-			Deadline: choreviewmodels.Field{
-				Value: "invalid",
-				Error: "invalid deadline",
-			},
-		}, false).Return(templ.Raw("manual form sentinel")).Once()
-		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
-			Service: service,
-			View:    view,
-		})
-		e := echo.New()
-		e.POST("/chores", handler.Create)
-		request := httptest.NewRequestWithContext(
-			ctx,
-			http.MethodPost,
-			"/chores",
-			strings.NewReader("name=Kitchen&description=Wash+and+fold&deadline=invalid"),
-		)
-		request.Header.Set("Accept", "text/html")
-		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		request.Header.Set("HX-Request", "true")
-		response := httptest.NewRecorder()
+	It(
+		"preserves save-as-template in a failed manual HTML submission",
+		func(ctx SpecContext) {
+			service := NewMockService(GinkgoT())
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ManualOneOffForm(choreviewmodels.ManualOneOffForm{
+				ActionHref:   "/chores",
+				CancelHref:   "/chores",
+				SummaryError: "invalid deadline",
+				Submitted:    true,
+				Name:         choreviewmodels.Field{Value: "Kitchen"},
+				Description:  choreviewmodels.Field{Value: "Wash and fold"},
+				Deadline: choreviewmodels.Field{
+					Value: "invalid",
+					Error: "invalid deadline",
+				},
+				SaveAsTemplate: true,
+			}, false).Return(templ.Raw("manual form sentinel")).Once()
+			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+				Service: service,
+				View:    view,
+			})
+			e := echo.New()
+			e.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(
+					"name=Kitchen&description=Wash+and+fold&deadline=invalid&save_as_chore_template=true",
+				),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
 
-		e.ServeHTTP(response, request)
+			e.ServeHTTP(response, request)
 
-		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
-		Expect(response.Body.String()).To(Equal("manual form sentinel"))
-	})
+			Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+			Expect(response.Body.String()).To(Equal("manual form sentinel"))
+		},
+	)
 
-	It("ignores save-as-template in an HTML submission", func(ctx SpecContext) {
+	It("saves a template from a manual HTML submission", func(ctx SpecContext) {
 		deadline := time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC)
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
-			Name:        "Kitchen",
-			Description: "Wash and fold",
-			Deadline:    deadline,
+			Name:                "Kitchen",
+			Description:         "Wash and fold",
+			Deadline:            deadline,
+			SaveAsChoreTemplate: true,
 		}).Return(&choremodels.CreateChoreResult{
 			Chore: &choremodels.Chore{
 				Id:          42,
@@ -283,6 +290,13 @@ var _ = Describe("Create chore", func() {
 
 		Expect(response.Code).To(Equal(http.StatusSeeOther))
 		Expect(response.Header().Get("Location")).To(Equal("/chores"))
+		cookies := response.Result().Cookies()
+		Expect(cookies).To(HaveLen(1))
+		Expect(cookies[0].Name).To(Equal("shiftbell_flash"))
+		Expect(cookies[0].Value).To(Equal("chore-and-template-created"))
+		Expect(cookies[0].Path).To(Equal("/chores"))
+		Expect(cookies[0].HttpOnly).To(BeTrue())
+		Expect(cookies[0].SameSite).To(Equal(http.SameSiteLaxMode))
 	})
 
 	It(

@@ -7,7 +7,8 @@ services:
     environment:
       DATABASE_FILEPATH: "/data/app.db"
       LOG_FORMAT: "text"
-      APP_TIMEZONE: "Europe/Budapest"
+      APP_TIMEZONE: "${APP_TIMEZONE:-Europe/Budapest}"
+      TZ: "${APP_TIMEZONE:-Europe/Budapest}"
     volumes:
       - "./:/src"
       - "go_build_cache:/root/.cache/go-build"
@@ -15,6 +16,28 @@ services:
       - "appdata:/data"
     entrypoint: ["go"]
     command: ["tool", "air"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider --header='Accept: application/vnd.shiftbell+json' http://localhost/"]
+      interval: 1s
+      timeout: 1s
+      retries: 60
+
+  dev-seed:
+    image: ${DEV_IMAGE}
+    environment:
+      TZ: "${APP_TIMEZONE:-Europe/Budapest}"
+    volumes:
+      - "./dev/seed.sql:/seed.sql:ro"
+      - "appdata:/data"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ "$$(sqlite3 /data/app.db 'select (select count(*) from chores) + (select count(*) from chore_templates) + (select count(*) from schedules)')" = "0" ]; then
+          sqlite3 -bail /data/app.db < /seed.sql
+        fi
+    depends_on:
+      shiftbell:
+        condition: service_healthy
 
 volumes:
   go_build_cache:

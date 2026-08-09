@@ -13,6 +13,7 @@ templ manualOneOffFormContent(form choreviewmodels.ManualOneOffForm) {
 			@createNameField(form.Name)
 			@createDescriptionField(form.Description)
 			@createDeadlineField(form.Deadline)
+			@createSaveAsTemplateField(form.SaveAsTemplate)
 		}
 	}
 }
@@ -138,4 +139,24 @@ templ createDeadlineField(field choreviewmodels.Field) {
 		/>
 		@fieldFeedback("create-chore-deadline-error", field.Error)
 	</div>
+}
+
+templ createSaveAsTemplateField(checked bool) {
+	<label data-field data-save-template>
+		<input
+			class="form-check-input"
+			type="checkbox"
+			id="create-chore-save-as-template"
+			name="save_as_chore_template"
+			value="true"
+			aria-describedby="create-chore-save-as-template-help"
+			if checked {
+				checked
+			}
+		/>
+		<span data-save-template-copy>
+			<span data-save-template-title>Also save as template</span>
+			<span data-save-template-help id="create-chore-save-as-template-help">Create a reusable template from this name and description.</span>
+		</span>
+	</label>
 }
