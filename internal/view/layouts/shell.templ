@@ -10,11 +10,11 @@ templ Frame(active string, fullPage bool, content templ.Component) {
 
 templ page(active string, content templ.Component) {
 	<!DOCTYPE html>
-	<html lang="en" data-bs-theme="dark">
+	<html lang="en">
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
-			<meta name="color-scheme" content="dark"/>
+			<meta name="color-scheme" content="light dark"/>
 			<title>ShiftBell</title>
 			@dependencies()
 		</head>
@@ -33,12 +33,12 @@ templ main(content templ.Component) {
 }
 
 templ dependencies() {
+	<script src="/assets/shiftbell.js"></script>
 	<link href="/assets/bootstrap.min.css" rel="stylesheet"/>
 	<link href="/assets/shiftbell.css" rel="stylesheet"/>
 	@cssScopeInline()
 	<script defer src="/assets/bootstrap.bundle.min.js"></script>
 	<script defer src="/assets/htmx.min.js"></script>
-	<script defer src="/assets/shiftbell.js"></script>
 }
 
 templ cssScopeInline() {

@@ -1,6 +1,51 @@
 (() => {
 	"use strict";
 
+	const themeStorageKey = "shiftbell-theme";
+	const themePreference = window.matchMedia("(prefers-color-scheme: dark)");
+
+	const isTheme = (value) => value === "light" || value === "dark";
+
+	const readStoredTheme = () => {
+		try {
+			const theme = localStorage.getItem(themeStorageKey);
+			return isTheme(theme) ? theme : null;
+		} catch {
+			return null;
+		}
+	};
+
+	const storeTheme = (theme) => {
+		try {
+			localStorage.setItem(themeStorageKey, theme);
+		} catch {
+			return;
+		}
+	};
+
+	const preferredTheme = () => themePreference.matches ? "dark" : "light";
+
+	const syncThemeControls = (theme) => {
+		const nextTheme = theme === "dark" ? "light" : "dark";
+		const label = `Switch to ${nextTheme} theme`;
+
+		document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+			button.setAttribute("aria-label", label);
+			button.setAttribute("title", label);
+			const text = button.querySelector("[data-theme-label]");
+			if (text) {
+				text.textContent = label;
+			}
+		});
+	};
+
+	const applyTheme = (theme) => {
+		document.documentElement.setAttribute("data-bs-theme", theme);
+		syncThemeControls(theme);
+	};
+
+	applyTheme(readStoredTheme() ?? preferredTheme());
+
 	const syncNavigation = () => {
 		const path = window.location.pathname;
 		const picker = path === "/chore-templates" && new URLSearchParams(window.location.search).get("picker") === "1";
@@ -18,6 +63,30 @@
 			}
 		});
 	};
+
+	document.addEventListener("click", (event) => {
+		const button = event.target.closest?.("[data-theme-toggle]");
+		if (!button) {
+			return;
+		}
+
+		const theme = document.documentElement.getAttribute("data-bs-theme");
+		const nextTheme = theme === "dark" ? "light" : "dark";
+		applyTheme(nextTheme);
+		storeTheme(nextTheme);
+	});
+
+	themePreference.addEventListener("change", (event) => {
+		if (readStoredTheme() === null) {
+			applyTheme(event.matches ? "dark" : "light");
+		}
+	});
+
+	window.addEventListener("storage", (event) => {
+		if (event.key === themeStorageKey) {
+			applyTheme(isTheme(event.newValue) ? event.newValue : preferredTheme());
+		}
+	});
 
 	const closeNavigation = () => {
 		const navigation = document.getElementById("primary-navigation");
@@ -40,6 +109,7 @@
 
 	document.addEventListener("htmx:afterSwap", (event) => {
 		syncNavigation();
+		syncThemeControls(document.documentElement.getAttribute("data-bs-theme"));
 
 		if (event.detail.target?.id === "main") {
 			closeNavigation();
@@ -48,5 +118,13 @@
 	});
 
 	window.addEventListener("popstate", syncNavigation);
-	syncNavigation();
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", () => {
+			syncNavigation();
+			syncThemeControls(document.documentElement.getAttribute("data-bs-theme"));
+		}, { once: true });
+	} else {
+		syncNavigation();
+		syncThemeControls(document.documentElement.getAttribute("data-bs-theme"));
+	}
 })();

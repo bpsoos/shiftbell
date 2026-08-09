@@ -19,7 +19,7 @@ templ picker(model viewmodels.Picker) {
 			me [data-template-list] { list-style: none; margin: 0; padding: 0; }
 			me [data-template-row] + [data-template-row] { border-top: 1px solid var(--sb-border); }
 			me [data-template-option] { align-items: center; color: var(--sb-text); display: flex; gap: 0.75rem; justify-content: space-between; padding: 0.7rem 0.875rem; text-decoration: none; }
-			me a[data-template-option]:hover { background: rgb(255 255 255 / 3%); color: var(--sb-text); }
+			me a[data-template-option]:hover { background: var(--sb-hover); color: var(--sb-text); }
 			me [data-template-name] { font-size: 0.9375rem; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 			me [data-template-caret] { color: var(--sb-muted); flex: 0 0 auto; opacity: 0.45; }
 			me a[data-template-option]:hover [data-template-caret] { color: var(--sb-accent); opacity: 0.85; }

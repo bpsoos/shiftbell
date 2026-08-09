@@ -25,7 +25,7 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 			me [data-chore-row] { display: flex; }
 			me [data-chore-row] + [data-chore-row] { border-top: 1px solid var(--sb-border); }
 			me [data-chore-detail] { align-items: center; color: var(--sb-text); display: flex; flex: 1 1 auto; gap: 0.75rem; min-width: 0; padding: 0.625rem 0.75rem; text-decoration: none; }
-			me a[data-chore-detail]:hover { background: rgb(255 255 255 / 3%); color: var(--sb-text); }
+			me a[data-chore-detail]:hover { background: var(--sb-hover); color: var(--sb-text); }
 			me [data-chore-copy] { flex: 1 1 auto; min-width: 0; }
 			me [data-chore-name] { display: block; font-size: 0.9375rem; font-weight: 650; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 			me [data-chore-description] { color: var(--sb-muted); display: block; font-size: 0.8125rem; line-height: 1.3; margin-top: 0.125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

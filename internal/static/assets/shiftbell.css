@@ -1,9 +1,37 @@
 :root,
+[data-bs-theme="light"] {
+	--sb-background: #fff8dc;
+	--sb-header: #f2c94c;
+	--sb-surface: #ffffff;
+	--sb-input: #fffdf7;
+	--sb-text: #1b1b16;
+	--sb-muted: #6c685d;
+	--sb-muted-strong: #4f4b41;
+	--sb-border: #d8d0b8;
+	--sb-accent: #e9bb2f;
+	--sb-accent-hover: #d5a923;
+	--sb-accent-text: #1b1b16;
+	--sb-danger: #b4233d;
+	--sb-warning: #9a4e00;
+	--sb-focus: rgb(233 187 47 / 32%);
+	--sb-hover: rgb(27 27 22 / 5%);
+	--sb-subtle: rgb(27 27 22 / 3%);
+	--sb-header-active: #1b1b16;
+	--sb-header-active-hover: #3b372b;
+	--sb-header-text: #1b1b16;
+	--sb-header-muted: #5b5545;
+	--sb-header-border: rgb(27 27 22 / 22%);
+	color-scheme: light;
+}
+
 [data-bs-theme="dark"] {
 	--sb-background: #0d0f12;
+	--sb-header: #16191e;
 	--sb-surface: #16191e;
+	--sb-input: #0d0f12;
 	--sb-text: #f3f1e9;
 	--sb-muted: #9da3ad;
+	--sb-muted-strong: #bcc0c7;
 	--sb-border: #30353d;
 	--sb-accent: #f2c94c;
 	--sb-accent-hover: #ffda68;
@@ -11,6 +39,46 @@
 	--sb-danger: #f17878;
 	--sb-warning: #d98b3f;
 	--sb-focus: rgb(242 201 76 / 32%);
+	--sb-hover: rgb(255 255 255 / 3%);
+	--sb-subtle: rgb(255 255 255 / 2%);
+	--sb-header-active: #f2c94c;
+	--sb-header-active-hover: #ffda68;
+	--sb-header-text: #f3f1e9;
+	--sb-header-muted: #9da3ad;
+	--sb-header-border: #30353d;
+	color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-bs-theme]) {
+		--sb-background: #0d0f12;
+		--sb-header: #16191e;
+		--sb-surface: #16191e;
+		--sb-input: #0d0f12;
+		--sb-text: #f3f1e9;
+		--sb-muted: #9da3ad;
+		--sb-muted-strong: #bcc0c7;
+		--sb-border: #30353d;
+		--sb-accent: #f2c94c;
+		--sb-accent-hover: #ffda68;
+		--sb-accent-text: #171409;
+		--sb-danger: #f17878;
+		--sb-warning: #d98b3f;
+		--sb-focus: rgb(242 201 76 / 32%);
+		--sb-hover: rgb(255 255 255 / 3%);
+		--sb-subtle: rgb(255 255 255 / 2%);
+		--sb-header-active: #f2c94c;
+		--sb-header-active-hover: #ffda68;
+		--sb-header-text: #f3f1e9;
+		--sb-header-muted: #9da3ad;
+		--sb-header-border: #30353d;
+		color-scheme: dark;
+	}
+}
+
+:root,
+[data-bs-theme="light"],
+[data-bs-theme="dark"] {
 	--sb-radius-sm: 0.375rem;
 	--sb-list-radius: 0.5rem;
 	--sb-radius: 0.625rem;
@@ -27,7 +95,6 @@
 	--bs-border-radius-sm: var(--sb-radius-sm);
 	--bs-border-radius: var(--sb-radius);
 	--bs-border-radius-lg: var(--sb-radius);
-	color-scheme: dark;
 }
 
 body {

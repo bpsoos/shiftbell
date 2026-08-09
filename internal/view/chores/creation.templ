@@ -34,7 +34,7 @@ templ creationPage(backHref string) {
 			me [data-panel-body] > p:first-child { color: var(--sb-muted); margin-bottom: 1rem; }
 			me [data-options] { display: grid; gap: 0.5rem; }
 			me [data-option] { align-items: center; border: 1px solid var(--sb-border); border-radius: var(--sb-radius-sm); color: var(--sb-text); display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr) auto; padding: 0.75rem; text-decoration: none; }
-			me [data-option]:hover { background: rgb(255 255 255 / 3%); border-color: var(--sb-muted); color: var(--sb-text); }
+			me [data-option]:hover { background: var(--sb-hover); border-color: var(--sb-muted); color: var(--sb-text); }
 			me [data-option-title] { display: block; font-size: 0.9375rem; font-weight: 700; }
 			me [data-option-description] { color: var(--sb-muted); display: block; font-size: 0.8125rem; line-height: 1.35; margin-top: 0.125rem; }
 			me [data-option-caret] { color: var(--sb-muted); }
@@ -43,8 +43,8 @@ templ creationPage(backHref string) {
 			me [data-caption] { color: var(--sb-muted); font-size: 0.75rem; margin-bottom: 0.125rem; text-transform: uppercase; }
 			me [data-selected] p { margin-bottom: 0; }
 			me [data-field] { margin-bottom: 1rem; }
-			me .form-control { background: var(--sb-background); border-color: var(--sb-border); color: var(--sb-text); }
-			me [data-save-template] { align-items: flex-start; background: rgb(255 255 255 / 2%); border-radius: var(--sb-radius-sm); cursor: pointer; display: flex; gap: 0.625rem; padding: 0.625rem 0.75rem; }
+			me .form-control { background: var(--sb-input); border-color: var(--sb-border); color: var(--sb-text); }
+			me [data-save-template] { align-items: flex-start; background: var(--sb-subtle); border-radius: var(--sb-radius-sm); cursor: pointer; display: flex; gap: 0.625rem; padding: 0.625rem 0.75rem; }
 			me [data-save-template] .form-check-input { background-color: var(--sb-surface); border-color: var(--sb-border); flex: 0 0 auto; margin: 0.2rem 0 0; }
 			me [data-save-template] .form-check-input:checked { background-color: var(--sb-accent); border-color: var(--sb-accent); }
 			me [data-save-template-copy] { display: block; }
