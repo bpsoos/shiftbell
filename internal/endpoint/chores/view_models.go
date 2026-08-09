@@ -130,14 +130,11 @@ func fieldViewModel(feedback formFeedback, name string) choreviewmodels.Field {
 }
 
 func creationActionHref(creation choreCreationResponse) string {
-	if creation.Action == nil {
-		return ""
-	}
-	return creation.Action.Href
+	return creation.Actions.Href("create")
 }
 
-func linkHref(links map[string]api.Link, name string) string {
-	return links[name].Href
+func linkHref(links api.Relations, name string) string {
+	return links.Href(name)
 }
 
 func formFeedbackMessage(feedback formFeedback) string {

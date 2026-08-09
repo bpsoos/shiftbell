@@ -9,9 +9,9 @@ import (
 
 func (c *APIClient) GetChoreTemplate(
 	ctx context.Context,
-	params GetChoreTemplateParams,
+	href string,
 ) (*GetChoreTemplateResult, error) {
-	request, err := c.newRequest(ctx, http.MethodGet, params.Link.Href, nil)
+	request, err := c.newRequest(ctx, http.MethodGet, href, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create get chore template request: %w", err)
 	}

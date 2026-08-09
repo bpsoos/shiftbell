@@ -32,7 +32,7 @@ func (h *Handler) Create(ctx *echo.Context) error {
 			errorResponse{
 				Error:   "invalid request body",
 				Links:   collectionLink(),
-				Actions: map[string]api.Action{"create": action},
+				Actions: api.Relations{action},
 			},
 		)
 	}
@@ -49,8 +49,8 @@ func (h *Handler) Create(ctx *echo.Context) error {
 			action := createAction()
 			return hypermedia.JSON(ctx, http.StatusConflict, errorResponse{
 				Error:   err.Error(),
-				Links:   map[string]api.Link{},
-				Actions: map[string]api.Action{"create": action},
+				Links:   api.Relations{},
+				Actions: api.Relations{action},
 			})
 		}
 		if isInvalidCreateRequestError(err) {
@@ -61,7 +61,7 @@ func (h *Handler) Create(ctx *echo.Context) error {
 				errorResponse{
 					Error:   err.Error(),
 					Links:   collectionLink(),
-					Actions: map[string]api.Action{"create": action},
+					Actions: api.Relations{action},
 				},
 			)
 		}
@@ -74,7 +74,7 @@ func (h *Handler) Create(ctx *echo.Context) error {
 	}
 
 	representation := newRepresentation(choreTemplate)
-	ctx.Response().Header().Set(echo.HeaderLocation, representation.Links["self"].Href)
+	ctx.Response().Header().Set(echo.HeaderLocation, representation.Links.Href("self"))
 	return hypermedia.JSON(ctx, http.StatusCreated, representation)
 }
 
@@ -83,14 +83,6 @@ func isInvalidCreateRequestError(err error) bool {
 		errors.Is(err, validationerrors.ErrInvalidDescription)
 }
 
-func createAction() api.Action {
-	return api.Action{
-		Href:        "/chore-templates",
-		Method:      http.MethodPost,
-		ContentType: "application/json",
-		Fields: []api.ActionField{
-			{Name: "name", Type: "string", Required: true},
-			{Name: "description", Type: "string", Required: false},
-		},
-	}
+func createAction() api.Relation {
+	return api.Relation{Rel: "create", Href: "/chore-templates"}
 }

@@ -27,7 +27,7 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 		</style>
 		<header>
 			<h1 id="chores-heading" class="h2">Upcoming chores</h1>
-			if href := model.Collection.Actions["create"].Href; href != "" {
+			if href := model.Collection.Actions.Href("create"); href != "" {
 				<a
 					class="btn btn-primary"
 					href={ href }
@@ -61,7 +61,7 @@ templ choreSummary(t *Templater, chore choreapimodels.Response, today time.Time)
 		</header>
 		<div class="card-body">
 			<h2 class="h5">
-				if href := chore.Links["self"].Href; href != "" {
+				if href := chore.Links.Href("self"); href != "" {
 					<a
 						class="stretched-link"
 						href={ href }
@@ -94,7 +94,7 @@ templ collectionPagination(model choreviewmodels.Collection) {
 	if model.HasPagination() {
 		<nav data-pagination aria-label="Chore pages">
 			<div>
-				if previousHref := model.Collection.Links["previous"].Href; previousHref != "" {
+				if previousHref := model.Collection.Links.Href("previous"); previousHref != "" {
 					<a
 						class="btn btn-secondary"
 						href={ previousHref }
@@ -108,7 +108,7 @@ templ collectionPagination(model choreviewmodels.Collection) {
 			</div>
 			<div></div>
 			<div>
-				if nextHref := model.Collection.Links["next"].Href; nextHref != "" {
+				if nextHref := model.Collection.Links.Href("next"); nextHref != "" {
 					<a
 						class="btn btn-secondary"
 						href={ nextHref }

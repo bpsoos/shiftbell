@@ -26,11 +26,11 @@ var _ = Describe("Get home", func() {
 		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 		Expect(response.Header().Get("Vary")).To(Equal("Accept"))
 		Expect(response.Body.Bytes()).To(MatchJSON(`{
-			"_links": {
-				"self": {"href": "/"},
-				"chores": {"href": "/chores"},
-				"chore_templates": {"href": "/chore-templates"}
-			}
+			"_links": [
+				{"rel": "self", "href": "/"},
+				{"rel": "chores", "href": "/chores"},
+				{"rel": "chore_templates", "href": "/chore-templates"}
+			]
 		}`))
 	})
 

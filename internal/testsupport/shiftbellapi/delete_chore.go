@@ -8,12 +8,12 @@ import (
 
 func (c *APIClient) DeleteChore(
 	ctx context.Context,
-	requestParams RequestParams,
+	href string,
 ) (*DeleteChoreResult, error) {
 	request, err := c.newRequest(
 		ctx,
-		requestParams.Method,
-		requestParams.Href,
+		http.MethodDelete,
+		href,
 		nil,
 	)
 	if err != nil {

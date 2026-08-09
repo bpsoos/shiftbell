@@ -173,7 +173,7 @@ func (h *Handler) renderCreated(
 	}
 	ctx.Response().Header().Set(
 		echo.HeaderLocation,
-		chore.Links["self"].Href,
+		chore.Links.Href("self"),
 	)
 	return hypermedia.JSON(ctx, http.StatusCreated, chore)
 }

@@ -1,18 +1,27 @@
 package api
 
-type Link struct {
+import "encoding/json"
+
+type Relation struct {
+	Rel  string `json:"rel"`
 	Href string `json:"href"`
 }
 
-type ActionField struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Required bool   `json:"required"`
+type Relations []Relation
+
+func (relations Relations) Href(rel string) string {
+	for _, relation := range relations {
+		if relation.Rel == rel {
+			return relation.Href
+		}
+	}
+	return ""
 }
 
-type Action struct {
-	Href        string        `json:"href"`
-	Method      string        `json:"method"`
-	ContentType string        `json:"content_type"`
-	Fields      []ActionField `json:"fields"`
+func (relations Relations) MarshalJSON() ([]byte, error) {
+	if relations == nil {
+		return []byte("[]"), nil
+	}
+	type plainRelations Relations
+	return json.Marshal(plainRelations(relations))
 }

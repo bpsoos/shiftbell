@@ -45,7 +45,7 @@ type formFeedback struct {
 	Values      map[string]string
 	FieldErrors map[string]string
 	Error       api.ErrorResponse
-	Action      api.Action
+	Action      api.Relation
 	CancelHref  string
 }
 

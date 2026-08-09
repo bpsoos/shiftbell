@@ -30,7 +30,8 @@ var _ = Describe("Start chore creation", func() {
 			"choices": [
 				{"label": "Specify new", "href": "/chores/new?source=manual"},
 				{"label": "Select template", "href": "/chore-templates?picker=1"}
-			]
+			],
+			"_actions": []
 		}`))
 	})
 
@@ -63,7 +64,8 @@ var _ = Describe("Start chore creation", func() {
 					"label": "Scheduled",
 					"href": "/chores/new?source=manual&recurrence=scheduled"
 				}
-			]
+			],
+			"_actions": []
 		}`))
 		},
 	)
@@ -87,8 +89,8 @@ var _ = Describe("Start chore creation", func() {
 		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 		Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"error": "scheduled recurrence is not implemented",
-			"_links": null,
-			"_actions": null
+			"_links": [],
+			"_actions": []
 		}`))
 	})
 
@@ -110,22 +112,7 @@ var _ = Describe("Start chore creation", func() {
 		Expect(response.Code).To(Equal(http.StatusOK))
 		Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"step": "form",
-			"fields": [
-				{"name": "name", "type": "string", "required": true},
-				{"name": "description", "type": "string", "required": false},
-				{"name": "deadline", "type": "date", "required": true},
-				{
-					"name": "save_as_chore_template",
-					"type": "boolean",
-					"required": false
-				}
-			],
-			"action": {
-				"href": "/chores",
-				"method": "POST",
-				"content_type": "application/json",
-				"fields": null
-			}
+			"_actions": [{"rel": "create", "href": "/chores"}]
 		}`))
 	})
 
@@ -174,7 +161,8 @@ var _ = Describe("Start chore creation", func() {
 					"label": "Scheduled",
 					"href": "/chores/new?template_id=42&recurrence=scheduled"
 				}
-			]
+			],
+			"_actions": []
 		}`))
 	})
 
@@ -212,8 +200,8 @@ var _ = Describe("Start chore creation", func() {
 			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
 				"error": "scheduled recurrence is not implemented",
-				"_links": null,
-				"_actions": null
+				"_links": [],
+				"_actions": []
 			}`))
 		},
 	)
@@ -254,15 +242,7 @@ var _ = Describe("Start chore creation", func() {
 				"name": "Kitchen",
 				"description": "Reusable template steps."
 			},
-			"fields": [
-				{"name": "deadline", "type": "date", "required": true}
-			],
-			"action": {
-				"href": "/chores",
-				"method": "POST",
-				"content_type": "application/json",
-				"fields": null
-			}
+			"_actions": [{"rel": "create", "href": "/chores"}]
 		}`))
 	})
 })

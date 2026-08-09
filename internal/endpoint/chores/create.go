@@ -80,13 +80,9 @@ func (h *Handler) create(ctx *echo.Context) error {
 		if errors.Is(err, choretemplatemodels.ErrNameConflict) {
 			response := apiErrorResponse{
 				Error: choretemplatemodels.ErrNameConflict.Error(),
-				Links: map[string]api.Link{},
-				Actions: map[string]api.Action{
-					"create": {
-						Href:        "/chores",
-						Method:      http.MethodPost,
-						ContentType: "application/json",
-					},
+				Links: api.Relations{},
+				Actions: api.Relations{
+					{Rel: "create", Href: "/chores"},
 				},
 			}
 			return h.renderCreateFormError(
@@ -103,15 +99,11 @@ func (h *Handler) create(ctx *echo.Context) error {
 		if errors.Is(err, choretemplatemodels.ErrInactive) {
 			response := apiErrorResponse{
 				Error: choretemplatemodels.ErrInactive.Error(),
-				Links: map[string]api.Link{
-					"collection": {Href: "/chores"},
+				Links: api.Relations{
+					{Rel: "collection", Href: "/chores"},
 				},
-				Actions: map[string]api.Action{
-					"create": {
-						Href:        "/chores",
-						Method:      http.MethodPost,
-						ContentType: "application/json",
-					},
+				Actions: api.Relations{
+					{Rel: "create", Href: "/chores"},
 				},
 			}
 			return h.renderCreateFormError(
@@ -156,7 +148,7 @@ func (h *Handler) create(ctx *echo.Context) error {
 	response := newChoreResponse(result.Chore)
 	return h.renderCreated(ctx, choreRepresentation{
 		Response: response,
-		Actions:  activeOneOffActions(response.Links["self"].Href),
+		Actions:  activeOneOffActions(response.Links.Href("self")),
 	})
 }
 

@@ -1,34 +1,23 @@
 package shiftbellapi
 
-type Link struct {
+type Relation struct {
+	Rel  string `json:"rel"`
 	Href string `json:"href"`
 }
 
-type Links map[string]Link
+type Relations []Relation
 
-type ActionField struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Required bool   `json:"required"`
-}
-
-type Action struct {
-	Href        string        `json:"href"`
-	Method      string        `json:"method"`
-	ContentType string        `json:"content_type"`
-	Fields      []ActionField `json:"fields"`
-}
-
-type Actions map[string]Action
-
-type RequestParams struct {
-	Method      string
-	Href        string
-	ContentType string
+func (relations Relations) Href(rel string) string {
+	for _, relation := range relations {
+		if relation.Rel == rel {
+			return relation.Href
+		}
+	}
+	return ""
 }
 
 type Home struct {
-	Links Links `json:"_links"`
+	Links Relations `json:"_links"`
 }
 
 type GetHomeResult struct {
@@ -36,21 +25,21 @@ type GetHomeResult struct {
 }
 
 type Chore struct {
-	Id          int     `json:"id"`
-	ScheduleId  *int    `json:"schedule_id"`
-	Status      string  `json:"status"`
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	Deadline    string  `json:"deadline"`
-	CompletedOn *string `json:"completed_on"`
-	Links       Links   `json:"_links"`
+	Id          int       `json:"id"`
+	ScheduleId  *int      `json:"schedule_id"`
+	Status      string    `json:"status"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Deadline    string    `json:"deadline"`
+	CompletedOn *string   `json:"completed_on"`
+	Links       Relations `json:"_links"`
 }
 
 type ChoreCollection struct {
-	Items   []Chore `json:"items"`
-	More    bool    `json:"more"`
-	Links   Links   `json:"_links"`
-	Actions Actions `json:"_actions"`
+	Items   []Chore   `json:"items"`
+	More    bool      `json:"more"`
+	Links   Relations `json:"_links"`
+	Actions Relations `json:"_actions"`
 }
 
 type GetChoresResult struct {
@@ -79,8 +68,7 @@ type ChoreCreationStep struct {
 	Step     string                 `json:"step"`
 	Template *ChoreCreationTemplate `json:"template,omitempty"`
 	Choices  []ChoreCreationChoice  `json:"choices,omitempty"`
-	Fields   []ActionField          `json:"fields,omitempty"`
-	Action   *Action                `json:"action,omitempty"`
+	Actions  Relations              `json:"_actions"`
 }
 
 type GetChoreCreationStepResult struct {
@@ -101,7 +89,7 @@ type CreateChoreParams struct {
 
 type CreateChoreResponse struct {
 	Chore    Chore
-	Actions  Actions
+	Actions  Relations
 	Location string
 }
 
@@ -111,13 +99,9 @@ type CreateChoreResult struct {
 	ErrorResponse   *ErrorResponse
 }
 
-type GetChoreParams struct {
-	Link Link
-}
-
 type GetChoreResponse struct {
 	Chore   Chore
-	Actions Actions
+	Actions Relations
 }
 
 type GetChoreResult struct {
@@ -134,7 +118,7 @@ type EditChoreParams struct {
 
 type EditChoreResponse struct {
 	Chore   Chore
-	Actions Actions
+	Actions Relations
 }
 
 type EditChoreResult struct {
@@ -149,7 +133,7 @@ type CompleteChoreParams struct {
 
 type CompleteChoreResponse struct {
 	Chore   Chore
-	Actions Actions
+	Actions Relations
 }
 
 type CompleteChoreResult struct {
@@ -164,7 +148,7 @@ type CorrectChoreCompletionParams struct {
 
 type CorrectChoreCompletionResponse struct {
 	Chore   Chore
-	Actions Actions
+	Actions Relations
 }
 
 type CorrectChoreCompletionResult struct {
@@ -179,18 +163,18 @@ type DeleteChoreResult struct {
 }
 
 type ChoreTemplate struct {
-	Id            int     `json:"id"`
-	Name          string  `json:"name"`
-	Description   string  `json:"description"`
-	DeactivatedAt *string `json:"deactivated_at"`
-	Links         Links   `json:"_links"`
+	Id            int       `json:"id"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	DeactivatedAt *string   `json:"deactivated_at"`
+	Links         Relations `json:"_links"`
 }
 
 type ChoreTemplateCollection struct {
 	Items   []ChoreTemplate `json:"items"`
 	More    bool            `json:"more"`
-	Links   Links           `json:"_links"`
-	Actions Actions         `json:"_actions"`
+	Links   Relations       `json:"_links"`
+	Actions Relations       `json:"_actions"`
 }
 
 type BrowseChoreTemplatesParams struct {
@@ -205,15 +189,15 @@ type GetChoreTemplatesResult struct {
 }
 
 type ChoreTemplatePickerItem struct {
-	Id     int    `json:"id"`
-	Name   string `json:"name"`
-	Select Link   `json:"select"`
+	Id    int       `json:"id"`
+	Name  string    `json:"name"`
+	Links Relations `json:"_links"`
 }
 
 type ChoreTemplatePickerCollection struct {
 	Items []ChoreTemplatePickerItem `json:"items"`
 	More  bool                      `json:"more"`
-	Links Links                     `json:"_links"`
+	Links Relations                 `json:"_links"`
 }
 
 type BrowseChoreTemplatePickerParams struct {
@@ -233,7 +217,7 @@ type CreateChoreTemplateParams struct {
 
 type CreateChoreTemplateResponse struct {
 	ChoreTemplate ChoreTemplate
-	Actions       Actions
+	Actions       Relations
 	Location      string
 }
 
@@ -243,13 +227,9 @@ type CreateChoreTemplateResult struct {
 	ErrorResponse   *ErrorResponse
 }
 
-type GetChoreTemplateParams struct {
-	Link Link
-}
-
 type GetChoreTemplateResponse struct {
 	ChoreTemplate ChoreTemplate
-	Actions       Actions
+	Actions       Relations
 }
 
 type GetChoreTemplateResult struct {
@@ -265,7 +245,7 @@ type EditChoreTemplateParams struct {
 
 type EditChoreTemplateResponse struct {
 	ChoreTemplate ChoreTemplate
-	Actions       Actions
+	Actions       Relations
 }
 
 type EditChoreTemplateResult struct {
@@ -276,21 +256,21 @@ type EditChoreTemplateResult struct {
 
 type DeactivateChoreTemplateResult struct {
 	ChoreTemplate ChoreTemplate
-	Actions       Actions
+	Actions       Relations
 }
 
 type ErrorResponse struct {
-	Error   string  `json:"error"`
-	Links   Links   `json:"_links"`
-	Actions Actions `json:"_actions"`
+	Error   string    `json:"error"`
+	Links   Relations `json:"_links"`
+	Actions Relations `json:"_actions"`
 }
 
 type choreTemplateRepresentation struct {
 	ChoreTemplate
-	Actions Actions `json:"_actions"`
+	Actions Relations `json:"_actions"`
 }
 
 type choreRepresentation struct {
 	Chore
-	Actions Actions `json:"_actions"`
+	Actions Relations `json:"_actions"`
 }

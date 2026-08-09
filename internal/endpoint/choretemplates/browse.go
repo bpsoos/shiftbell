@@ -76,19 +76,21 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 		)
 	}
 
-	links := map[string]api.Link{
-		"self": {Href: responseURL.RequestURI()},
+	links := api.Relations{
+		{Rel: "self", Href: responseURL.RequestURI()},
 	}
 	if page.More {
-		links["next"] = api.Link{
+		links = append(links, api.Relation{
+			Rel:  "next",
 			Href: choreTemplatePageHref(&responseURL, offset+limit),
-		}
+		})
 	}
 	if offset > 0 {
 		previousOffset := max(0, offset-limit)
-		links["previous"] = api.Link{
+		links = append(links, api.Relation{
+			Rel:  "previous",
 			Href: choreTemplatePageHref(&responseURL, previousOffset),
-		}
+		})
 	}
 	if pickerRequested {
 		items := make([]pickerItemResponse, len(page.ChoreTemplates))
@@ -115,12 +117,10 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 		ctx,
 		http.StatusOK,
 		collectionResponse{
-			Items: items,
-			More:  page.More,
-			Links: links,
-			Actions: map[string]api.Action{
-				"create": createAction(),
-			},
+			Items:   items,
+			More:    page.More,
+			Links:   links,
+			Actions: api.Relations{createAction()},
 		},
 	)
 }

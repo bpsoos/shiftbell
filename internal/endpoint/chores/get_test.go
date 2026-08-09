@@ -45,10 +45,8 @@ var _ = Describe("Get chore", func() {
 		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 		Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"error": "chore not found",
-			"_links": {
-				"collection": {"href": "/chores"}
-			},
-			"_actions": {}
+			"_links": [{"rel": "collection", "href": "/chores"}],
+			"_actions": []
 		}`))
 	})
 
@@ -98,36 +96,15 @@ var _ = Describe("Get chore", func() {
 			"description": "Wash and fold.",
 			"deadline": "2020-02-03",
 			"completed_on": null,
-			"_links": {
-				"self": {"href": "/chores/42"},
-				"collection": {"href": "/chores"}
-			},
-			"_actions": {
-				"edit": {
-					"href": "/chores/42",
-					"method": "PATCH",
-					"content_type": "application/json",
-					"fields": [
-						{"name": "name", "type": "string", "required": true},
-						{"name": "description", "type": "string", "required": false},
-						{"name": "deadline", "type": "date", "required": true}
-					]
-				},
-				"complete": {
-					"href": "/chores/42/completion",
-					"method": "PUT",
-					"content_type": "application/json",
-					"fields": [
-						{"name": "completed_on", "type": "date", "required": true}
-					]
-				},
-				"delete": {
-					"href": "/chores/42",
-					"method": "DELETE",
-					"content_type": "",
-					"fields": null
-				}
-			}
+			"_links": [
+				{"rel": "self", "href": "/chores/42"},
+				{"rel": "collection", "href": "/chores"}
+			],
+			"_actions": [
+				{"rel": "edit", "href": "/chores/42"},
+				{"rel": "complete", "href": "/chores/42/completion"},
+				{"rel": "delete", "href": "/chores/42"}
+			]
 		}`))
 		},
 	)
@@ -168,26 +145,14 @@ var _ = Describe("Get chore", func() {
 			"description": "Wash and fold.",
 			"deadline": "2020-02-03",
 			"completed_on": "2020-02-04",
-			"_links": {
-				"self": {"href": "/chores/42"},
-				"collection": {"href": "/chores"}
-			},
-			"_actions": {
-				"correct_completion": {
-					"href": "/chores/42/completion",
-					"method": "PATCH",
-					"content_type": "application/json",
-					"fields": [
-						{"name": "completed_on", "type": "date", "required": true}
-					]
-				},
-				"delete": {
-					"href": "/chores/42",
-					"method": "DELETE",
-					"content_type": "",
-					"fields": null
-				}
-			}
+			"_links": [
+				{"rel": "self", "href": "/chores/42"},
+				{"rel": "collection", "href": "/chores"}
+			],
+			"_actions": [
+				{"rel": "correct_completion", "href": "/chores/42/completion"},
+				{"rel": "delete", "href": "/chores/42"}
+			]
 		}`))
 	})
 
@@ -208,31 +173,15 @@ var _ = Describe("Get chore", func() {
 				Name:        "Kitchen",
 				Description: "Wash and fold",
 				Deadline:    "2026-08-15",
-				Links: map[string]api.Link{
-					"self":       {Href: "/chores/42"},
-					"collection": {Href: "/chores"},
+				Links: api.Relations{
+					{Rel: "self", Href: "/chores/42"},
+					{Rel: "collection", Href: "/chores"},
 				},
 			},
-			Actions: map[string]api.Action{
-				"edit": {
-					Href:        "/chores/42",
-					Method:      http.MethodPatch,
-					ContentType: "application/json",
-					Fields: []api.ActionField{
-						{Name: "name", Type: "string", Required: true},
-						{Name: "description", Type: "string"},
-						{Name: "deadline", Type: "date", Required: true},
-					},
-				},
-				"complete": {
-					Href:        "/chores/42/completion",
-					Method:      http.MethodPut,
-					ContentType: "application/json",
-					Fields: []api.ActionField{
-						{Name: "completed_on", Type: "date", Required: true},
-					},
-				},
-				"delete": {Href: "/chores/42", Method: http.MethodDelete},
+			Actions: api.Relations{
+				{Rel: "edit", Href: "/chores/42"},
+				{Rel: "complete", Href: "/chores/42/completion"},
+				{Rel: "delete", Href: "/chores/42"},
 			},
 		}
 		view := NewMockView(GinkgoT())

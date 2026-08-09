@@ -9,9 +9,9 @@ import (
 
 func (c *APIClient) GetChore(
 	ctx context.Context,
-	params GetChoreParams,
+	href string,
 ) (*GetChoreResult, error) {
-	request, err := c.newRequest(ctx, http.MethodGet, params.Link.Href, nil)
+	request, err := c.newRequest(ctx, http.MethodGet, href, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create get chore request: %w", err)
 	}

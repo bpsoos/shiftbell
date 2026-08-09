@@ -13,19 +13,19 @@ type Response struct {
 	Description string                  `json:"description"`
 	Deadline    string                  `json:"deadline"`
 	CompletedOn *string                 `json:"completed_on"`
-	Links       map[string]api.Link     `json:"_links"`
+	Links       api.Relations           `json:"_links"`
 }
 
 type Representation struct {
 	Response
-	Actions map[string]api.Action `json:"_actions"`
+	Actions api.Relations `json:"_actions"`
 }
 
 type CollectionResponse struct {
-	Items   []Response            `json:"items"`
-	More    bool                  `json:"more"`
-	Links   map[string]api.Link   `json:"_links"`
-	Actions map[string]api.Action `json:"_actions"`
+	Items   []Response    `json:"items"`
+	More    bool          `json:"more"`
+	Links   api.Relations `json:"_links"`
+	Actions api.Relations `json:"_actions"`
 }
 
 type CreationChoice struct {
@@ -43,6 +43,5 @@ type CreationResponse struct {
 	Step     string            `json:"step"`
 	Template *CreationTemplate `json:"template,omitempty"`
 	Choices  []CreationChoice  `json:"choices,omitempty"`
-	Fields   []api.ActionField `json:"fields,omitempty"`
-	Action   *api.Action       `json:"action,omitempty"`
+	Actions  api.Relations     `json:"_actions"`
 }

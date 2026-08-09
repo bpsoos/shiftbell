@@ -3,7 +3,6 @@ package choretemplates
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/a-h/templ"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
@@ -65,18 +64,18 @@ func newResponse(choreTemplate *models.ChoreTemplate) response {
 		Name:          choreTemplate.Name,
 		Description:   choreTemplate.Description,
 		DeactivatedAt: choreTemplate.DeactivatedAt,
-		Links: map[string]api.Link{
-			"self":       {Href: fmt.Sprintf("/chore-templates/%d", choreTemplate.Id)},
-			"collection": {Href: "/chore-templates"},
+		Links: api.Relations{
+			{Rel: "self", Href: fmt.Sprintf("/chore-templates/%d", choreTemplate.Id)},
+			{Rel: "collection", Href: "/chore-templates"},
 		},
 	}
 }
 
 func newRepresentation(choreTemplate *models.ChoreTemplate) representation {
 	response := newResponse(choreTemplate)
-	actions := map[string]api.Action{}
+	actions := api.Relations{}
 	if choreTemplate.DeactivatedAt == nil {
-		actions = activeActions(response.Links["self"].Href)
+		actions = activeActions(response.Links.Href("self"))
 	}
 	return representation{Response: response, Actions: actions}
 }
@@ -85,32 +84,24 @@ func newPickerItemResponse(choreTemplate *models.ChoreTemplate) pickerItemRespon
 	return pickerItemResponse{
 		Id:   choreTemplate.Id,
 		Name: choreTemplate.Name,
-		Select: api.Link{
-			Href: fmt.Sprintf("/chores/new?template_id=%d", choreTemplate.Id),
-		},
-	}
-}
-
-func activeActions(selfHref string) map[string]api.Action {
-	return map[string]api.Action{
-		"edit": {
-			Href:        selfHref,
-			Method:      http.MethodPatch,
-			ContentType: "application/json",
-			Fields: []api.ActionField{
-				{Name: "name", Type: "string", Required: true},
-				{Name: "description", Type: "string", Required: false},
+		Links: api.Relations{
+			{
+				Rel:  "select",
+				Href: fmt.Sprintf("/chores/new?template_id=%d", choreTemplate.Id),
 			},
 		},
-		"deactivate": {
-			Href:   selfHref + "/deactivation",
-			Method: http.MethodPut,
-		},
 	}
 }
 
-func collectionLink() map[string]api.Link {
-	return map[string]api.Link{
-		"collection": {Href: "/chore-templates"},
+func activeActions(selfHref string) api.Relations {
+	return api.Relations{
+		{Rel: "edit", Href: selfHref},
+		{Rel: "deactivate", Href: selfHref + "/deactivation"},
+	}
+}
+
+func collectionLink() api.Relations {
+	return api.Relations{
+		{Rel: "collection", Href: "/chore-templates"},
 	}
 }

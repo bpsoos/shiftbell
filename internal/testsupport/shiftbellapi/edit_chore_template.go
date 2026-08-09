@@ -10,7 +10,7 @@ import (
 
 func (c *APIClient) EditChoreTemplate(
 	ctx context.Context,
-	requestParams RequestParams,
+	href string,
 	params EditChoreTemplateParams,
 ) (*EditChoreTemplateResult, error) {
 	requestBody, err := json.Marshal(params)
@@ -19,14 +19,14 @@ func (c *APIClient) EditChoreTemplate(
 	}
 	request, err := c.newRequest(
 		ctx,
-		requestParams.Method,
-		requestParams.Href,
+		http.MethodPatch,
+		href,
 		bytes.NewReader(requestBody),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create edit chore template request: %w", err)
 	}
-	request.Header.Set("Content-Type", requestParams.ContentType)
+	request.Header.Set("Content-Type", "application/json")
 	statusCode, _, responseBody, err := c.doResponse(request)
 	if err != nil {
 		return nil, err

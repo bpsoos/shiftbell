@@ -34,24 +34,12 @@ var _ = Describe("Browse chore templates", func() {
 		view.EXPECT().Collection(viewmodels.Collection{
 			Collection: choretemplateapimodels.CollectionResponse{
 				Items: []choretemplateapimodels.Response{},
-				Links: map[string]api.Link{
-					"self": {
-						Href: "/chore-templates?limit=7&offset=4",
-					},
-					"previous": {
-						Href: "/chore-templates?limit=7&offset=0",
-					},
+				Links: api.Relations{
+					{Rel: "self", Href: "/chore-templates?limit=7&offset=4"},
+					{Rel: "previous", Href: "/chore-templates?limit=7&offset=0"},
 				},
-				Actions: map[string]api.Action{
-					"create": {
-						Href:        "/chore-templates",
-						Method:      http.MethodPost,
-						ContentType: "application/json",
-						Fields: []api.ActionField{
-							{Name: "name", Type: "string", Required: true},
-							{Name: "description", Type: "string"},
-						},
-					},
+				Actions: api.Relations{
+					{Rel: "create", Href: "/chore-templates"},
 				},
 			},
 		}, true).Return(templ.Raw("collection sentinel")).Once()
@@ -87,11 +75,13 @@ var _ = Describe("Browse chore templates", func() {
 		view.EXPECT().Picker(viewmodels.Picker{
 			Collection: choretemplateapimodels.PickerCollectionResponse{
 				Items: []choretemplateapimodels.PickerItemResponse{},
-				Links: map[string]api.Link{
-					"self": {
+				Links: api.Relations{
+					{
+						Rel:  "self",
 						Href: "/chore-templates?limit=7&offset=4&picker=1",
 					},
-					"previous": {
+					{
+						Rel:  "previous",
 						Href: "/chore-templates?limit=7&offset=0&picker=1",
 					},
 				},
@@ -146,5 +136,20 @@ var _ = Describe("Browse chore templates", func() {
 
 		Expect(response.Code).To(Equal(http.StatusOK))
 		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+		Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"items": [],
+			"more": false,
+			"_links": [
+				{
+					"rel": "self",
+					"href": "/chore-templates?state=deactivated&search=Kitchen&offset=4&limit=7"
+				},
+				{
+					"rel": "previous",
+					"href": "/chore-templates?limit=7&offset=0&search=Kitchen&state=deactivated"
+				}
+			],
+			"_actions": [{"rel": "create", "href": "/chore-templates"}]
+		}`))
 	})
 })

@@ -32,8 +32,8 @@ templ picker(model viewmodels.Picker) {
 				} else {
 					<div class="list-group list-group-flush">
 						for _, item := range model.Collection.Items {
-							if item.Select.Href != "" {
-								<a class="list-group-item list-group-item-action" data-template-option href={ item.Select.Href } hx-get={ item.Select.Href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">
+							if selectHref := knownLink(item.Links, "select"); selectHref != "" {
+								<a class="list-group-item list-group-item-action" data-template-option href={ selectHref } hx-get={ selectHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">
 									<span>{ item.Name }</span>
 									<span class="btn btn-sm btn-primary" aria-hidden="true">Select</span>
 								</a>

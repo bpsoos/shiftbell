@@ -82,26 +82,14 @@ var _ = Describe("Complete chore", func() {
 			"description": "Clean counters",
 			"deadline": "2020-02-01",
 			"completed_on": "2020-02-03",
-			"_links": {
-				"self": {"href": "/chores/42"},
-				"collection": {"href": "/chores"}
-			},
-			"_actions": {
-				"correct_completion": {
-					"href": "/chores/42/completion",
-					"method": "PATCH",
-					"content_type": "application/json",
-					"fields": [
-						{"name": "completed_on", "type": "date", "required": true}
-					]
-				},
-				"delete": {
-					"href": "/chores/42",
-					"method": "DELETE",
-					"content_type": "",
-					"fields": null
-				}
-			}
+			"_links": [
+				{"rel": "self", "href": "/chores/42"},
+				{"rel": "collection", "href": "/chores"}
+			],
+			"_actions": [
+				{"rel": "correct_completion", "href": "/chores/42/completion"},
+				{"rel": "delete", "href": "/chores/42"}
+			]
 		}`))
 	})
 })

@@ -36,14 +36,8 @@ func (h *Handler) newManualChore(ctx *echo.Context) error {
 		ctx.QueryParamOr("recurrence", "") == "one-off" {
 		action := createChoreSubmissionAction()
 		return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
-			Step: "form",
-			Fields: []api.ActionField{
-				{Name: "name", Type: "string", Required: true},
-				{Name: "description", Type: "string", Required: false},
-				{Name: "deadline", Type: "date", Required: true},
-				{Name: "save_as_chore_template", Type: "boolean", Required: false},
-			},
-			Action: &action,
+			Step:    "form",
+			Actions: api.Relations{action},
 		})
 	}
 
@@ -169,9 +163,6 @@ func (h *Handler) templateOneOffForm(
 			Name:        template.Name,
 			Description: template.Description,
 		},
-		Fields: []api.ActionField{
-			{Name: "deadline", Type: "date", Required: true},
-		},
-		Action: &action,
+		Actions: api.Relations{action},
 	})
 }

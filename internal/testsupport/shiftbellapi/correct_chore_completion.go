@@ -10,7 +10,7 @@ import (
 
 func (c *APIClient) CorrectChoreCompletion(
 	ctx context.Context,
-	requestParams RequestParams,
+	href string,
 	params CorrectChoreCompletionParams,
 ) (*CorrectChoreCompletionResult, error) {
 	requestBody, err := json.Marshal(params)
@@ -19,14 +19,14 @@ func (c *APIClient) CorrectChoreCompletion(
 	}
 	request, err := c.newRequest(
 		ctx,
-		requestParams.Method,
-		requestParams.Href,
+		http.MethodPatch,
+		href,
 		bytes.NewReader(requestBody),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create correct chore completion request: %w", err)
 	}
-	request.Header.Set("Content-Type", requestParams.ContentType)
+	request.Header.Set("Content-Type", "application/json")
 	statusCode, _, responseBody, err := c.doResponse(request)
 	if err != nil {
 		return nil, err

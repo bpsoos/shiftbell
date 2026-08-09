@@ -7,6 +7,6 @@ type Collection struct {
 }
 
 func (model Collection) HasPagination() bool {
-	return model.Collection.Links["previous"].Href != "" ||
-		model.Collection.Links["next"].Href != ""
+	return model.Collection.Links.Href("previous") != "" ||
+		model.Collection.Links.Href("next") != ""
 }

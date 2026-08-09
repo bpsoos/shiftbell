@@ -87,21 +87,14 @@ var _ = Describe("Browse chores", func() {
 				"description": "Clean counters",
 				"deadline": "2020-02-03",
 				"completed_on": null,
-				"_links": {
-					"self": {"href": "/chores/42"},
-					"collection": {"href": "/chores"}
-				}
+				"_links": [
+					{"rel": "self", "href": "/chores/42"},
+					{"rel": "collection", "href": "/chores"}
+				]
 			}],
 			"more": false,
-			"_links": {"self": {"href": "/chores"}},
-			"_actions": {
-				"create": {
-					"href": "/chores/new",
-					"method": "GET",
-					"content_type": "",
-					"fields": null
-				}
-			}
+			"_links": [{"rel": "self", "href": "/chores"}],
+			"_actions": [{"rel": "create", "href": "/chores/new"}]
 		}`))
 		},
 	)
@@ -133,21 +126,17 @@ var _ = Describe("Browse chores", func() {
 						Name:        "Kitchen",
 						Description: "Wash and fold",
 						Deadline:    "2026-08-15",
-						Links: map[string]api.Link{
-							"self":       {Href: "/chores/42"},
-							"collection": {Href: "/chores"},
+						Links: api.Relations{
+							{Rel: "self", Href: "/chores/42"},
+							{Rel: "collection", Href: "/chores"},
 						},
 					}},
-					Links: map[string]api.Link{
-						"self": {
-							Href: "/chores?limit=7&offset=4",
-						},
-						"previous": {
-							Href: "/chores?limit=7&offset=0",
-						},
+					Links: api.Relations{
+						{Rel: "self", Href: "/chores?limit=7&offset=4"},
+						{Rel: "previous", Href: "/chores?limit=7&offset=0"},
 					},
-					Actions: map[string]api.Action{
-						"create": {Href: "/chores/new", Method: http.MethodGet},
+					Actions: api.Relations{
+						{Rel: "create", Href: "/chores/new"},
 					},
 				},
 			}, false).Return(templ.Raw("collection sentinel")).Once()

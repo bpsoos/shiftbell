@@ -53,9 +53,6 @@ func (t *Templater) formatTime(value time.Time) string {
 	return value.In(t.appTimezone).Format("2 Jan 2006, 15:04 MST")
 }
 
-func knownLink(links map[string]api.Link, relation string) string {
-	if link, ok := links[relation]; ok {
-		return link.Href
-	}
-	return ""
+func knownLink(links api.Relations, relation string) string {
+	return links.Href(relation)
 }

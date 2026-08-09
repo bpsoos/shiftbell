@@ -70,36 +70,15 @@ var _ = Describe("Create chore", func() {
 			"description": "Wash and fold.",
 			"deadline": "2020-02-03",
 			"completed_on": null,
-			"_links": {
-				"self": {"href": "/chores/42"},
-				"collection": {"href": "/chores"}
-			},
-			"_actions": {
-				"edit": {
-					"href": "/chores/42",
-					"method": "PATCH",
-					"content_type": "application/json",
-					"fields": [
-						{"name": "name", "type": "string", "required": true},
-						{"name": "description", "type": "string", "required": false},
-						{"name": "deadline", "type": "date", "required": true}
-					]
-				},
-				"complete": {
-					"href": "/chores/42/completion",
-					"method": "PUT",
-					"content_type": "application/json",
-					"fields": [
-						{"name": "completed_on", "type": "date", "required": true}
-					]
-				},
-				"delete": {
-					"href": "/chores/42",
-					"method": "DELETE",
-					"content_type": "",
-					"fields": null
-				}
-			}
+			"_links": [
+				{"rel": "self", "href": "/chores/42"},
+				{"rel": "collection", "href": "/chores"}
+			],
+			"_actions": [
+				{"rel": "edit", "href": "/chores/42"},
+				{"rel": "complete", "href": "/chores/42/completion"},
+				{"rel": "delete", "href": "/chores/42"}
+			]
 		}`))
 		},
 	)
@@ -144,15 +123,8 @@ var _ = Describe("Create chore", func() {
 			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"error": "chore template name conflicts with an active chore template",
-			"_links": {},
-			"_actions": {
-				"create": {
-					"href": "/chores",
-					"method": "POST",
-					"content_type": "application/json",
-					"fields": null
-				}
-			}
+			"_links": [],
+			"_actions": [{"rel": "create", "href": "/chores"}]
 		}`))
 		},
 	)
@@ -194,17 +166,8 @@ var _ = Describe("Create chore", func() {
 			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"error": "chore template inactive",
-			"_links": {
-				"collection": {"href": "/chores"}
-			},
-			"_actions": {
-				"create": {
-					"href": "/chores",
-					"method": "POST",
-					"content_type": "application/json",
-					"fields": null
-				}
-			}
+			"_links": [{"rel": "collection", "href": "/chores"}],
+			"_actions": [{"rel": "create", "href": "/chores"}]
 		}`))
 		},
 	)
@@ -239,8 +202,8 @@ var _ = Describe("Create chore", func() {
 			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"error": "scheduled recurrence is not implemented",
-			"_links": null,
-			"_actions": null
+			"_links": [],
+			"_actions": []
 		}`))
 		},
 	)

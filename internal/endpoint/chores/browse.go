@@ -74,27 +74,27 @@ func (h *Handler) browse(ctx *echo.Context) error {
 		items[i] = newChoreResponse(&page.Chores[i])
 	}
 
-	links := map[string]api.Link{
-		"self": {Href: collectionURL.RequestURI()},
+	links := api.Relations{
+		{Rel: "self", Href: collectionURL.RequestURI()},
 	}
 	if page.More {
-		links["next"] = api.Link{
+		links = append(links, api.Relation{
+			Rel:  "next",
 			Href: chorePageHref(&collectionURL, offset+limit),
-		}
+		})
 	}
 	if offset > 0 {
-		links["previous"] = api.Link{
+		links = append(links, api.Relation{
+			Rel:  "previous",
 			Href: chorePageHref(&collectionURL, max(0, offset-limit)),
-		}
+		})
 	}
 
 	return h.renderCollection(ctx, http.StatusOK, choreCollectionResponse{
-		Items: items,
-		More:  page.More,
-		Links: links,
-		Actions: map[string]api.Action{
-			"create": createChoreNavigationAction(),
-		},
+		Items:   items,
+		More:    page.More,
+		Links:   links,
+		Actions: api.Relations{createChoreNavigationAction()},
 	})
 }
 

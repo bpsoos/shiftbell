@@ -9,17 +9,17 @@ import (
 )
 
 type response struct {
-	Links map[string]api.Link `json:"_links"`
+	Links api.Relations `json:"_links"`
 }
 
 func (h *Handler) Get(ctx *echo.Context) error {
 	switch hypermedia.Negotiate(ctx.Request()) {
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, http.StatusOK, response{
-			Links: map[string]api.Link{
-				"self":            {Href: "/"},
-				"chores":          {Href: "/chores"},
-				"chore_templates": {Href: "/chore-templates"},
+			Links: api.Relations{
+				{Rel: "self", Href: "/"},
+				{Rel: "chores", Href: "/chores"},
+				{Rel: "chore_templates", Href: "/chore-templates"},
 			},
 		})
 	case hypermedia.RepresentationHTML:

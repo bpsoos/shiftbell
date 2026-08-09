@@ -93,9 +93,9 @@ func editErrorResponse(id int, message string) errorResponse {
 	selfHref := fmt.Sprintf("/chore-templates/%d", id)
 	return errorResponse{
 		Error: message,
-		Links: map[string]api.Link{},
-		Actions: map[string]api.Action{
-			"edit": activeActions(selfHref)["edit"],
+		Links: api.Relations{},
+		Actions: api.Relations{
+			{Rel: "edit", Href: selfHref},
 		},
 	}
 }
@@ -103,9 +103,9 @@ func editErrorResponse(id int, message string) errorResponse {
 func resourceErrorResponse(id int, message string) errorResponse {
 	return errorResponse{
 		Error: message,
-		Links: map[string]api.Link{
-			"self":       {Href: resourceHref(id)},
-			"collection": {Href: "/chore-templates"},
+		Links: api.Relations{
+			{Rel: "self", Href: resourceHref(id)},
+			{Rel: "collection", Href: "/chore-templates"},
 		},
 	}
 }

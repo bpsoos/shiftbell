@@ -33,25 +33,14 @@ var _ = Describe("Get chore template", func() {
 					Id:          8,
 					Name:        "Laundry",
 					Description: "Wash and fold",
-					Links: map[string]api.Link{
-						"self":       {Href: "/chore-templates/8"},
-						"collection": {Href: "/chore-templates"},
+					Links: api.Relations{
+						{Rel: "self", Href: "/chore-templates/8"},
+						{Rel: "collection", Href: "/chore-templates"},
 					},
 				},
-				Actions: map[string]api.Action{
-					"edit": {
-						Href:        "/chore-templates/8",
-						Method:      http.MethodPatch,
-						ContentType: "application/json",
-						Fields: []api.ActionField{
-							{Name: "name", Type: "string", Required: true},
-							{Name: "description", Type: "string"},
-						},
-					},
-					"deactivate": {
-						Href:   "/chore-templates/8/deactivation",
-						Method: http.MethodPut,
-					},
+				Actions: api.Relations{
+					{Rel: "edit", Href: "/chore-templates/8"},
+					{Rel: "deactivate", Href: "/chore-templates/8/deactivation"},
 				},
 			},
 			CollectionHref: "/chore-templates",
@@ -96,12 +85,12 @@ var _ = Describe("Get chore template", func() {
 						Id:            8,
 						Name:          "Laundry",
 						DeactivatedAt: &deactivatedAt,
-						Links: map[string]api.Link{
-							"self":       {Href: "/chore-templates/8"},
-							"collection": {Href: "/chore-templates"},
+						Links: api.Relations{
+							{Rel: "self", Href: "/chore-templates/8"},
+							{Rel: "collection", Href: "/chore-templates"},
 						},
 					},
-					Actions: map[string]api.Action{},
+					Actions: api.Relations{},
 				},
 				CollectionHref: "/chore-templates",
 			}, true).Return(templ.Raw("read-only detail sentinel")).Once()

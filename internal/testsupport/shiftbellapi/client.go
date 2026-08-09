@@ -20,14 +20,13 @@ const (
 	RelationChoreTemplates    = "chore_templates"
 	RelationNext              = "next"
 	RelationPrevious          = "previous"
-	ActionCreateChoreTemplate = "create"
-	ActionCreateChore         = "create"
-	ActionEditChore           = "edit"
-	ActionCompleteChore       = "complete"
-	ActionCorrectCompletion   = "correct_completion"
-	ActionDeleteChore         = "delete"
-	ActionEditChoreTemplate   = "edit"
-	ActionDeactivateTemplate  = "deactivate"
+	RelationCreate            = "create"
+	RelationEdit              = "edit"
+	RelationComplete          = "complete"
+	RelationCorrectCompletion = "correct_completion"
+	RelationDelete            = "delete"
+	RelationDeactivate        = "deactivate"
+	RelationSelect            = "select"
 )
 
 type APIClient struct {

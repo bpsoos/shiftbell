@@ -35,7 +35,7 @@ func (h *Handler) Get(ctx *echo.Context) error {
 				errorResponse{
 					Error:   models.ErrNotFound.Error(),
 					Links:   collectionLink(),
-					Actions: map[string]api.Action{},
+					Actions: api.Relations{},
 				},
 			)
 		}

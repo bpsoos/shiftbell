@@ -28,10 +28,10 @@ func (h *Handler) get(ctx *echo.Context) error {
 				http.StatusNotFound,
 				apiErrorResponse{
 					Error: choremodels.ErrNotFound.Error(),
-					Links: map[string]api.Link{
-						"collection": {Href: "/chores"},
+					Links: api.Relations{
+						{Rel: "collection", Href: "/chores"},
 					},
-					Actions: map[string]api.Action{},
+					Actions: api.Relations{},
 				},
 			)
 		}
@@ -44,9 +44,9 @@ func (h *Handler) get(ctx *echo.Context) error {
 	}
 
 	response := newChoreResponse(chore)
-	actions := activeOneOffActions(response.Links["self"].Href)
+	actions := activeOneOffActions(response.Links.Href("self"))
 	if chore.Status == choremodels.ChoreStatusCompleted {
-		actions = completedOneOffActions(response.Links["self"].Href)
+		actions = completedOneOffActions(response.Links.Href("self"))
 	}
 	return h.renderDetail(ctx, http.StatusOK, choreRepresentation{
 		Response: response,

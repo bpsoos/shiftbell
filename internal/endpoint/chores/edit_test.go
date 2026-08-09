@@ -93,36 +93,15 @@ var _ = Describe("Edit chore", func() {
 			"description": "Clean all counters.",
 			"deadline": "2020-02-03",
 			"completed_on": null,
-			"_links": {
-				"self": {"href": "/chores/42"},
-				"collection": {"href": "/chores"}
-			},
-			"_actions": {
-				"edit": {
-					"href": "/chores/42",
-					"method": "PATCH",
-					"content_type": "application/json",
-					"fields": [
-						{"name": "name", "type": "string", "required": true},
-						{"name": "description", "type": "string", "required": false},
-						{"name": "deadline", "type": "date", "required": true}
-					]
-				},
-				"complete": {
-					"href": "/chores/42/completion",
-					"method": "PUT",
-					"content_type": "application/json",
-					"fields": [
-						{"name": "completed_on", "type": "date", "required": true}
-					]
-				},
-				"delete": {
-					"href": "/chores/42",
-					"method": "DELETE",
-					"content_type": "",
-					"fields": null
-				}
-			}
+			"_links": [
+				{"rel": "self", "href": "/chores/42"},
+				{"rel": "collection", "href": "/chores"}
+			],
+			"_actions": [
+				{"rel": "edit", "href": "/chores/42"},
+				{"rel": "complete", "href": "/chores/42/completion"},
+				{"rel": "delete", "href": "/chores/42"}
+			]
 		}`))
 		},
 	)

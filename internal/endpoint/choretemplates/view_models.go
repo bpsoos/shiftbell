@@ -41,9 +41,6 @@ func errorViewModel(response errorResponse) viewmodels.Error {
 	return model
 }
 
-func knownLink(links map[string]api.Link, relation string) string {
-	if link, ok := links[relation]; ok {
-		return link.Href
-	}
-	return ""
+func knownLink(links api.Relations, relation string) string {
+	return links.Href(relation)
 }

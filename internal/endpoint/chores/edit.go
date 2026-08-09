@@ -64,7 +64,7 @@ func (h *Handler) edit(ctx *echo.Context) error {
 	response := newChoreResponse(edited)
 	return hypermedia.JSON(ctx, http.StatusOK, choreRepresentation{
 		Response: response,
-		Actions:  activeOneOffActions(response.Links["self"].Href),
+		Actions:  activeOneOffActions(response.Links.Href("self")),
 	})
 }
 
