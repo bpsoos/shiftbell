@@ -5,45 +5,81 @@ import (
 
 	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
 )
 
 templ collectionContent(t *Templater, model choreviewmodels.Collection, today time.Time) {
 	<section aria-labelledby="chores-heading">
 		<style>
-			me > header { align-items: center; display: flex; gap: 1rem; justify-content: space-between; margin-bottom: 1rem; }
-			me > header h1 { margin: 0; }
-			me [data-chore-list] { display: grid; gap: 1rem; }
-			me [data-chore-card] { box-shadow: var(--bs-box-shadow-sm); }
-			me [data-chore-card] > header { align-items: center; border-bottom: 0; display: flex; padding: 0.25rem; }
-			me [data-chore-id] { margin-left: auto; }
-			me [data-chore-card] h2 { margin-bottom: 0.5rem; }
-			me [data-chore-card] h2 a { text-decoration: none; }
-			me [data-chore-card] p { margin-bottom: 0; }
-			me [data-empty] { box-shadow: var(--bs-box-shadow-sm); padding: 3rem 1rem; text-align: center; }
-			me [data-empty] h2 { margin-bottom: 0.5rem; }
-			me [data-empty] p { color: var(--bs-secondary-color); margin: 0; }
-			me [data-pagination] { display: grid; gap: 1rem; grid-template-columns: 1fr 4fr 1fr; margin-top: 1rem; }
-			me [data-pagination] a { width: 100%; }
+			me { margin-inline: auto; max-width: 52rem; }
+			me > [data-page-header] { align-items: center; display: flex; gap: 1rem; justify-content: space-between; margin-bottom: 0.5rem; }
+			me > [data-page-header] h1 { font-size: 1.75rem; letter-spacing: -0.025em; margin: 0; }
+			me [data-primary-action] { align-items: center; background: var(--sb-accent); border-color: var(--sb-accent); color: var(--sb-accent-text); display: inline-flex; font-weight: 700; gap: 0.375rem; }
+			me [data-primary-action]:hover { background: var(--sb-accent-hover); border-color: var(--sb-accent-hover); color: var(--sb-accent-text); }
+			me [data-chore-group] + [data-chore-group] { margin-top: 0.875rem; }
+			me [data-group-heading] { align-items: center; color: var(--sb-muted); display: flex; font-size: 0.75rem; font-weight: 700; gap: 0.375rem; letter-spacing: 0.09em; margin: 0 0 0.35rem; text-transform: uppercase; }
+			me [data-group-state="overdue"] [data-group-heading] { color: var(--sb-danger); }
+			me [data-chore-list] { background: var(--sb-surface); border: 1px solid var(--sb-border); border-radius: var(--sb-list-radius); list-style: none; margin: 0; overflow: hidden; padding: 0; }
+			me [data-chore-row] { display: flex; }
+			me [data-chore-row] + [data-chore-row] { border-top: 1px solid var(--sb-border); }
+			me [data-chore-detail] { align-items: center; color: var(--sb-text); display: flex; flex: 1 1 auto; gap: 0.75rem; min-width: 0; padding: 0.625rem 0.75rem; text-decoration: none; }
+			me a[data-chore-detail]:hover { background: rgb(255 255 255 / 3%); color: var(--sb-text); }
+			me [data-chore-copy] { flex: 1 1 auto; min-width: 0; }
+			me [data-chore-name] { display: block; font-size: 0.9375rem; font-weight: 650; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+			me [data-chore-description] { color: var(--sb-muted); display: block; font-size: 0.8125rem; line-height: 1.3; margin-top: 0.125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+			me [data-deadline] { color: var(--sb-muted); flex: 0 0 auto; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+			me [data-deadline-state="overdue"] { color: var(--sb-danger); }
+			me [data-deadline-state="today"] { color: var(--sb-warning); }
+			me [data-row-caret] { color: var(--sb-muted); flex: 0 0 auto; opacity: 0.45; }
+			me a[data-chore-detail]:hover [data-row-caret] { color: var(--sb-accent); opacity: 0.85; }
+			me [data-empty] { align-items: center; background: var(--sb-surface); border: 1px solid var(--sb-border); border-radius: var(--sb-radius); display: flex; gap: 0.875rem; padding: 1.5rem; }
+			me [data-empty] > svg { color: var(--sb-muted); font-size: 1.5rem; }
+			me [data-empty] h2 { font-size: 1rem; margin: 0 0 0.125rem; }
+			me [data-empty] p { color: var(--sb-muted); font-size: 0.875rem; margin: 0; }
+			me [data-pagination] { display: flex; gap: 0.75rem; margin-top: 1rem; }
+			me [data-page-link] { align-items: center; border-color: var(--sb-border); color: var(--sb-muted); display: inline-flex; gap: 0.375rem; }
+			me [data-page-link]:hover { background: var(--sb-surface); border-color: var(--sb-border); color: var(--sb-text); }
+			me [data-page-link="next"] { margin-left: auto; }
+			@media sm- {
+				me [data-primary-action] { font-size: 0.9375rem; padding: 0.3125rem 0.55rem; }
+				me [data-chore-description] { display: none; }
+			}
 		</style>
-		<header>
-			<h1 id="chores-heading" class="h2">Upcoming chores</h1>
+		<header data-page-header>
+			<h1 id="chores-heading">Chores</h1>
 			if href := model.Collection.Actions.Href("create"); href != "" {
 				<a
 					class="btn btn-primary"
+					data-primary-action
 					href={ href }
 					hx-get={ href }
 					hx-target="#main"
 					hx-swap="outerHTML"
 					hx-push-url="true"
-				>New chore</a>
+				>
+					@viewicons.Plus()
+					<span>Add chore</span>
+				</a>
 			}
 		</header>
 		if len(model.Collection.Items) == 0 {
 			@collectionEmptyState(model)
 		} else {
-			<div data-chore-list>
-				for _, chore := range model.Collection.Items {
-					@choreSummary(t, chore, today)
+			<div data-chore-groups>
+				for _, group := range t.deadlineGroups(model.Collection.Items, today) {
+					<section data-chore-group data-group-state={ group.State } aria-labelledby={ "chore-group-" + group.State }>
+						<h2 id={ "chore-group-" + group.State } data-group-heading>
+							if group.State == "overdue" {
+								@viewicons.WarningCircle()
+							}
+							{ group.Label }
+						</h2>
+						<ul data-chore-list>
+							for _, chore := range group.Chores {
+								@choreSummary(t, chore, today)
+							}
+						</ul>
+					</section>
 				}
 			</div>
 		}
@@ -52,39 +88,42 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 }
 
 templ choreSummary(t *Templater, chore choreapimodels.Response, today time.Time) {
-	<article class="card" data-chore-card>
-		<header class="card-header">
-			<span class={ "badge text-bg-" + t.deadlineBadgeVariant(chore.Deadline, today) }>
-				Due: { chore.Deadline }
-			</span>
-			<span data-chore-id>#{ chore.Id }</span>
-		</header>
-		<div class="card-body">
-			<h2 class="h5">
-				if href := chore.Links.Href("self"); href != "" {
-					<a
-						class="stretched-link"
-						href={ href }
-						hx-get={ href }
-						hx-target="#main"
-						hx-swap="outerHTML"
-						hx-push-url="true"
-					>{ chore.Name }</a>
-				} else {
-					{ chore.Name }
-				}
-			</h2>
-			if chore.Description != "" {
-				<p>{ chore.Description }</p>
-			}
-		</div>
-	</article>
+	<li data-chore-row>
+		if href := chore.Links.Href("self"); href != "" {
+			<a
+				data-chore-detail
+				href={ href }
+				hx-get={ href }
+				hx-target="#main"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+			>
+				@choreSummaryContent(t, chore, today)
+			</a>
+		} else {
+			<div data-chore-detail>
+				@choreSummaryContent(t, chore, today)
+			</div>
+		}
+	</li>
+}
+
+templ choreSummaryContent(t *Templater, chore choreapimodels.Response, today time.Time) {
+	<span data-chore-copy>
+		<span data-chore-name>{ chore.Name }</span>
+		if chore.Description != "" {
+			<span data-chore-description>{ chore.Description }</span>
+		}
+	</span>
+	<time data-deadline data-deadline-state={ t.deadlineState(chore.Deadline, today) } datetime={ chore.Deadline }>{ t.relativeDeadline(chore.Deadline, today) }</time>
+	<span data-row-caret>@viewicons.CaretRight()</span>
 }
 
 templ collectionEmptyState(model choreviewmodels.Collection) {
-	<div class="card" data-empty>
+	<div data-empty>
+		@viewicons.CheckCircle()
 		<div>
-			<h2 class="h5">No upcoming chores</h2>
+			<h2>No chores due</h2>
 			<p>Create a chore to get started.</p>
 		</div>
 	</div>
@@ -93,33 +132,36 @@ templ collectionEmptyState(model choreviewmodels.Collection) {
 templ collectionPagination(model choreviewmodels.Collection) {
 	if model.HasPagination() {
 		<nav data-pagination aria-label="Chore pages">
-			<div>
-				if previousHref := model.Collection.Links.Href("previous"); previousHref != "" {
-					<a
-						class="btn btn-secondary"
-						href={ previousHref }
-						hx-get={ previousHref }
-						hx-target="#main"
-						hx-swap="outerHTML"
-						hx-push-url="true"
-						rel="prev"
-					>←</a>
-				}
-			</div>
-			<div></div>
-			<div>
-				if nextHref := model.Collection.Links.Href("next"); nextHref != "" {
-					<a
-						class="btn btn-secondary"
-						href={ nextHref }
-						hx-get={ nextHref }
-						hx-target="#main"
-						hx-swap="outerHTML"
-						hx-push-url="true"
-						rel="next"
-					>→</a>
-				}
-			</div>
+			if previousHref := model.Collection.Links.Href("previous"); previousHref != "" {
+				<a
+					class="btn btn-outline-secondary"
+					data-page-link="previous"
+					href={ previousHref }
+					hx-get={ previousHref }
+					hx-target="#main"
+					hx-swap="outerHTML"
+					hx-push-url="true"
+					rel="prev"
+				>
+					@viewicons.CaretLeft()
+					<span>Previous</span>
+				</a>
+			}
+			if nextHref := model.Collection.Links.Href("next"); nextHref != "" {
+				<a
+					class="btn btn-outline-secondary"
+					data-page-link="next"
+					href={ nextHref }
+					hx-get={ nextHref }
+					hx-target="#main"
+					hx-swap="outerHTML"
+					hx-push-url="true"
+					rel="next"
+				>
+					<span>Next</span>
+					@viewicons.CaretRight()
+				</a>
+			}
 		</nav>
 	}
 }

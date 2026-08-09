@@ -5,7 +5,7 @@ import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplat
 templ errorContent(model viewmodels.Error) {
 	<section aria-labelledby="chore-template-error-heading">
 		<style>
-			me > .card { box-shadow: var(--bs-box-shadow-sm); margin-inline: auto; width: 100%; }
+			me > .card { background: var(--sb-surface); border-color: var(--sb-danger); margin-inline: auto; width: 100%; }
 			me [data-actions] { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 			@media lg { me > .card { width: 50%; } }
 		</style>

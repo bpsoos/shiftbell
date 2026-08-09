@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
 )
 
 templ manualOneOffFormContent(form choreviewmodels.ManualOneOffForm) {
@@ -25,7 +26,7 @@ templ templateOneOffFormContent(form choreviewmodels.TemplateOneOffForm) {
 					if form.ChoreTemplateName != "" {
 						<strong>{ form.ChoreTemplateName }</strong>
 					} else {
-						<strong>#{ strconv.Itoa(form.ChoreTemplateId) }</strong>
+						<strong>Selected template</strong>
 					}
 					if form.ChoreTemplateDescription != "" {
 						<p>{ form.ChoreTemplateDescription }</p>
@@ -40,49 +41,44 @@ templ templateOneOffFormContent(form choreviewmodels.TemplateOneOffForm) {
 
 templ oneOffFormPanel(actionHref string, cancelHref string, summaryError string) {
 	<div data-panel>
-		<div class="card">
-			<header class="card-header">
-				<h1 id="create-chore-heading" class="h5">Add one-off chore</h1>
-			</header>
-			<div class="card-body">
-				if actionHref == "" {
-					<div class="alert alert-danger" data-unavailable role="alert">The creation action is not available.</div>
-				} else {
-					<form
-						id="create-chore-form"
-						action={ actionHref }
-						method="post"
-						hx-post={ actionHref }
-						hx-target="#main"
-						hx-swap="outerHTML"
-						if summaryError != "" {
-							aria-describedby="create-chore-form-summary"
+		<header data-panel-header>
+			<h1 id="create-chore-heading">Add chore</h1>
+		</header>
+		<div data-panel-body>
+			if actionHref == "" {
+				<div class="alert alert-danger" data-unavailable role="alert">The creation action is not available.</div>
+			} else {
+				<form
+					id="create-chore-form"
+					action={ actionHref }
+					method="post"
+					hx-post={ actionHref }
+					hx-target="#main"
+					hx-swap="outerHTML"
+					if summaryError != "" {
+						aria-describedby="create-chore-form-summary"
+					}
+				>
+					@formSummary("create-chore-form-summary", summaryError)
+					{ children... }
+					<div data-actions>
+						if cancelHref != "" {
+							<a
+								class="btn btn-secondary"
+								href={ cancelHref }
+								hx-get={ cancelHref }
+								hx-target="#main"
+								hx-swap="outerHTML"
+								hx-push-url="true"
+							>Cancel</a>
 						}
-					>
-						@formSummary("create-chore-form-summary", summaryError)
-						{ children... }
-						<div data-actions>
-							if cancelHref != "" {
-								<a
-									class="btn btn-secondary"
-									href={ cancelHref }
-									hx-get={ cancelHref }
-									hx-target="#main"
-									hx-swap="outerHTML"
-									hx-push-url="true"
-								>Cancel</a>
-							}
-							<button class="btn btn-primary" type="submit">
-								if summaryError != "" {
-									Try again
-								} else {
-									Add
-								}
-							</button>
-						</div>
-					</form>
-				}
-			</div>
+						<button class="btn btn-primary" data-primary-action type="submit">
+							@viewicons.Plus()
+							<span>Add chore</span>
+						</button>
+					</div>
+				</form>
+			}
 		</div>
 	</div>
 }

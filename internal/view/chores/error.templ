@@ -6,9 +6,11 @@ templ errorContent(model choreviewmodels.Error) {
 	<section aria-labelledby="error-heading">
 		<style>
 			me { margin-inline: auto; max-width: 42rem; }
-			me > .card { box-shadow: var(--bs-box-shadow-sm); }
+			me > .card { background: var(--sb-surface); border-color: var(--sb-danger); }
 			me > .card > .card-body { padding: 1.5rem; }
 			me [data-actions] { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+			me [data-primary-action] { background: var(--sb-accent); border-color: var(--sb-accent); color: var(--sb-accent-text); font-weight: 700; }
+			me [data-primary-action]:hover { background: var(--sb-accent-hover); border-color: var(--sb-accent-hover); color: var(--sb-accent-text); }
 		</style>
 		<div class="card border-danger">
 			<div class="card-body">
@@ -21,6 +23,7 @@ templ errorContent(model choreviewmodels.Error) {
 								<a
 									if index == 0 {
 										class="btn btn-primary"
+										data-primary-action
 									} else {
 										class="btn btn-outline-secondary"
 									}

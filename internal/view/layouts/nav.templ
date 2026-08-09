@@ -1,14 +1,40 @@
 package layouts
 
+import viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+
 templ nav(active string) {
-	<nav class="navbar navbar-expand-sm bg-primary" aria-label="Primary navigation">
+	<nav class="navbar navbar-expand-sm" aria-label="Primary navigation">
 		<style>
-			me .navbar-brand { align-items: center; display: inline-flex; gap: 0.5rem; }
-			me .shiftbell-logo { flex: 0 0 auto; height: 1.5rem; width: 1.875rem; }
+			me { background: var(--sb-surface); border-bottom: 1px solid var(--sb-border); padding-block: 0; }
+			me .container-fluid { min-height: 4rem; }
+			me .navbar-brand { align-items: center; color: var(--sb-accent); display: inline-flex; font-weight: 600; gap: 0.8125rem; letter-spacing: -0.025em; }
+			me .navbar-brand:hover { color: var(--sb-accent-hover); }
+			me .shiftbell-logo { flex: 0 0 auto; height: 1.5rem; width: 1.5rem; }
+			me .navbar-nav { gap: 0.25rem; }
+			me .nav-link { color: var(--sb-muted); font-weight: 600; padding: 0.75rem; position: relative; }
+			me .nav-link:hover { color: var(--sb-text); }
+			me .nav-link.active { color: var(--sb-accent); }
+			me .nav-link.active::after { background: var(--sb-accent); bottom: 0.4rem; content: ""; height: 1px; left: 0.75rem; position: absolute; width: 1.25rem; }
+			me [data-secondary] { font-size: 0.875rem; font-weight: 500; }
+			me [data-secondary]:not(.active) { color: #bcc0c7; }
+			me [data-secondary]:not(.active):hover { color: var(--sb-text); }
+			me .navbar-toggler { border-color: var(--sb-border); color: var(--sb-muted); font-size: 1.125rem; height: 2.125rem; padding: 0.4375rem; width: 2.125rem; }
+			me .navbar-toggler:hover { color: var(--sb-text); }
+			me .navbar-toggler .phosphor-icon { display: block; }
+			@media sm- {
+				me .navbar-brand { min-height: 2.75rem; }
+				me .shiftbell-logo { height: 2rem; width: 2rem; }
+				me [data-wordmark] { display: none; }
+				me .navbar-collapse { border-top: 1px solid var(--sb-border); }
+				me .navbar-nav { padding-block: 0.25rem 0.5rem; }
+				me .nav-link { padding: 0.5rem 0.75rem; }
+				me .nav-link.active::after { bottom: 0.2rem; }
+			}
 		</style>
 		<div class="container-fluid">
 			<a
 				class="navbar-brand"
+				aria-label="ShiftBell home"
 				hx-get="/chores"
 				hx-target="#main"
 				hx-swap="outerHTML"
@@ -16,10 +42,11 @@ templ nav(active string) {
 				href="/chores"
 			>
 				@logo()
-				<span>ShiftBell</span>
+				<span data-wordmark>ShiftBell</span>
 			</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#primary-navigation" aria-controls="primary-navigation" aria-expanded="false" aria-label="Toggle navigation">
-				<span class="navbar-toggler-icon"></span>
+				@viewicons.List()
+				<span class="visually-hidden">Toggle navigation</span>
 			</button>
 			<div class="collapse navbar-collapse" id="primary-navigation">
 				<ul class="navbar-nav">
@@ -37,7 +64,7 @@ templ nav(active string) {
 							hx-swap="outerHTML"
 							hx-push-url="true"
 							href="/chores"
-						>Upcoming</a>
+						>Chores</a>
 					</li>
 					<li class="nav-item">
 						<a
@@ -47,13 +74,14 @@ templ nav(active string) {
 							} else {
 								class="nav-link"
 							}
+							data-secondary
 							data-shiftbell-nav="chore-templates"
 							hx-get="/chore-templates"
 							hx-target="#main"
 							hx-swap="outerHTML"
 							hx-push-url="true"
 							href="/chore-templates"
-						>Chore Templates</a>
+						>Templates</a>
 					</li>
 				</ul>
 			</div>
@@ -62,7 +90,13 @@ templ nav(active string) {
 }
 
 templ logo() {
-	<svg class="shiftbell-logo" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-		<path fill="currentColor" fill-rule="evenodd" d="M4,4 L9,4 C9.55228,4 10,3.55228 10,3 C10,2.44772 9.55228,2 9,2 L4,2 C2.89543,2 2,2.89543 2,4 L2,12 C2,13.1046 2.89543,14 4,14 L12,14 C13.1046,14 14,13.1046 14,12 L14,10 C14,9.44771 13.5523,9 13,9 C12.4477,9 12,9.44771 12,10 L12,12 L4,12 L4,4 Z M15.2071,2.29289 C14.8166,1.90237 14.1834,1.90237 13.7929,2.29289 L8.5,7.58579 L7.70711,6.79289 C7.31658,6.40237 6.68342,6.40237 6.29289,6.79289 C5.90237,7.18342 5.90237,7.81658 6.29289,8.20711 L7.79289,9.70711 C7.98043,9.89464 8.23478,10 8.5,10 C8.76522,10 9.01957,9.89464 9.20711,9.70711 L15.2071,3.70711 C15.5976,3.31658 15.5976,2.68342 15.2071,2.29289 Z"></path>
+	<svg class="shiftbell-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+		<g transform="rotate(90 12 12)">
+			<path d="M10 10m-6 0a6 6 0 1 0 12 0a6 6 0 1 0 -12 0"></path>
+			<path d="M13.5 15h.5a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-1a2 2 0 0 1 2 -2h.5"></path>
+			<path d="M16 17a5.698 5.698 0 0 0 4.467 -7.932l-.467 -1.068"></path>
+			<path d="M10 10v.01"></path>
+			<path d="M20 8m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path>
+		</g>
 	</svg>
 }

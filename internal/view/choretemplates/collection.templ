@@ -1,95 +1,95 @@
 package choretemplates
 
-import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
+import (
+	choretemplateapimodels "github.com/bpsoos/shiftbell/internal/models/api/choretemplates"
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
+	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+)
 
 templ collection(model viewmodels.Collection) {
 	<section aria-labelledby="chore-templates-heading">
 		<style>
-			me > header { margin-bottom: 1rem; }
-			me > header h1 { margin: 0; }
-			me > [data-results-card] { box-shadow: var(--bs-box-shadow-sm); }
-			me [data-empty] { padding: 3rem 1rem; text-align: center; }
-			me [data-empty] h2 { margin-bottom: 0.5rem; }
-			me [data-empty] p { color: var(--bs-secondary-color); margin: 0; }
-			me table { margin-bottom: 0; vertical-align: middle; }
-			me tbody a { text-decoration: none; }
-			me [data-muted] { color: var(--bs-secondary-color); }
-			me [data-pagination] { display: grid; gap: 1rem; grid-template-columns: 1fr 4fr 1fr; }
-			me [data-pagination] a { width: 100%; }
-			@media sm- { me th:nth-child(2), me td:nth-child(2) { display: none; } }
+			me { margin-inline: auto; max-width: 52rem; }
+			me > header { margin-bottom: 0.875rem; }
+			me > header h1 { font-size: 1.5rem; letter-spacing: -0.02em; margin: 0; }
+			me > header p { color: var(--sb-muted); font-size: 0.875rem; margin: 0.25rem 0 0; }
+			me [data-template-list] { background: var(--sb-surface); border: 1px solid var(--sb-border); border-radius: var(--sb-list-radius); list-style: none; margin: 0; overflow: hidden; padding: 0; }
+			me [data-template-row] + [data-template-row] { border-top: 1px solid var(--sb-border); }
+			me [data-template-link] { align-items: center; color: var(--sb-text); display: flex; gap: 0.75rem; min-width: 0; padding: 0.625rem 0.75rem; text-decoration: none; }
+			me a[data-template-link]:hover { background: rgb(255 255 255 / 3%); color: var(--sb-text); }
+			me [data-template-copy] { flex: 1 1 auto; min-width: 0; }
+			me [data-template-name] { display: block; font-size: 0.9375rem; font-weight: 650; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+			me [data-template-description] { color: var(--sb-muted); display: block; font-size: 0.8125rem; line-height: 1.3; margin-top: 0.125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+			me [data-template-caret] { color: var(--sb-muted); flex: 0 0 auto; opacity: 0.45; }
+			me a[data-template-link]:hover [data-template-caret] { color: var(--sb-accent); opacity: 0.85; }
+			me [data-empty] { background: var(--sb-surface); border: 1px solid var(--sb-border); border-radius: var(--sb-radius); padding: 2rem 1rem; text-align: center; }
+			me [data-empty] h2 { font-size: 1rem; margin-bottom: 0.25rem; }
+			me [data-empty] p { color: var(--sb-muted); font-size: 0.875rem; margin: 0; }
+			me [data-pagination] { display: flex; gap: 0.75rem; margin-top: 1rem; }
+			me [data-page-link] { align-items: center; border-color: var(--sb-border); color: var(--sb-muted); display: inline-flex; gap: 0.375rem; }
+			me [data-page-link]:hover { background: var(--sb-surface); border-color: var(--sb-border); color: var(--sb-text); }
+			me [data-page-link="next"] { margin-left: auto; }
+			@media sm- { me [data-template-description] { display: none; } }
 		</style>
 		<header>
-			<h1 id="chore-templates-heading" class="h2">Chore templates</h1>
+			<h1 id="chore-templates-heading">Templates</h1>
+			<p>Reusable starting points for chores.</p>
 		</header>
-		<div class="card" data-results-card>
-			@collectionResults(model)
-		</div>
+		@collectionResults(model)
 	</section>
 }
 
 templ collectionResults(model viewmodels.Collection) {
 	if len(model.Collection.Items) == 0 {
-		<div class="card-body" data-empty>
-			<h2 class="h5">No chore templates</h2>
-			<p>No chore templates are available.</p>
+		<div data-empty>
+			<h2>No templates</h2>
+			<p>No reusable chore templates are available.</p>
 		</div>
 	} else {
-		<div class="table-responsive">
-			<table class="table table-striped">
-				<thead>
-					<tr>
-						<th scope="col">Name</th>
-						<th scope="col">Description</th>
-						<th scope="col">State</th>
-					</tr>
-				</thead>
-				<tbody>
-					for _, item := range model.Collection.Items {
-						<tr>
-							<th scope="row">
-								if href := knownLink(item.Links, "self"); href != "" {
-									<a href={ href } hx-get={ href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">{ item.Name }</a>
-								} else {
-									{ item.Name }
-								}
-							</th>
-							<td>
-								if item.Description != "" {
-									{ item.Description }
-								} else {
-									<span data-muted>No description</span>
-								}
-							</td>
-							<td>
-								if item.DeactivatedAt == nil {
-									<span class="badge text-bg-success">Active</span>
-								} else {
-									<span class="badge text-bg-secondary">Deactivated</span>
-								}
-							</td>
-						</tr>
+		<ul data-template-list>
+			for _, item := range model.Collection.Items {
+				<li data-template-row>
+					if href := knownLink(item.Links, "self"); href != "" {
+						<a data-template-link href={ href } hx-get={ href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">
+							@templateRowContent(item)
+						</a>
+					} else {
+						<div data-template-link>
+							@templateRowContent(item)
+						</div>
 					}
-				</tbody>
-			</table>
-		</div>
+				</li>
+			}
+		</ul>
 	}
 	@collectionPagination(model)
 }
 
+templ templateRowContent(item choretemplateapimodels.Response) {
+	<span data-template-copy>
+		<span data-template-name>{ item.Name }</span>
+		if item.Description != "" {
+			<span data-template-description>{ item.Description }</span>
+		}
+	</span>
+	<span data-template-caret>@viewicons.CaretRight()</span>
+}
+
 templ collectionPagination(model viewmodels.Collection) {
 	if model.HasPagination() {
-		<nav class="card-footer" data-pagination aria-label="Chore template pages">
-			<div>
-				if previous := knownLink(model.Collection.Links, "previous"); previous != "" {
-					<a class="btn btn-secondary" href={ previous } hx-get={ previous } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="prev" aria-label="Previous page">←</a>
-				}
-			</div>
-			<div></div>
-			<div>
-				if next := knownLink(model.Collection.Links, "next"); next != "" {
-					<a class="btn btn-secondary" href={ next } hx-get={ next } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="next" aria-label="Next page">→</a>
-				}
-			</div>
+		<nav data-pagination aria-label="Chore template pages">
+			if previous := knownLink(model.Collection.Links, "previous"); previous != "" {
+				<a class="btn btn-outline-secondary" data-page-link="previous" href={ previous } hx-get={ previous } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="prev">
+					@viewicons.CaretLeft()
+					<span>Previous</span>
+				</a>
+			}
+			if next := knownLink(model.Collection.Links, "next"); next != "" {
+				<a class="btn btn-outline-secondary" data-page-link="next" href={ next } hx-get={ next } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="next">
+					<span>Next</span>
+					@viewicons.CaretRight()
+				</a>
+			}
 		</nav>
 	}
 }

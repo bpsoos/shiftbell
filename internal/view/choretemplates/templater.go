@@ -1,6 +1,7 @@
 package choretemplates
 
 import (
+	"strings"
 	"time"
 
 	"github.com/a-h/templ"
@@ -55,4 +56,11 @@ func (t *Templater) formatTime(value time.Time) string {
 
 func knownLink(links api.Relations, relation string) string {
 	return links.Href(relation)
+}
+
+func oneOffCreationHref(href string) string {
+	if strings.Contains(href, "?") {
+		return href + "&recurrence=one-off"
+	}
+	return href + "?recurrence=one-off"
 }
