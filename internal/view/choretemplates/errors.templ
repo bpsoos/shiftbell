@@ -5,24 +5,25 @@ import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplat
 templ errorContent(model viewmodels.Error) {
 	<section aria-labelledby="chore-template-error-heading">
 		<style>
-			me > .card { background: var(--sb-surface); border-color: var(--sb-danger); margin-inline: auto; width: 100%; }
+			me { margin-inline: auto; max-width: 42rem; }
+			me [data-error-frame] { background: var(--sb-surface); border: 2px solid var(--sb-frame); border-left: 3px solid var(--sb-danger); padding: 1.5rem; }
+			me h1 { font-size: 1.5rem; letter-spacing: -0.025em; margin: 0; }
+			me [data-error-message] { border-bottom: 1px solid var(--sb-border); border-top: 1px solid var(--sb-border); margin: 1rem 0; padding: 0.75rem 0; }
 			me [data-actions] { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-			@media lg { me > .card { width: 50%; } }
+			@media sm- { me [data-error-frame] { padding: 1.25rem 1rem; } }
 		</style>
-		<div class="card border-danger">
-			<div class="card-body">
-				<h1 id="chore-template-error-heading" class="h4">Unable to continue</h1>
-				<p role="alert">{ model.Message }</p>
-				if len(model.Links) != 0 {
-					<div data-actions>
-						for _, link := range model.Links {
-							if link.Href != "" {
-								<a class="btn btn-secondary" href={ link.Href } hx-get={ link.Href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">{ link.Label }</a>
-							}
+		<div data-error-frame>
+			<h1 id="chore-template-error-heading">Unable to continue</h1>
+			<p data-error-message role="alert">{ model.Message }</p>
+			if len(model.Links) != 0 {
+				<div data-actions>
+					for _, link := range model.Links {
+						if link.Href != "" {
+							<a class="btn btn-secondary" href={ link.Href } hx-get={ link.Href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">{ link.Label }</a>
 						}
-					</div>
-				}
-			</div>
+					}
+				</div>
+			}
 		</div>
 	</section>
 }

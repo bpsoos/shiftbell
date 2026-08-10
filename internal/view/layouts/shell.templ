@@ -19,6 +19,19 @@ templ page(active string, content templ.Component) {
 			@dependencies()
 		</head>
 		<body>
+			<style>
+				me .shiftbell-skip-link { background: var(--sb-surface); border: 1px solid var(--sb-frame); border-radius: var(--sb-radius-overlay); box-shadow: 3px 3px 0 var(--sb-depth); color: var(--sb-text); left: 0.5rem; padding: 0.5rem 0.75rem; position: fixed; top: 0.5rem; transform: translateY(calc(-100% - 1rem)); z-index: 1100; }
+				me .shiftbell-skip-link:focus { box-shadow: 3px 3px 0 var(--sb-depth); transform: translateY(0); }
+				me #main { padding-bottom: 3.5rem; padding-top: 1.75rem; }
+				me #main:focus:not(:focus-visible) { outline: none; }
+				me #main.htmx-swapping { opacity: 0.45; }
+				@media (prefers-reduced-motion: no-preference) {
+					me .shiftbell-skip-link, me #main { transition: opacity 150ms ease, transform 150ms ease; }
+				}
+				@media xs- {
+					me #main { padding-bottom: 2.5rem; padding-top: 1.25rem; }
+				}
+			</style>
 			<a class="shiftbell-skip-link" href="#main">Skip to content</a>
 			@nav(active)
 			@main(content)

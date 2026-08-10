@@ -3,38 +3,38 @@ package layouts
 import viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
 
 templ nav(active string) {
-	<nav class="navbar navbar-expand-sm" aria-label="Primary navigation">
+	<nav class="navbar navbar-expand-md" aria-label="Primary navigation">
 		<style>
-			me { background: var(--sb-header); border-bottom: 1px solid var(--sb-header-border); padding-block: 0; }
-			me .container-fluid { min-height: 4rem; }
-			me .navbar-brand { align-items: center; color: var(--sb-header-active); display: inline-flex; font-weight: 600; gap: 0.8125rem; letter-spacing: -0.025em; }
-			me .navbar-brand:hover { color: var(--sb-header-active-hover); }
+			me { background: var(--sb-surface); border-bottom: 2px solid var(--sb-frame); padding-block: 0; }
+			me .container-fluid { max-width: 64rem; min-height: 4rem; padding-inline: 1.25rem; }
+			me .navbar-brand { align-items: center; color: var(--sb-text); display: inline-flex; font-weight: 750; gap: 0.6875rem; letter-spacing: -0.03em; }
+			me .navbar-brand:hover { color: var(--sb-muted-strong); }
 			me .shiftbell-logo { flex: 0 0 auto; height: 1.5rem; width: 1.5rem; }
-			me .navbar-nav { gap: 0.25rem; }
-			me .nav-link { color: var(--sb-header-muted); font-weight: 600; padding: 0.75rem; position: relative; }
-			me .nav-link:hover { color: var(--sb-header-text); }
-			me .nav-link.active { color: var(--sb-header-active); }
-			me .nav-link.active::after { background: var(--sb-header-active); bottom: 0.4rem; content: ""; height: 1px; left: 0.75rem; position: absolute; width: 1.25rem; }
-			me [data-secondary] { font-size: 0.875rem; font-weight: 500; }
-			me [data-secondary]:not(.active) { color: var(--sb-header-muted); }
-			me [data-secondary]:not(.active):hover { color: var(--sb-header-text); }
+			me .navbar-nav { gap: 0.125rem; }
+			me .nav-link { color: var(--sb-muted); font-size: 0.9375rem; font-weight: 650; padding: 0.9rem 0.75rem; position: relative; }
+			me .nav-link:hover { color: var(--sb-text); }
+			me .nav-link.active { color: var(--sb-text); }
+			me .nav-link.active::after { background: var(--sb-accent); bottom: 0.45rem; content: ""; height: 3px; left: 0.75rem; position: absolute; width: 1.5rem; }
 			me .navbar-collapse { order: 2; }
 			me [data-nav-actions] { align-items: center; display: flex; gap: 0.375rem; margin-left: auto; order: 3; }
-			me [data-header-button] { align-items: center; background: transparent; border: 1px solid var(--sb-header-border); border-radius: var(--sb-radius-sm); color: var(--sb-header-muted); font-size: 1.125rem; height: 2.125rem; justify-content: center; padding: 0.4375rem; width: 2.125rem; }
+			me [data-header-button] { align-items: center; background: transparent; border: 1px solid var(--sb-control-border); border-radius: var(--sb-radius-control); color: var(--sb-muted); font-size: 1.125rem; height: 2.25rem; justify-content: center; padding: 0.4375rem; width: 2.25rem; }
 			me [data-theme-toggle] { display: inline-flex; }
-			me [data-header-button]:hover { color: var(--sb-header-text); }
+			me [data-header-button]:hover { background: var(--sb-hover); border-color: var(--sb-frame); color: var(--sb-text); }
+			me [data-header-button]:focus { box-shadow: none; }
+			me [data-header-button]:focus-visible { box-shadow: none; outline: 2px solid var(--sb-focus); outline-offset: 2px; }
 			me [data-header-button] .phosphor-icon { display: block; }
 			me [data-theme-icon] { display: none; }
 			[data-bs-theme="dark"] me [data-theme-icon="light"] { display: block; }
 			[data-bs-theme="light"] me [data-theme-icon="dark"] { display: block; }
 			@media sm- {
-				me .navbar-brand { min-height: 2.75rem; }
-				me .shiftbell-logo { height: 2rem; width: 2rem; }
+				me .container-fluid { padding-inline: 0.75rem; }
+				me .navbar-brand { min-height: 3.5rem; }
+				me .shiftbell-logo { height: 1.75rem; width: 1.75rem; }
 				me [data-wordmark] { display: none; }
 				me [data-nav-actions] { order: 2; }
-				me .navbar-collapse { border-top: 1px solid var(--sb-header-border); order: 3; }
+				me .navbar-collapse { border-top: 1px solid var(--sb-border); order: 3; }
 				me .navbar-nav { padding-block: 0.25rem 0.5rem; }
-				me .nav-link { padding: 0.5rem 0.75rem; }
+				me .nav-link { padding: 0.625rem 0.75rem; }
 				me .nav-link.active::after { bottom: 0.2rem; }
 			}
 		</style>
@@ -88,7 +88,6 @@ templ nav(active string) {
 							} else {
 								class="nav-link"
 							}
-							data-secondary
 							data-shiftbell-nav="chore-templates"
 							hx-get="/chore-templates"
 							hx-target="#main"
