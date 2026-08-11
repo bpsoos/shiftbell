@@ -10,6 +10,7 @@ import (
 
 templ collectionContent(t *Templater, model choreviewmodels.Collection, today time.Time) {
 	<section
+		data-chore-collection
 		aria-labelledby="chores-heading"
 		hx-get={ model.Links.Href("self") }
 		hx-trigger="choreCompleted from:body"
@@ -31,9 +32,15 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 			me [data-chore-list] { list-style: none; margin: 0; padding: 0; }
 			me [data-chore-row] { display: flex; }
 			me [data-chore-row] + [data-chore-row] { border-top: 1px solid var(--sb-border); }
-			me [data-complete-chore] { align-items: center; align-self: stretch; background: transparent; border: 0; border-right: 1px solid var(--sb-border); color: var(--sb-muted); display: flex; flex: 0 0 3rem; justify-content: center; min-height: 44px; min-width: 44px; padding: 0; }
-			me [data-complete-chore]:hover { background: var(--sb-hover); color: var(--sb-text); }
-			me [data-complete-chore] svg { height: 1.375rem; width: 1.375rem; }
+			me [data-complete-chore] { align-items: center; align-self: stretch; background: color-mix(in srgb, var(--sb-accent) 7%, transparent); border: 0; border-right: 1px solid var(--sb-border); color: var(--sb-focus); display: flex; flex: 0 0 4rem; justify-content: center; min-height: 44px; min-width: 4rem; padding: 0; }
+			me [data-complete-chore]:hover, me [data-complete-chore]:focus-visible, me [data-complete-chore].htmx-request, me [data-complete-chore][data-completion-pending] { background: color-mix(in srgb, var(--sb-accent) 18%, transparent); }
+			me [data-complete-icon] { align-items: center; display: flex; height: 1.5rem; justify-content: center; transition: transform 80ms ease; width: 1.5rem; }
+			me [data-complete-icon] svg { height: 1.45rem; width: 1.45rem; }
+			me [data-complete-icon="idle"] svg { stroke: currentColor; stroke-width: 6px; }
+			me [data-complete-icon="preview"] { background: var(--sb-accent); border-radius: 50%; color: var(--sb-accent-text); display: none; }
+			me [data-complete-chore]:hover [data-complete-icon="idle"], me [data-complete-chore]:focus-visible [data-complete-icon="idle"], me [data-complete-chore].htmx-request [data-complete-icon="idle"], me [data-complete-chore][data-completion-pending] [data-complete-icon="idle"] { display: none; }
+			me [data-complete-chore]:hover [data-complete-icon="preview"], me [data-complete-chore]:focus-visible [data-complete-icon="preview"], me [data-complete-chore].htmx-request [data-complete-icon="preview"], me [data-complete-chore][data-completion-pending] [data-complete-icon="preview"] { display: flex; }
+			me [data-complete-chore]:active [data-complete-icon] { transform: translateY(2px); }
 			me [data-chore-detail] { align-items: center; color: var(--sb-text); display: flex; flex: 1 1 auto; gap: 0.75rem; min-height: 4rem; min-width: 0; padding: 0.6875rem 0.875rem; text-decoration: none; }
 			me a[data-chore-detail]:hover { background: var(--sb-hover); color: var(--sb-text); }
 			me [data-chore-copy] { flex: 1 1 auto; min-width: 0; }
@@ -119,7 +126,8 @@ templ choreSummary(t *Templater, item choreviewmodels.CollectionItem, today time
 				aria-label={ "Complete \u201c" + item.Chore.Name + "\u201d" }
 				title={ "Complete \u201c" + item.Chore.Name + "\u201d" }
 			>
-				@viewicons.CheckCircle()
+				<span data-complete-icon="idle">@viewicons.Circle()</span>
+				<span data-complete-icon="preview">@viewicons.CheckCircle()</span>
 			</button>
 		}
 		if href := item.Chore.Links.Href("self"); href != "" {

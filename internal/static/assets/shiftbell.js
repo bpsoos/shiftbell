@@ -4,6 +4,7 @@
 	const themeStorageKey = "shiftbell-theme";
 	const themePreference = window.matchMedia("(prefers-color-scheme: dark)");
 	let dialogTrigger = null;
+	let completionPendingTrigger = null;
 
 	const isTheme = (value) => value === "light" || value === "dark";
 
@@ -76,7 +77,54 @@
 			return;
 		}
 		dialog.addEventListener("close", removeDialog, { once: true });
+		dialog.addEventListener("cancel", (event) => {
+			if (dialog.querySelector('[data-completion-form][aria-busy="true"]')) {
+				event.preventDefault();
+			}
+		});
 		dialog.showModal();
+	};
+
+	const clearCompletionPendingTrigger = () => {
+		completionPendingTrigger?.removeAttribute("data-completion-pending");
+		completionPendingTrigger = null;
+	};
+
+	const htmxRequestElement = (event) => event.detail.requestConfig?.elt ?? event.detail.elt;
+
+	const setCompletionPending = (form, pending) => {
+		const button = form.querySelector("[data-complete-action]");
+		const cancelButton = form.querySelector("[data-dialog-cancel]");
+		const label = button?.querySelector("[data-complete-label]");
+		const dialog = form.closest("dialog");
+		if (!button || !cancelButton || !label) {
+			return;
+		}
+
+		if (pending && document.activeElement === button) {
+			dialog?.focus({ preventScroll: true });
+		}
+		button.disabled = pending;
+		cancelButton.disabled = pending;
+		label.textContent = pending ? "Completing\u2026" : "Complete chore";
+		if (pending) {
+			button.setAttribute("aria-busy", "true");
+			form.setAttribute("aria-busy", "true");
+			clearCompletionPendingTrigger();
+			completionPendingTrigger = dialogTrigger;
+			completionPendingTrigger?.setAttribute("data-completion-pending", "");
+			return;
+		}
+
+		button.removeAttribute("aria-busy");
+		form.removeAttribute("aria-busy");
+		clearCompletionPendingTrigger();
+		if (
+			dialog?.isConnected &&
+			(document.activeElement === dialog || !dialog.contains(document.activeElement))
+		) {
+			button.focus({ preventScroll: true });
+		}
 	};
 
 	const syncNavigation = () => {
@@ -149,6 +197,24 @@
 			event.detail.shouldSwap = true;
 		}
 
+	});
+
+	document.addEventListener("htmx:beforeRequest", (event) => {
+		const form = htmxRequestElement(event)?.closest?.("[data-completion-form]");
+		if (form) {
+			setCompletionPending(form, true);
+		}
+	});
+
+	document.addEventListener("htmx:afterRequest", (event) => {
+		const requestElement = htmxRequestElement(event);
+		const form = requestElement?.closest?.("[data-completion-form]");
+		if (form && !event.detail.successful) {
+			setCompletionPending(form, false);
+		}
+		if (requestElement?.matches?.("[data-chore-collection]")) {
+			clearCompletionPendingTrigger();
+		}
 	});
 
 	document.addEventListener("htmx:afterSwap", (event) => {
