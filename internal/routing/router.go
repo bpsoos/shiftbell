@@ -20,6 +20,7 @@ type ChoreHandler interface {
 	Patch(*echo.Context) error
 	New(*echo.Context) error
 	Create(*echo.Context) error
+	ConfirmCompletion(*echo.Context) error
 	Complete(*echo.Context) error
 	CorrectCompletion(*echo.Context) error
 	Delete(*echo.Context) error

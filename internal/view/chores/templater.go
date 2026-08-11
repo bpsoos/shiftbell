@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/a-h/templ"
-	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
@@ -14,7 +13,7 @@ import (
 type deadlineGroup struct {
 	Label  string
 	State  string
-	Chores []choreapimodels.Response
+	Chores []choreviewmodels.CollectionItem
 }
 
 type Config struct {
@@ -81,6 +80,17 @@ func (t *Templater) Error(
 	return layouts.Frame("chores", fullPage, errorContent(model))
 }
 
+func (t *Templater) CompletionDialog(
+	model choreviewmodels.CompletionDialog,
+) templ.Component {
+	today := t.localDate()
+	model.CompletedOnMax = today
+	if model.CompletedOn.Value == "" && model.CompletedOn.Error == "" {
+		model.CompletedOn.Value = today
+	}
+	return completionDialog(model)
+}
+
 func (t *Templater) localDate() string {
 	return t.now().In(t.timezone).Format(time.DateOnly)
 }
@@ -91,7 +101,7 @@ func (t *Templater) today() time.Time {
 }
 
 func (t *Templater) deadlineGroups(
-	chores []choreapimodels.Response,
+	chores []choreviewmodels.CollectionItem,
 	today time.Time,
 ) []deadlineGroup {
 	groups := []deadlineGroup{
@@ -100,7 +110,7 @@ func (t *Templater) deadlineGroups(
 		{Label: "Upcoming", State: "upcoming"},
 	}
 	for _, chore := range chores {
-		switch t.deadlineState(chore.Deadline, today) {
+		switch t.deadlineState(chore.Chore.Deadline, today) {
 		case "overdue":
 			groups[0].Chores = append(groups[0].Chores, chore)
 		case "today":

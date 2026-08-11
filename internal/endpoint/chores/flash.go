@@ -10,6 +10,8 @@ const (
 	flashCookieName                   = "shiftbell_flash"
 	choreAndTemplateCreatedFlashValue = "chore-and-template-created"
 	choreAndTemplateCreatedNotice     = "Chore added and template saved."
+	choreCompletedFlashValue          = "chore-completed"
+	choreCompletedNotice              = "Chore completed."
 )
 
 func setFlashCookie(ctx *echo.Context, value string) {
@@ -29,8 +31,11 @@ func consumeFlashCookie(ctx *echo.Context) string {
 		return ""
 	}
 	clearFlashCookie(ctx)
-	if cookie.Value == choreAndTemplateCreatedFlashValue {
+	switch cookie.Value {
+	case choreAndTemplateCreatedFlashValue:
 		return choreAndTemplateCreatedNotice
+	case choreCompletedFlashValue:
+		return choreCompletedNotice
 	}
 	return ""
 }

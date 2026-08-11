@@ -9,7 +9,13 @@ import (
 )
 
 templ collectionContent(t *Templater, model choreviewmodels.Collection, today time.Time) {
-	<section aria-labelledby="chores-heading">
+	<section
+		aria-labelledby="chores-heading"
+		hx-get={ model.Links.Href("self") }
+		hx-trigger="choreCompleted from:body"
+		hx-target="#main"
+		hx-swap="outerHTML"
+	>
 		<style>
 			me { margin-inline: auto; max-width: 52rem; }
 			me > [data-page-header] { align-items: flex-end; display: flex; gap: 1rem; justify-content: space-between; margin-bottom: 1rem; }
@@ -25,6 +31,9 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 			me [data-chore-list] { list-style: none; margin: 0; padding: 0; }
 			me [data-chore-row] { display: flex; }
 			me [data-chore-row] + [data-chore-row] { border-top: 1px solid var(--sb-border); }
+			me [data-complete-chore] { align-items: center; align-self: stretch; background: transparent; border: 0; border-right: 1px solid var(--sb-border); color: var(--sb-muted); display: flex; flex: 0 0 3rem; justify-content: center; min-height: 44px; min-width: 44px; padding: 0; }
+			me [data-complete-chore]:hover { background: var(--sb-hover); color: var(--sb-text); }
+			me [data-complete-chore] svg { height: 1.375rem; width: 1.375rem; }
 			me [data-chore-detail] { align-items: center; color: var(--sb-text); display: flex; flex: 1 1 auto; gap: 0.75rem; min-height: 4rem; min-width: 0; padding: 0.6875rem 0.875rem; text-decoration: none; }
 			me a[data-chore-detail]:hover { background: var(--sb-hover); color: var(--sb-text); }
 			me [data-chore-copy] { flex: 1 1 auto; min-width: 0; }
@@ -51,7 +60,7 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 		</style>
 		<header data-page-header>
 			<h1 id="chores-heading">Chores</h1>
-			if href := model.Collection.Actions.Href("create"); href != "" {
+		if href := model.Actions.Href("create"); href != "" {
 				<a
 					class="btn btn-primary"
 					data-primary-action
@@ -72,11 +81,11 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 				<span>{ model.Notice }</span>
 			</div>
 		}
-		if len(model.Collection.Items) == 0 {
+		if len(model.Items) == 0 {
 			@collectionEmptyState(model)
 		} else {
 			<div data-chore-groups>
-				for _, group := range t.deadlineGroups(model.Collection.Items, today) {
+				for _, group := range t.deadlineGroups(model.Items, today) {
 					<section data-chore-group data-group-state={ group.State } aria-labelledby={ "chore-group-" + group.State }>
 						<h2 id={ "chore-group-" + group.State } data-group-heading>
 							if group.State == "overdue" {
@@ -97,9 +106,23 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 	</section>
 }
 
-templ choreSummary(t *Templater, chore choreapimodels.Response, today time.Time) {
+templ choreSummary(t *Templater, item choreviewmodels.CollectionItem, today time.Time) {
 	<li data-chore-row>
-		if href := chore.Links.Href("self"); href != "" {
+		if item.CompleteHref != "" {
+			<button
+				type="button"
+				data-complete-chore
+				hx-get={ item.CompleteHref }
+				hx-target="#dialog-root"
+				hx-swap="innerHTML"
+				aria-haspopup="dialog"
+				aria-label={ "Complete \u201c" + item.Chore.Name + "\u201d" }
+				title={ "Complete \u201c" + item.Chore.Name + "\u201d" }
+			>
+				@viewicons.CheckCircle()
+			</button>
+		}
+		if href := item.Chore.Links.Href("self"); href != "" {
 			<a
 				data-chore-detail
 				href={ href }
@@ -108,11 +131,11 @@ templ choreSummary(t *Templater, chore choreapimodels.Response, today time.Time)
 				hx-swap="outerHTML"
 				hx-push-url="true"
 			>
-				@choreSummaryContent(t, chore, today)
+				@choreSummaryContent(t, item.Chore, today)
 			</a>
 		} else {
 			<div data-chore-detail>
-				@choreSummaryContent(t, chore, today)
+				@choreSummaryContent(t, item.Chore, today)
 			</div>
 		}
 	</li>
@@ -148,7 +171,7 @@ templ collectionEmptyState(model choreviewmodels.Collection) {
 templ collectionPagination(model choreviewmodels.Collection) {
 	if model.HasPagination() {
 		<nav data-pagination aria-label="Chore pages">
-			if previousHref := model.Collection.Links.Href("previous"); previousHref != "" {
+			if previousHref := model.Links.Href("previous"); previousHref != "" {
 				<a
 					class="btn btn-outline-secondary"
 					data-page-link="previous"
@@ -163,7 +186,7 @@ templ collectionPagination(model choreviewmodels.Collection) {
 					<span>Previous</span>
 				</a>
 			}
-			if nextHref := model.Collection.Links.Href("next"); nextHref != "" {
+			if nextHref := model.Links.Href("next"); nextHref != "" {
 				<a
 					class="btn btn-outline-secondary"
 					data-page-link="next"

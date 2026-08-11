@@ -12,8 +12,26 @@ const choreCollectionHref = "/chores"
 func collectionViewModel(
 	collection choreCollectionResponse,
 ) choreviewmodels.Collection {
+	items := make([]choreviewmodels.CollectionItem, len(collection.Items))
+	for i, chore := range collection.Items {
+		items[i] = choreviewmodels.CollectionItem{
+			Chore:        chore,
+			CompleteHref: completionHref(chore),
+		}
+	}
 	return choreviewmodels.Collection{
-		Collection: collection,
+		Items:   items,
+		Links:   collection.Links,
+		Actions: collection.Actions,
+	}
+}
+
+func completionDialogViewModel(
+	chore choreResponse,
+) choreviewmodels.CompletionDialog {
+	return choreviewmodels.CompletionDialog{
+		Name:       chore.Name,
+		ActionHref: completionHref(chore),
 	}
 }
 
@@ -136,6 +154,14 @@ func creationActionHref(creation choreCreationResponse) string {
 
 func linkHref(links api.Relations, name string) string {
 	return links.Href(name)
+}
+
+func completionHref(chore choreResponse) string {
+	selfHref := linkHref(chore.Links, "self")
+	if selfHref == "" {
+		return ""
+	}
+	return activeOneOffActions(selfHref).Href("complete")
 }
 
 func formFeedbackMessage(feedback formFeedback) string {

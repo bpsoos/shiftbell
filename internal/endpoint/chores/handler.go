@@ -51,6 +51,7 @@ type formFeedback struct {
 
 type View interface {
 	Collection(choreviewmodels.Collection, bool) templ.Component
+	CompletionDialog(choreviewmodels.CompletionDialog) templ.Component
 	Detail(choreviewmodels.Detail, bool) templ.Component
 	Creation(choreviewmodels.Creation, bool) templ.Component
 	ManualOneOffForm(choreviewmodels.ManualOneOffForm, bool) templ.Component

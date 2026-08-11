@@ -119,8 +119,8 @@ var _ = Describe("Browse chores", func() {
 			}, nil).Once()
 			view := NewMockView(GinkgoT())
 			view.EXPECT().Collection(choreviewmodels.Collection{
-				Collection: choreapimodels.CollectionResponse{
-					Items: []choreapimodels.Response{{
+				Items: []choreviewmodels.CollectionItem{{
+					Chore: choreapimodels.Response{
 						Id:          42,
 						Status:      choremodels.ChoreStatusActive,
 						Name:        "Kitchen",
@@ -130,14 +130,15 @@ var _ = Describe("Browse chores", func() {
 							{Rel: "self", Href: "/chores/42"},
 							{Rel: "collection", Href: "/chores"},
 						},
-					}},
-					Links: api.Relations{
-						{Rel: "self", Href: "/chores?limit=7&offset=4"},
-						{Rel: "previous", Href: "/chores?limit=7&offset=0"},
 					},
-					Actions: api.Relations{
-						{Rel: "create", Href: "/chores/new"},
-					},
+					CompleteHref: "/chores/42/completion",
+				}},
+				Links: api.Relations{
+					{Rel: "self", Href: "/chores?limit=7&offset=4"},
+					{Rel: "previous", Href: "/chores?limit=7&offset=0"},
+				},
+				Actions: api.Relations{
+					{Rel: "create", Href: "/chores/new"},
 				},
 			}, false).Return(templ.Raw("collection sentinel")).Once()
 			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
@@ -172,12 +173,10 @@ var _ = Describe("Browse chores", func() {
 		}).Return(&choremodels.ChorePage{}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Collection(choreviewmodels.Collection{
-			Collection: choreapimodels.CollectionResponse{
-				Items: []choreapimodels.Response{},
-				Links: api.Relations{{Rel: "self", Href: "/chores"}},
-				Actions: api.Relations{
-					{Rel: "create", Href: "/chores/new"},
-				},
+			Items: []choreviewmodels.CollectionItem{},
+			Links: api.Relations{{Rel: "self", Href: "/chores"}},
+			Actions: api.Relations{
+				{Rel: "create", Href: "/chores/new"},
 			},
 			Notice: "Chore added and template saved.",
 		}, true).Return(templ.Raw("collection sentinel")).Once()
@@ -192,6 +191,46 @@ var _ = Describe("Browse chores", func() {
 		request.AddCookie(&http.Cookie{
 			Name:  "shiftbell_flash",
 			Value: "chore-and-template-created",
+		})
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(Equal("collection sentinel"))
+		cookies := response.Result().Cookies()
+		Expect(cookies).To(HaveLen(1))
+		Expect(cookies[0].Name).To(Equal("shiftbell_flash"))
+		Expect(cookies[0].MaxAge).To(Equal(-1))
+	})
+
+	It("consumes the chore completion success flash", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
+			Status: choremodels.ChoreStatusActive,
+			Offset: 0,
+			Limit:  20,
+		}).Return(&choremodels.ChorePage{}, nil).Once()
+		view := NewMockView(GinkgoT())
+		view.EXPECT().Collection(choreviewmodels.Collection{
+			Items: []choreviewmodels.CollectionItem{},
+			Links: api.Relations{{Rel: "self", Href: "/chores"}},
+			Actions: api.Relations{
+				{Rel: "create", Href: "/chores/new"},
+			},
+			Notice: "Chore completed.",
+		}, true).Return(templ.Raw("collection sentinel")).Once()
+		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+			Service: service,
+			View:    view,
+		})
+		e := echo.New()
+		e.GET("/chores", handler.GetBatch)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/chores", nil)
+		request.Header.Set("Accept", "text/html")
+		request.AddCookie(&http.Cookie{
+			Name:  "shiftbell_flash",
+			Value: "chore-completed",
 		})
 		response := httptest.NewRecorder()
 

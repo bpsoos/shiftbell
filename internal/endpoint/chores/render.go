@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/labstack/echo/v5"
 )
 
@@ -48,6 +49,14 @@ func (h *Handler) renderDetail(
 	default:
 		return hypermedia.NotAcceptable(ctx)
 	}
+}
+
+func (h *Handler) renderCompletionDialog(
+	ctx *echo.Context,
+	status int,
+	model choreviewmodels.CompletionDialog,
+) error {
+	return hypermedia.HTML(ctx, status, h.view.CompletionDialog(model))
 }
 
 func (h *Handler) renderCreation(
@@ -190,4 +199,9 @@ func fullPage(ctx *echo.Context) bool {
 
 func supported(ctx *echo.Context) bool {
 	return hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationUnsupported
+}
+
+func acceptsHTMXHTML(ctx *echo.Context) bool {
+	return !fullPage(ctx) &&
+		hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML
 }

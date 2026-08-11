@@ -3,6 +3,7 @@
 
 	const themeStorageKey = "shiftbell-theme";
 	const themePreference = window.matchMedia("(prefers-color-scheme: dark)");
+	let dialogTrigger = null;
 
 	const isTheme = (value) => value === "light" || value === "dark";
 
@@ -46,6 +47,38 @@
 
 	applyTheme(readStoredTheme() ?? preferredTheme());
 
+	const restoreDialogFocus = () => {
+		const trigger = dialogTrigger;
+		dialogTrigger = null;
+		if (trigger?.isConnected) {
+			trigger.focus({ preventScroll: true });
+		}
+	};
+
+	const removeDialog = () => {
+		document.getElementById("dialog-root")?.replaceChildren();
+		restoreDialogFocus();
+	};
+
+	const closeDialog = () => {
+		const dialog = document.querySelector("#dialog-root dialog");
+		if (dialog?.open) {
+			dialog.close();
+			return;
+		}
+		removeDialog();
+	};
+
+	const showDialog = (root) => {
+		const dialog = root.querySelector("dialog");
+		if (!dialog || typeof dialog.showModal !== "function") {
+			restoreDialogFocus();
+			return;
+		}
+		dialog.addEventListener("close", removeDialog, { once: true });
+		dialog.showModal();
+	};
+
 	const syncNavigation = () => {
 		const path = window.location.pathname;
 		const picker = path === "/chore-templates" && new URLSearchParams(window.location.search).get("picker") === "1";
@@ -65,6 +98,17 @@
 	};
 
 	document.addEventListener("click", (event) => {
+		const completeButton = event.target.closest?.("[data-complete-chore]");
+		if (completeButton) {
+			dialogTrigger = completeButton;
+		}
+
+		if (event.target.closest?.("[data-dialog-cancel]")) {
+			event.preventDefault();
+			closeDialog();
+			return;
+		}
+
 		const button = event.target.closest?.("[data-theme-toggle]");
 		if (!button) {
 			return;
@@ -111,11 +155,17 @@
 		syncNavigation();
 		syncThemeControls(document.documentElement.getAttribute("data-bs-theme"));
 
+		if (event.detail.target?.id === "dialog-root") {
+			showDialog(event.detail.target);
+		}
+
 		if (event.detail.target?.id === "main") {
 			closeNavigation();
 			document.getElementById("main")?.focus({ preventScroll: true });
 		}
 	});
+
+	document.addEventListener("choreCompleted", closeDialog);
 
 	window.addEventListener("popstate", syncNavigation);
 	if (document.readyState === "loading") {

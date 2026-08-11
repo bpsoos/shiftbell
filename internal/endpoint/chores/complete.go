@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bpsoos/shiftbell/internal/endpoint/binding"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
@@ -15,13 +16,20 @@ import (
 )
 
 type completeChoreRequest struct {
-	CompletedOn string `json:"completed_on"`
+	CompletedOn string `form:"completed_on" json:"completed_on"`
 }
 
 func (h *Handler) Complete(ctx *echo.Context) error {
-	if !hypermedia.Accepts(ctx.Request()) {
+	if hypermedia.Accepts(ctx.Request()) {
+		return h.completeVendorJSON(ctx)
+	}
+	if !acceptsHTMXHTML(ctx) {
 		return hypermedia.NotAcceptable(ctx)
 	}
+	return h.completeHTMX(ctx)
+}
+
+func (h *Handler) completeVendorJSON(ctx *echo.Context) error {
 	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
 	if err != nil || id <= 0 {
 		return hypermedia.JSON(
@@ -87,4 +95,43 @@ func (h *Handler) Complete(ctx *echo.Context) error {
 		Response: response,
 		Actions:  completedOneOffActions(response.Links.Href("self")),
 	})
+}
+
+func (h *Handler) completeHTMX(ctx *echo.Context) error {
+	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
+	if err != nil || id <= 0 {
+		return hypermedia.NoContent(ctx, http.StatusUnprocessableEntity)
+	}
+	var request completeChoreRequest
+	if err := binding.Bind(ctx, &request); err != nil {
+		if errors.Is(err, binding.ErrUnsupportedMediaType) {
+			return hypermedia.NoContent(ctx, http.StatusUnsupportedMediaType)
+		}
+		return hypermedia.NoContent(ctx, http.StatusBadRequest)
+	}
+	completedOn, err := time.Parse(time.DateOnly, request.CompletedOn)
+	if err != nil {
+		return h.renderCompletionDateError(ctx, id, request.CompletedOn)
+	}
+	result, err := h.service.Complete(
+		ctx.Request().Context(),
+		&choremodels.CompleteChoreParams{Id: id, CompletedOn: completedOn},
+	)
+	if err != nil {
+		if errors.Is(err, validationerrors.ErrInvalidCompletionDate) {
+			return h.renderCompletionDateError(ctx, id, request.CompletedOn)
+		}
+		if errors.Is(err, choremodels.ErrNotFound) {
+			return hypermedia.NoContent(ctx, http.StatusNotFound)
+		}
+		logging.Default().Error("complete chore", "err", err)
+		return hypermedia.NoContent(ctx, http.StatusInternalServerError)
+	}
+	if result == nil || result.Chore == nil {
+		logging.Default().Error("complete chore returned no chore")
+		return hypermedia.NoContent(ctx, http.StatusInternalServerError)
+	}
+	setFlashCookie(ctx, choreCompletedFlashValue)
+	ctx.Response().Header().Set("HX-Trigger", "choreCompleted")
+	return hypermedia.NoContent(ctx, http.StatusNoContent)
 }
