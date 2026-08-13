@@ -49,7 +49,7 @@ templ panelPage(backHref string, backLabel string, headingId string) {
 			me [data-option-caret] { color: var(--sb-muted); }
 			me [data-option]:hover [data-option-caret] { color: var(--sb-text); }
 			me [data-selected] { border: 1px solid var(--sb-border); border-left: 3px solid var(--sb-accent); margin-bottom: 1.25rem; padding: 0.75rem; }
-			me [data-caption] { background: var(--sb-accent); color: var(--sb-accent-text); display: inline-block; font-size: 0.6875rem; font-weight: 750; letter-spacing: 0.08em; margin-bottom: 0.5rem; padding: 0.125rem 0.375rem; text-transform: uppercase; }
+			me [data-caption] { background: var(--sb-accent); color: var(--sb-accent-text); display: block; font-size: 0.6875rem; font-weight: 750; letter-spacing: 0.08em; margin-bottom: 0.5rem; padding: 0.125rem 0.375rem; text-transform: uppercase; width: max-content; }
 			me [data-selected] p { margin-bottom: 0; }
 			me [data-field] { margin-bottom: 1rem; }
 			me [data-field] > .form-label { font-size: 0.875rem; font-weight: 650; }
