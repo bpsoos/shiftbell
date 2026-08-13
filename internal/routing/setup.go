@@ -29,6 +29,7 @@ func (r *Router) Setup(app *echo.Echo) error {
 	app.POST("/chore-templates", r.choreTemplateHandler.Create)
 	app.GET("/chore-templates", r.choreTemplateHandler.Browse)
 	app.GET("/chore-templates/:id", r.choreTemplateHandler.Get)
+	app.GET("/chore-templates/:id/edit", r.choreTemplateHandler.EditForm)
 	app.PATCH("/chore-templates/:id", r.choreTemplateHandler.Edit)
 	app.PUT("/chore-templates/:id/deactivation", r.choreTemplateHandler.Deactivate)
 	return nil

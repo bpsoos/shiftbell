@@ -2,6 +2,7 @@ package choretemplates
 
 import (
 	api "github.com/bpsoos/shiftbell/internal/models/api"
+	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 )
 
@@ -17,10 +18,48 @@ func pickerViewModel(representation pickerCollectionResponse) viewmodels.Picker 
 	}
 }
 
-func detailViewModel(representation representation) viewmodels.Detail {
+func detailViewModel(representation representation, notice string) viewmodels.Detail {
 	return viewmodels.Detail{
 		ChoreTemplate:  representation,
 		CollectionHref: knownLink(representation.Links, "collection"),
+		EditHref:       editNavigationHref(representation),
+		Notice:         notice,
+	}
+}
+
+func editFormViewModel(choreTemplate *models.ChoreTemplate) viewmodels.EditForm {
+	selfHref := newResponse(choreTemplate).Links.Href("self")
+	return viewmodels.EditForm{
+		ActionHref: selfHref,
+		CancelHref: selfHref,
+		Name: viewmodels.Field{
+			Value: choreTemplate.Name,
+		},
+		Description: viewmodels.Field{
+			Value: choreTemplate.Description,
+		},
+	}
+}
+
+func editFormFeedbackViewModel(
+	id int,
+	request editRequest,
+	fieldErrors map[string]string,
+	summaryError string,
+) viewmodels.EditForm {
+	selfHref := resourceHref(id)
+	return viewmodels.EditForm{
+		ActionHref: selfHref,
+		CancelHref: selfHref,
+		Name: viewmodels.Field{
+			Value: request.Name,
+			Error: fieldErrors["name"],
+		},
+		Description: viewmodels.Field{
+			Value: request.Description,
+			Error: fieldErrors["description"],
+		},
+		SummaryError: summaryError,
 	}
 }
 
@@ -43,4 +82,11 @@ func errorViewModel(response errorResponse) viewmodels.Error {
 
 func knownLink(links api.Relations, relation string) string {
 	return links.Href(relation)
+}
+
+func editNavigationHref(representation representation) string {
+	if href := representation.Actions.Href("edit"); href != "" {
+		return href + "/edit"
+	}
+	return ""
 }

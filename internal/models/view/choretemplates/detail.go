@@ -5,4 +5,6 @@ import choretemplateapimodels "github.com/bpsoos/shiftbell/internal/models/api/c
 type Detail struct {
 	ChoreTemplate  choretemplateapimodels.Representation
 	CollectionHref string
+	EditHref       string
+	Notice         string
 }

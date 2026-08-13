@@ -47,5 +47,10 @@ func (h *Handler) Get(ctx *echo.Context) error {
 		)
 	}
 
-	return h.renderDetail(ctx, http.StatusOK, newRepresentation(&details.ChoreTemplate))
+	return h.renderDetail(
+		ctx,
+		http.StatusOK,
+		newRepresentation(&details.ChoreTemplate),
+		"",
+	)
 }

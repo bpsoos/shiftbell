@@ -10,6 +10,7 @@ type ChoreTemplateHandler interface {
 	Browse(*echo.Context) error
 	Create(*echo.Context) error
 	Get(*echo.Context) error
+	EditForm(*echo.Context) error
 	Edit(*echo.Context) error
 	Deactivate(*echo.Context) error
 }

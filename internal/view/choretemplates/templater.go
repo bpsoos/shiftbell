@@ -43,6 +43,13 @@ func (t *Templater) Detail(
 	return layouts.Frame("chore-templates", fullPage, detail(t, model))
 }
 
+func (t *Templater) EditForm(
+	model viewmodels.EditForm,
+	fullPage bool,
+) templ.Component {
+	return layouts.Frame("chore-templates", fullPage, editForm(model))
+}
+
 func (t *Templater) Error(
 	model viewmodels.Error,
 	fullPage bool,
@@ -63,4 +70,11 @@ func oneOffCreationHref(href string) string {
 		return href + "&recurrence=one-off"
 	}
 	return href + "?recurrence=one-off"
+}
+
+func formControlClass(className string, errorMessage string) string {
+	if errorMessage != "" {
+		className += " is-invalid"
+	}
+	return className
 }

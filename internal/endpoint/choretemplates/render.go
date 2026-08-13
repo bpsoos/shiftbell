@@ -2,6 +2,7 @@ package choretemplates
 
 import (
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	choretemplateviewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	"github.com/labstack/echo/v5"
 )
 
@@ -53,6 +54,7 @@ func (h *Handler) renderDetail(
 	ctx *echo.Context,
 	status int,
 	representation representation,
+	notice string,
 ) error {
 	switch hypermedia.Negotiate(ctx.Request()) {
 	case hypermedia.RepresentationJSON:
@@ -61,11 +63,19 @@ func (h *Handler) renderDetail(
 		return hypermedia.HTML(
 			ctx,
 			status,
-			h.view.Detail(detailViewModel(representation), fullPage(ctx)),
+			h.view.Detail(detailViewModel(representation, notice), fullPage(ctx)),
 		)
 	default:
 		return hypermedia.NotAcceptable(ctx)
 	}
+}
+
+func (h *Handler) renderEditForm(
+	ctx *echo.Context,
+	status int,
+	model choretemplateviewmodels.EditForm,
+) error {
+	return hypermedia.HTML(ctx, status, h.view.EditForm(model, fullPage(ctx)))
 }
 
 func (h *Handler) renderError(
@@ -93,4 +103,9 @@ func fullPage(ctx *echo.Context) bool {
 
 func supported(ctx *echo.Context) bool {
 	return hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationUnsupported
+}
+
+func acceptsHTMXHTML(ctx *echo.Context) bool {
+	return !fullPage(ctx) &&
+		hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML
 }

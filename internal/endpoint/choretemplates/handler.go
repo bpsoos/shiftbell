@@ -42,6 +42,7 @@ type View interface {
 	Collection(choretemplateviewmodels.Collection, bool) templ.Component
 	Picker(choretemplateviewmodels.Picker, bool) templ.Component
 	Detail(choretemplateviewmodels.Detail, bool) templ.Component
+	EditForm(choretemplateviewmodels.EditForm, bool) templ.Component
 	Error(choretemplateviewmodels.Error, bool) templ.Component
 }
 
