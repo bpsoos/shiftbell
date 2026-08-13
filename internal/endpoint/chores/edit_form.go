@@ -3,7 +3,6 @@ package chores
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
@@ -12,10 +11,10 @@ import (
 )
 
 func (h *Handler) editForm(ctx *echo.Context) error {
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreID(ctx)
+	if err != nil {
 		return h.renderError(ctx, http.StatusUnprocessableEntity, apiErrorResponse{
-			Error: "invalid chore id",
+			Error: err.Error(),
 			Links: api.Relations{{Rel: "collection", Href: choreCollectionHref}},
 		})
 	}
@@ -24,15 +23,8 @@ func (h *Handler) editForm(ctx *echo.Context) error {
 	if err != nil {
 		return h.renderEditLoadError(ctx, err)
 	}
-	if chore.Status == choremodels.ChoreStatusCompleted {
-		return h.renderNonEditableChoreError(
-			ctx,
-			chore,
-			"completed chore cannot be edited",
-		)
-	}
-	if actionsForChore(chore).Href("edit") == "" {
-		return h.renderNonEditableChoreError(ctx, chore, "chore cannot be edited")
+	if message := nonEditableMessage(chore); message != "" {
+		return h.renderNonEditableChoreError(ctx, chore, message)
 	}
 	return h.renderEditForm(ctx, http.StatusOK, editFormViewModel(chore))
 }

@@ -9,6 +9,8 @@ import (
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 )
 
+const choreCollectionHref = "/chores"
+
 type (
 	choreResponse           = choreapimodels.Response
 	choreRepresentation     = choreapimodels.Representation
@@ -32,18 +34,25 @@ func newChoreResponse(chore *choremodels.Chore) choreResponse {
 		Deadline:    chore.Deadline.Format(time.DateOnly),
 		CompletedOn: completedOn,
 		Links: api.Relations{
-			{Rel: "self", Href: fmt.Sprintf("/chores/%d", chore.Id)},
-			{Rel: "collection", Href: "/chores"},
+			{Rel: "self", Href: choreHref(chore.Id)},
+			{Rel: "collection", Href: choreCollectionHref},
 		},
 	}
 }
 
+func newChoreRepresentation(chore *choremodels.Chore) choreRepresentation {
+	return choreRepresentation{
+		Response: newChoreResponse(chore),
+		Actions:  actionsForChore(chore),
+	}
+}
+
 func createChoreNavigationAction() api.Relation {
-	return api.Relation{Rel: "create", Href: "/chores/new"}
+	return api.Relation{Rel: "create", Href: choreCollectionHref + "/new"}
 }
 
 func createChoreSubmissionAction() api.Relation {
-	return api.Relation{Rel: "create", Href: "/chores"}
+	return api.Relation{Rel: "create", Href: choreCollectionHref}
 }
 
 func activeOneOffActions(selfHref string) api.Relations {
@@ -69,7 +78,7 @@ func completedChoreActions(selfHref string) api.Relations {
 }
 
 func actionsForChore(chore *choremodels.Chore) api.Relations {
-	selfHref := fmt.Sprintf("/chores/%d", chore.Id)
+	selfHref := choreHref(chore.Id)
 	switch chore.Status {
 	case choremodels.ChoreStatusActive:
 		if chore.ScheduleId != nil {
@@ -81,4 +90,8 @@ func actionsForChore(chore *choremodels.Chore) api.Relations {
 	default:
 		return api.Relations{}
 	}
+}
+
+func choreHref(id int) string {
+	return fmt.Sprintf("%s/%d", choreCollectionHref, id)
 }

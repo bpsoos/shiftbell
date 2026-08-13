@@ -97,4 +97,31 @@ var _ = Describe("Confirm chore completion", func() {
 		).To(Equal("text/html; charset=UTF-8"))
 		Expect(response.Body.String()).To(Equal("dialog sentinel"))
 	})
+
+	It("rejects a completed chore", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		service.EXPECT().Get(ctx, 42).Return(&choremodels.ChoreDetails{
+			Id:     42,
+			Status: choremodels.ChoreStatusCompleted,
+		}, nil).Once()
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: service},
+		)
+		e := echo.New()
+		e.GET("/chores/:id/completion", handler.ConfirmCompletion)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores/42/completion",
+			nil,
+		)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("HX-Request", "true")
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+		Expect(response.Body.String()).To(BeEmpty())
+	})
 })

@@ -3,6 +3,7 @@ package chores
 import (
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
+	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 )
 
 type CollectionItem struct {
@@ -14,6 +15,8 @@ type Collection struct {
 	Items   []CollectionItem
 	Links   api.Relations
 	Actions api.Relations
+	Status  choremodels.ChoreStatus
+	Search  string
 	Notice  string
 }
 

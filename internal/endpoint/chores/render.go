@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
@@ -13,12 +14,14 @@ func (h *Handler) renderCollection(
 	ctx *echo.Context,
 	status int,
 	collection choreCollectionResponse,
+	selectedStatus choremodels.ChoreStatus,
+	search string,
 ) error {
 	switch hypermedia.Negotiate(ctx.Request()) {
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, status, collection)
 	case hypermedia.RepresentationHTML:
-		model := collectionViewModel(collection)
+		model := collectionViewModel(collection, selectedStatus, search)
 		model.Notice = consumeFlashCookie(ctx)
 		return hypermedia.HTML(
 			ctx,
@@ -202,7 +205,7 @@ func (h *Handler) renderCreated(
 	chore choreRepresentation,
 ) error {
 	if hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML {
-		return renderHTMLRedirect(ctx, "/chores")
+		return renderHTMLRedirect(ctx, choreCollectionHref)
 	}
 	ctx.Response().Header().Set(
 		echo.HeaderLocation,

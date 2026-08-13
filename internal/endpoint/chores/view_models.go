@@ -9,11 +9,14 @@ import (
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 )
 
-const choreCollectionHref = "/chores"
-
 func collectionViewModel(
 	collection choreCollectionResponse,
+	status choremodels.ChoreStatus,
+	search string,
 ) choreviewmodels.Collection {
+	if status == "" {
+		status = choremodels.ChoreStatusActive
+	}
 	items := make([]choreviewmodels.CollectionItem, len(collection.Items))
 	for i, chore := range collection.Items {
 		items[i] = choreviewmodels.CollectionItem{
@@ -25,6 +28,8 @@ func collectionViewModel(
 		Items:   items,
 		Links:   collection.Links,
 		Actions: collection.Actions,
+		Status:  status,
+		Search:  search,
 	}
 }
 
@@ -197,6 +202,9 @@ func linkHref(links api.Relations, name string) string {
 }
 
 func completionHref(chore choreResponse) string {
+	if chore.Status != choremodels.ChoreStatusActive {
+		return ""
+	}
 	selfHref := linkHref(chore.Links, "self")
 	if selfHref == "" {
 		return ""

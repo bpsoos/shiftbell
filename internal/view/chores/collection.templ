@@ -4,6 +4,7 @@ import (
 	"time"
 
 	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
+	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
 )
@@ -66,7 +67,13 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 			}
 		</style>
 		<header data-page-header>
-			<h1 id="chores-heading">Chores</h1>
+			<h1 id="chores-heading">
+				if model.Status == choremodels.ChoreStatusCompleted {
+					Completed chores
+				} else {
+					Chores
+				}
+			</h1>
 		if href := model.Actions.Href("create"); href != "" {
 				<a
 					class="btn btn-primary"
@@ -92,20 +99,31 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 			@collectionEmptyState(model)
 		} else {
 			<div data-chore-groups>
-				for _, group := range t.deadlineGroups(model.Items, today) {
-					<section data-chore-group data-group-state={ group.State } aria-labelledby={ "chore-group-" + group.State }>
-						<h2 id={ "chore-group-" + group.State } data-group-heading>
-							if group.State == "overdue" {
-								@viewicons.WarningCircle()
-							}
-							{ group.Label }
-						</h2>
+				if model.Status == choremodels.ChoreStatusCompleted {
+					<section data-chore-group data-group-state="completed" aria-labelledby="chore-group-completed">
+						<h2 id="chore-group-completed" data-group-heading>Completed</h2>
 						<ul data-chore-list>
-							for _, chore := range group.Chores {
+							for _, chore := range model.Items {
 								@choreSummary(t, chore, today)
 							}
 						</ul>
 					</section>
+				} else {
+					for _, group := range t.deadlineGroups(model.Items, today) {
+						<section data-chore-group data-group-state={ group.State } aria-labelledby={ "chore-group-" + group.State }>
+							<h2 id={ "chore-group-" + group.State } data-group-heading>
+								if group.State == "overdue" {
+									@viewicons.WarningCircle()
+								}
+								{ group.Label }
+							</h2>
+							<ul data-chore-list>
+								for _, chore := range group.Chores {
+									@choreSummary(t, chore, today)
+								}
+							</ul>
+						</section>
+					}
 				}
 			</div>
 		}
@@ -156,13 +174,17 @@ templ choreSummaryContent(t *Templater, chore choreapimodels.Response, today tim
 			<span data-chore-description>{ chore.Description }</span>
 		}
 	</span>
-	<time
-		data-deadline
-		data-deadline-state={ t.deadlineState(chore.Deadline, today) }
-		datetime={ chore.Deadline }
-		aria-label={ t.deadlineAccessibleLabel(chore.Deadline) }
-		title={ t.deadlineAccessibleLabel(chore.Deadline) }
-	>{ t.relativeDeadline(chore.Deadline, today) }</time>
+	if chore.Status == choremodels.ChoreStatusCompleted && chore.CompletedOn != nil {
+		<time data-deadline datetime={ *chore.CompletedOn }>{ "Completed " + *chore.CompletedOn }</time>
+	} else {
+		<time
+			data-deadline
+			data-deadline-state={ t.deadlineState(chore.Deadline, today) }
+			datetime={ chore.Deadline }
+			aria-label={ t.deadlineAccessibleLabel(chore.Deadline) }
+			title={ t.deadlineAccessibleLabel(chore.Deadline) }
+		>{ t.relativeDeadline(chore.Deadline, today) }</time>
+	}
 	<span data-row-caret>@viewicons.CaretRight()</span>
 }
 
@@ -170,8 +192,16 @@ templ collectionEmptyState(model choreviewmodels.Collection) {
 	<div data-empty>
 		@viewicons.CheckCircle()
 		<div>
-			<h2>No chores due</h2>
-			<p>Create a chore to get started.</p>
+			if model.Search != "" {
+				<h2>No matching chores</h2>
+				<p>Try a different search.</p>
+			} else if model.Status == choremodels.ChoreStatusCompleted {
+				<h2>No completed chores</h2>
+				<p>Completed chores will appear here.</p>
+			} else {
+				<h2>No chores due</h2>
+				<p>Create a chore to get started.</p>
+			}
 		</div>
 	</div>
 }

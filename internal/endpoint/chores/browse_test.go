@@ -18,6 +18,56 @@ import (
 )
 
 var _ = Describe("Browse chores", func() {
+	It("rejects a non-numeric offset", func(ctx SpecContext) {
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},
+		)
+		e := echo.New()
+		e.GET("/chores", handler.GetBatch)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores?offset=invalid",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+		Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"error": "invalid offset",
+			"_links": [],
+			"_actions": []
+		}`))
+	})
+
+	It("rejects a non-numeric limit", func(ctx SpecContext) {
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},
+		)
+		e := echo.New()
+		e.GET("/chores", handler.GetBatch)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores?limit=invalid",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+		Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"error": "invalid limit",
+			"_links": [],
+			"_actions": []
+		}`))
+	})
+
 	It("passes filters and pagination to the service", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
@@ -51,7 +101,6 @@ var _ = Describe("Browse chores", func() {
 			deadline := time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC)
 			service := NewMockService(GinkgoT())
 			service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
-				Status: choremodels.ChoreStatusActive,
 				Offset: 0,
 				Limit:  20,
 			}).Return(&choremodels.ChorePage{
@@ -100,18 +149,19 @@ var _ = Describe("Browse chores", func() {
 	)
 
 	It(
-		"ignores search and status filters in the HTML collection",
+		"passes search and status filters to the HTML collection",
 		func(ctx SpecContext) {
 			deadline := time.Date(2026, time.August, 15, 0, 0, 0, 0, time.UTC)
 			service := NewMockService(GinkgoT())
 			service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
-				Status: choremodels.ChoreStatusActive,
+				Status: choremodels.ChoreStatusCompleted,
+				Search: "Kitchen",
 				Offset: 4,
 				Limit:  7,
 			}).Return(&choremodels.ChorePage{
 				Chores: []choremodels.Chore{{
 					Id:          42,
-					Status:      choremodels.ChoreStatusActive,
+					Status:      choremodels.ChoreStatusCompleted,
 					Name:        "Kitchen",
 					Description: "Wash and fold",
 					Deadline:    deadline,
@@ -122,7 +172,7 @@ var _ = Describe("Browse chores", func() {
 				Items: []choreviewmodels.CollectionItem{{
 					Chore: choreapimodels.Response{
 						Id:          42,
-						Status:      choremodels.ChoreStatusActive,
+						Status:      choremodels.ChoreStatusCompleted,
 						Name:        "Kitchen",
 						Description: "Wash and fold",
 						Deadline:    "2026-08-15",
@@ -131,15 +181,22 @@ var _ = Describe("Browse chores", func() {
 							{Rel: "collection", Href: "/chores"},
 						},
 					},
-					CompleteHref: "/chores/42/completion",
 				}},
 				Links: api.Relations{
-					{Rel: "self", Href: "/chores?limit=7&offset=4"},
-					{Rel: "previous", Href: "/chores?limit=7&offset=0"},
+					{
+						Rel:  "self",
+						Href: "/chores?status=completed&search=Kitchen&offset=4&limit=7",
+					},
+					{
+						Rel:  "previous",
+						Href: "/chores?limit=7&offset=0&search=Kitchen&status=completed",
+					},
 				},
 				Actions: api.Relations{
 					{Rel: "create", Href: "/chores/new"},
 				},
+				Status: choremodels.ChoreStatusCompleted,
+				Search: "Kitchen",
 			}, false).Return(templ.Raw("collection sentinel")).Once()
 			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
 				Service: service,
@@ -167,7 +224,6 @@ var _ = Describe("Browse chores", func() {
 	It("consumes the chore-and-template success flash", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
-			Status: choremodels.ChoreStatusActive,
 			Offset: 0,
 			Limit:  20,
 		}).Return(&choremodels.ChorePage{}, nil).Once()
@@ -178,6 +234,7 @@ var _ = Describe("Browse chores", func() {
 			Actions: api.Relations{
 				{Rel: "create", Href: "/chores/new"},
 			},
+			Status: choremodels.ChoreStatusActive,
 			Notice: "Chore added and template saved.",
 		}, true).Return(templ.Raw("collection sentinel")).Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
@@ -207,7 +264,6 @@ var _ = Describe("Browse chores", func() {
 	It("consumes the chore completion success flash", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
-			Status: choremodels.ChoreStatusActive,
 			Offset: 0,
 			Limit:  20,
 		}).Return(&choremodels.ChorePage{}, nil).Once()
@@ -218,6 +274,7 @@ var _ = Describe("Browse chores", func() {
 			Actions: api.Relations{
 				{Rel: "create", Href: "/chores/new"},
 			},
+			Status: choremodels.ChoreStatusActive,
 			Notice: "Chore completed.",
 		}, true).Return(templ.Raw("collection sentinel")).Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
@@ -247,7 +304,6 @@ var _ = Describe("Browse chores", func() {
 	It("consumes the chore deletion success flash", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
-			Status: choremodels.ChoreStatusActive,
 			Offset: 0,
 			Limit:  20,
 		}).Return(&choremodels.ChorePage{}, nil).Once()
@@ -258,6 +314,7 @@ var _ = Describe("Browse chores", func() {
 			Actions: api.Relations{
 				{Rel: "create", Href: "/chores/new"},
 			},
+			Status: choremodels.ChoreStatusActive,
 			Notice: "Chore deleted.",
 		}, true).Return(templ.Raw("collection sentinel")).Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{

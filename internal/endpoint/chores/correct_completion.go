@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
@@ -18,12 +17,12 @@ func (h *Handler) CorrectCompletion(ctx *echo.Context) error {
 	if !hypermedia.Accepts(ctx.Request()) {
 		return hypermedia.NotAcceptable(ctx)
 	}
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreID(ctx)
+	if err != nil {
 		return hypermedia.JSON(
 			ctx,
 			http.StatusUnprocessableEntity,
-			apiErrorResponse{Error: "invalid chore id"},
+			apiErrorResponse{Error: err.Error()},
 		)
 	}
 	var request completeChoreRequest
@@ -47,28 +46,7 @@ func (h *Handler) CorrectCompletion(ctx *echo.Context) error {
 		&choremodels.CorrectCompletionParams{Id: id, CompletedOn: completedOn},
 	)
 	if err != nil {
-		if errors.Is(err, validationerrors.ErrInvalidCompletionDate) {
-			return hypermedia.JSON(
-				ctx,
-				http.StatusUnprocessableEntity,
-				apiErrorResponse{
-					Error: validationerrors.ErrInvalidCompletionDate.Error(),
-				},
-			)
-		}
-		if errors.Is(err, choremodels.ErrNotFound) {
-			return hypermedia.JSON(
-				ctx,
-				http.StatusNotFound,
-				apiErrorResponse{Error: choremodels.ErrNotFound.Error()},
-			)
-		}
-		logging.Default().Error("correct chore completion", "err", err)
-		return hypermedia.JSON(
-			ctx,
-			http.StatusInternalServerError,
-			apiErrorResponse{Error: "something went wrong"},
-		)
+		return renderCorrectionError(ctx, err)
 	}
 	if corrected == nil {
 		logging.Default().Error("correct chore completion returned no chore")
@@ -78,9 +56,28 @@ func (h *Handler) CorrectCompletion(ctx *echo.Context) error {
 			apiErrorResponse{Error: "something went wrong"},
 		)
 	}
-	response := newChoreResponse(corrected)
-	return hypermedia.JSON(ctx, http.StatusOK, choreRepresentation{
-		Response: response,
-		Actions:  actionsForChore(corrected),
-	})
+	return hypermedia.JSON(ctx, http.StatusOK, newChoreRepresentation(corrected))
+}
+
+func renderCorrectionError(ctx *echo.Context, err error) error {
+	if errors.Is(err, validationerrors.ErrInvalidCompletionDate) {
+		return hypermedia.JSON(
+			ctx,
+			http.StatusUnprocessableEntity,
+			apiErrorResponse{Error: validationerrors.ErrInvalidCompletionDate.Error()},
+		)
+	}
+	if errors.Is(err, choremodels.ErrNotFound) {
+		return hypermedia.JSON(
+			ctx,
+			http.StatusNotFound,
+			apiErrorResponse{Error: choremodels.ErrNotFound.Error()},
+		)
+	}
+	logging.Default().Error("correct chore completion", "err", err)
+	return hypermedia.JSON(
+		ctx,
+		http.StatusInternalServerError,
+		apiErrorResponse{Error: "something went wrong"},
+	)
 }

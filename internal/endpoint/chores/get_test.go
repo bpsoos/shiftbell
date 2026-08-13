@@ -19,6 +19,35 @@ import (
 )
 
 var _ = Describe("Get chore", func() {
+	It("rejects a non-numeric chore id", func(ctx SpecContext) {
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},
+		)
+		e := echo.New()
+		e.GET("/chores/:id", handler.Get)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores/invalid",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(struct {
+			Status int
+			Body   string
+		}{response.Code, response.Body.String()}).To(Equal(struct {
+			Status int
+			Body   string
+		}{
+			http.StatusUnprocessableEntity,
+			"{\"error\":\"invalid chore id\",\"_links\":[],\"_actions\":[]}\n",
+		}))
+	})
+
 	It("returns recovery controls when the chore is missing", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Get(ctx, 42).Return(

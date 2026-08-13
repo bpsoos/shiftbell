@@ -3,7 +3,6 @@ package chores
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -23,12 +22,12 @@ func (h *Handler) Delete(ctx *echo.Context) error {
 }
 
 func (h *Handler) deleteVendorJSON(ctx *echo.Context) error {
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreID(ctx)
+	if err != nil {
 		return hypermedia.JSON(
 			ctx,
 			http.StatusUnprocessableEntity,
-			apiErrorResponse{Error: "invalid chore id"},
+			apiErrorResponse{Error: err.Error()},
 		)
 	}
 	if err := h.service.Delete(ctx.Request().Context(), id); err != nil {
@@ -46,8 +45,8 @@ func (h *Handler) deleteVendorJSON(ctx *echo.Context) error {
 }
 
 func (h *Handler) deleteHTMX(ctx *echo.Context) error {
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreID(ctx)
+	if err != nil {
 		return hypermedia.NoContent(ctx, http.StatusUnprocessableEntity)
 	}
 	if err := h.service.Delete(ctx.Request().Context(), id); err != nil {

@@ -13,6 +13,33 @@ import (
 )
 
 var _ = Describe("Start chore creation", func() {
+	It("rejects a non-numeric template id", func(ctx SpecContext) {
+		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{})
+		e := echo.New()
+		e.GET("/chores/new", handler.New)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores/new?template_id=invalid",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(struct {
+			Status int
+			Body   string
+		}{response.Code, response.Body.String()}).To(Equal(struct {
+			Status int
+			Body   string
+		}{
+			http.StatusUnprocessableEntity,
+			"{\"error\":\"invalid chore template id\",\"_links\":[],\"_actions\":[]}\n",
+		}))
+	})
+
 	It("offers manual and template sources", func(ctx SpecContext) {
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{})
 		e := echo.New()

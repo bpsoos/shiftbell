@@ -3,7 +3,6 @@ package chores
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -13,8 +12,8 @@ import (
 )
 
 func (h *Handler) confirmDeletion(ctx *echo.Context) error {
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreID(ctx)
+	if err != nil {
 		return hypermedia.NoContent(ctx, http.StatusUnprocessableEntity)
 	}
 	chore, err := h.service.Get(ctx.Request().Context(), id)

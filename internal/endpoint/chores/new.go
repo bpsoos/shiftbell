@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
@@ -19,21 +18,49 @@ type (
 	choreCreationResponse = choreapimodels.CreationResponse
 )
 
-func (h *Handler) newChore(ctx *echo.Context) error {
-	if templateId := ctx.QueryParamOr("template_id", ""); templateId != "" {
-		return h.newTemplateBasedChore(ctx, templateId)
-	}
-	return h.newManualChore(ctx)
+type newChoreQuery struct {
+	TemplateID       int
+	TemplateSelected bool
+	Source           string
+	Recurrence       string
 }
 
-func (h *Handler) newManualChore(ctx *echo.Context) error {
-	if ctx.QueryParamOr("source", "") == "manual" &&
-		ctx.QueryParamOr("recurrence", "") == "scheduled" {
+func (h *Handler) newChore(ctx *echo.Context) error {
+	query, err := parseNewChoreQuery(ctx)
+	if err != nil {
+		return h.renderError(
+			ctx,
+			http.StatusUnprocessableEntity,
+			apiErrorResponse{Error: err.Error()},
+		)
+	}
+	if query.TemplateSelected {
+		return h.newTemplateBasedChore(ctx, query)
+	}
+	return h.newManualChore(ctx, query)
+}
+
+func parseNewChoreQuery(ctx *echo.Context) (newChoreQuery, error) {
+	query := newChoreQuery{
+		TemplateSelected: ctx.QueryParam("template_id") != "",
+	}
+	err := echo.QueryParamsBinder(ctx).
+		Int("template_id", &query.TemplateID).
+		String("source", &query.Source).
+		String("recurrence", &query.Recurrence).
+		BindError()
+	if err != nil || query.TemplateSelected && query.TemplateID <= 0 {
+		return newChoreQuery{}, errInvalidChoreTemplateID
+	}
+	return query, nil
+}
+
+func (h *Handler) newManualChore(ctx *echo.Context, query newChoreQuery) error {
+	if query.Source == "manual" && query.Recurrence == "scheduled" {
 		return h.scheduledRecurrenceNotImplemented(ctx)
 	}
 
-	if ctx.QueryParamOr("source", "") == "manual" &&
-		ctx.QueryParamOr("recurrence", "") == "one-off" {
+	if query.Source == "manual" && query.Recurrence == "one-off" {
 		action := createChoreSubmissionAction()
 		return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
 			Step:    "form",
@@ -41,8 +68,7 @@ func (h *Handler) newManualChore(ctx *echo.Context) error {
 		})
 	}
 
-	if ctx.QueryParamOr("source", "") == "manual" &&
-		ctx.QueryParamOr("recurrence", "") == "" {
+	if query.Source == "manual" && query.Recurrence == "" {
 		return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
 			Step: "recurrence",
 			Choices: []choreCreationChoice{
@@ -75,30 +101,16 @@ func (h *Handler) scheduledRecurrenceNotImplemented(ctx *echo.Context) error {
 	)
 }
 
-func (h *Handler) newTemplateBasedChore(ctx *echo.Context, rawTemplateId string) error {
-	templateId, err := strconv.Atoi(rawTemplateId)
-	if err != nil || templateId <= 0 {
-		return h.renderError(
-			ctx,
-			http.StatusUnprocessableEntity,
-			apiErrorResponse{Error: "invalid chore template id"},
-		)
-	}
-	details, err := h.choreTemplateService.Get(ctx.Request().Context(), templateId)
+func (h *Handler) newTemplateBasedChore(
+	ctx *echo.Context,
+	query newChoreQuery,
+) error {
+	details, err := h.choreTemplateService.Get(
+		ctx.Request().Context(),
+		query.TemplateID,
+	)
 	if err != nil {
-		if errors.Is(err, choretemplatemodels.ErrNotFound) {
-			return h.renderError(
-				ctx,
-				http.StatusNotFound,
-				apiErrorResponse{Error: choretemplatemodels.ErrNotFound.Error()},
-			)
-		}
-		logging.Default().Error("get chore template for chore creation", "err", err)
-		return h.renderError(
-			ctx,
-			http.StatusInternalServerError,
-			apiErrorResponse{Error: "something went wrong"},
-		)
+		return h.renderNewChoreTemplateError(ctx, err)
 	}
 	template := details.ChoreTemplate
 	if template.DeactivatedAt != nil {
@@ -108,17 +120,35 @@ func (h *Handler) newTemplateBasedChore(ctx *echo.Context, rawTemplateId string)
 			apiErrorResponse{Error: choretemplatemodels.ErrInactive.Error()},
 		)
 	}
-	recurrence := ctx.QueryParamOr("recurrence", "")
-	if recurrence == "scheduled" {
+	if query.Recurrence == "scheduled" {
 		return h.scheduledRecurrenceNotImplemented(ctx)
 	}
-	if recurrence == "" {
+	if query.Recurrence == "" {
 		return h.templateRecurrenceChoices(ctx, &template)
 	}
-	if recurrence == "one-off" {
+	if query.Recurrence == "one-off" {
 		return h.templateOneOffForm(ctx, &template)
 	}
 	return h.templateRecurrenceChoices(ctx, &template)
+}
+
+func (h *Handler) renderNewChoreTemplateError(
+	ctx *echo.Context,
+	err error,
+) error {
+	if errors.Is(err, choretemplatemodels.ErrNotFound) {
+		return h.renderError(
+			ctx,
+			http.StatusNotFound,
+			apiErrorResponse{Error: choretemplatemodels.ErrNotFound.Error()},
+		)
+	}
+	logging.Default().Error("get chore template for chore creation", "err", err)
+	return h.renderError(
+		ctx,
+		http.StatusInternalServerError,
+		apiErrorResponse{Error: "something went wrong"},
+	)
 }
 
 func (h *Handler) templateRecurrenceChoices(

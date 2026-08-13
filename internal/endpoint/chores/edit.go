@@ -24,12 +24,12 @@ type editChoreRequest struct {
 }
 
 func (h *Handler) editVendorJSON(ctx *echo.Context) error {
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreID(ctx)
+	if err != nil {
 		return hypermedia.JSON(
 			ctx,
 			http.StatusUnprocessableEntity,
-			apiErrorResponse{Error: "invalid chore id"},
+			apiErrorResponse{Error: err.Error()},
 		)
 	}
 	var request editChoreRequest
@@ -50,115 +50,149 @@ func (h *Handler) editVendorJSON(ctx *echo.Context) error {
 	}
 	existing, err := h.service.Get(ctx.Request().Context(), id)
 	if err != nil {
-		return h.editChoreError(ctx, err)
+		return h.renderVendorJSONEditError(ctx, err)
 	}
-	edited, err := h.service.Edit(ctx.Request().Context(), &choremodels.EditChoreParams{
-		Id:                      id,
-		ScheduleId:              existing.ScheduleId,
-		Name:                    request.Name,
-		Description:             request.Description,
-		Deadline:                deadline,
-		AlsoUpdateChoreTemplate: request.AlsoUpdateChoreTemplate,
-	})
+	edited, err := h.service.Edit(
+		ctx.Request().Context(),
+		request.params(id, existing.ScheduleId, deadline),
+	)
 	if err != nil {
-		return h.editChoreError(ctx, err)
+		return h.renderVendorJSONEditError(ctx, err)
 	}
-	response := newChoreResponse(edited)
-	return hypermedia.JSON(ctx, http.StatusOK, choreRepresentation{
-		Response: response,
-		Actions:  actionsForChore(edited),
-	})
+	return hypermedia.JSON(ctx, http.StatusOK, newChoreRepresentation(edited))
 }
 
 func (h *Handler) editHTMX(ctx *echo.Context) error {
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreID(ctx)
+	if err != nil {
 		return h.renderError(ctx, http.StatusUnprocessableEntity, apiErrorResponse{
-			Error: "invalid chore id",
+			Error: err.Error(),
 			Links: api.Relations{{Rel: "collection", Href: choreCollectionHref}},
 		})
 	}
 
 	var request editChoreRequest
 	if err := binding.Bind(ctx, &request); err != nil {
-		if errors.Is(err, binding.ErrUnsupportedMediaType) {
-			return h.renderError(ctx, http.StatusUnsupportedMediaType, apiErrorResponse{
-				Error: binding.ErrUnsupportedMediaType.Error(),
-			})
-		}
-		return h.renderError(ctx, http.StatusBadRequest, apiErrorResponse{
-			Error: "invalid request body",
-		})
+		return h.renderEditBindingError(ctx, err)
 	}
 
 	existing, err := h.service.Get(ctx.Request().Context(), id)
 	if err != nil {
 		return h.renderEditLoadError(ctx, err)
 	}
-	if existing.Status == choremodels.ChoreStatusCompleted {
-		return h.renderNonEditableChoreError(
-			ctx,
-			existing,
-			"completed chore cannot be edited",
-		)
-	}
-	if actionsForChore(existing).Href("edit") == "" {
-		return h.renderNonEditableChoreError(ctx, existing, "chore cannot be edited")
+	if message := nonEditableMessage(existing); message != "" {
+		return h.renderNonEditableChoreError(ctx, existing, message)
 	}
 
-	deadline := existing.Deadline
-	if existing.ScheduleId == nil {
-		deadline, err = time.Parse(time.DateOnly, request.Deadline)
-		if err != nil {
-			return h.renderEditValidationError(
-				ctx,
-				existing,
-				request,
-				validationerrors.ErrInvalidDeadline,
-			)
-		}
-	} else {
-		request.Deadline = existing.Deadline.Format(time.DateOnly)
+	deadline, err := editDeadline(existing, &request)
+	if err != nil {
+		return h.renderEditValidationError(ctx, existing, request, err)
 	}
 
-	edited, err := h.service.Edit(ctx.Request().Context(), &choremodels.EditChoreParams{
+	edited, err := h.service.Edit(
+		ctx.Request().Context(),
+		request.params(id, existing.ScheduleId, deadline),
+	)
+	if err != nil {
+		return h.renderHTMXEditError(ctx, existing, request, err)
+	}
+	if edited == nil {
+		return h.renderMissingEditResult(ctx, existing)
+	}
+	return h.renderEditedChore(ctx, edited)
+}
+
+func (request editChoreRequest) params(
+	id int,
+	scheduleID *int,
+	deadline time.Time,
+) *choremodels.EditChoreParams {
+	return &choremodels.EditChoreParams{
 		Id:                      id,
-		ScheduleId:              existing.ScheduleId,
+		ScheduleId:              scheduleID,
 		Name:                    request.Name,
 		Description:             request.Description,
 		Deadline:                deadline,
 		AlsoUpdateChoreTemplate: request.AlsoUpdateChoreTemplate,
-	})
-	if err != nil {
-		if isEditChoreValidationError(err) {
-			return h.renderEditValidationError(ctx, existing, request, err)
-		}
-		if errors.Is(err, choremodels.ErrNotFound) {
-			return h.renderEditLoadError(ctx, err)
-		}
-		logging.Default().Error("edit chore", "err", err)
-		return h.renderError(ctx, http.StatusInternalServerError, apiErrorResponse{
-			Error: "something went wrong",
-			Links: newChoreResponse(existing).Links,
-		})
 	}
-	if edited == nil {
-		logging.Default().Error("edit chore returned no chore")
-		return h.renderError(ctx, http.StatusInternalServerError, apiErrorResponse{
-			Error: "something went wrong",
-			Links: newChoreResponse(existing).Links,
-		})
-	}
+}
 
+func (h *Handler) renderEditBindingError(ctx *echo.Context, err error) error {
+	if errors.Is(err, binding.ErrUnsupportedMediaType) {
+		return h.renderError(ctx, http.StatusUnsupportedMediaType, apiErrorResponse{
+			Error: binding.ErrUnsupportedMediaType.Error(),
+		})
+	}
+	return h.renderError(ctx, http.StatusBadRequest, apiErrorResponse{
+		Error: "invalid request body",
+	})
+}
+
+func nonEditableMessage(chore *choremodels.ChoreDetails) string {
+	if chore.Status == choremodels.ChoreStatusCompleted {
+		return "completed chore cannot be edited"
+	}
+	if actionsForChore(chore).Href("edit") == "" {
+		return "chore cannot be edited"
+	}
+	return ""
+}
+
+func editDeadline(
+	existing *choremodels.ChoreDetails,
+	request *editChoreRequest,
+) (time.Time, error) {
+	if existing.ScheduleId != nil {
+		request.Deadline = existing.Deadline.Format(time.DateOnly)
+		return existing.Deadline, nil
+	}
+	deadline, err := time.Parse(time.DateOnly, request.Deadline)
+	if err != nil {
+		return time.Time{}, validationerrors.ErrInvalidDeadline
+	}
+	return deadline, nil
+}
+
+func (h *Handler) renderHTMXEditError(
+	ctx *echo.Context,
+	existing *choremodels.ChoreDetails,
+	request editChoreRequest,
+	err error,
+) error {
+	if isEditChoreValidationError(err) {
+		return h.renderEditValidationError(ctx, existing, request, err)
+	}
+	if errors.Is(err, choremodels.ErrNotFound) {
+		return h.renderEditLoadError(ctx, err)
+	}
+	logging.Default().Error("edit chore", "err", err)
+	return h.renderError(ctx, http.StatusInternalServerError, apiErrorResponse{
+		Error: "something went wrong",
+		Links: newChoreResponse(existing).Links,
+	})
+}
+
+func (h *Handler) renderMissingEditResult(
+	ctx *echo.Context,
+	existing *choremodels.ChoreDetails,
+) error {
+	logging.Default().Error("edit chore returned no chore")
+	return h.renderError(ctx, http.StatusInternalServerError, apiErrorResponse{
+		Error: "something went wrong",
+		Links: newChoreResponse(existing).Links,
+	})
+}
+
+func (h *Handler) renderEditedChore(
+	ctx *echo.Context,
+	edited *choremodels.ChoreDetails,
+) error {
 	response := newChoreResponse(edited)
 	ctx.Response().Header().Set("HX-Replace-Url", response.Links.Href("self"))
 	return h.renderDetail(
 		ctx,
 		http.StatusOK,
-		choreRepresentation{
-			Response: response,
-			Actions:  actionsForChore(edited),
-		},
+		newChoreRepresentation(edited),
 		"Chore updated.",
 	)
 }
@@ -223,7 +257,7 @@ func (h *Handler) renderNonEditableChoreError(
 	})
 }
 
-func (h *Handler) editChoreError(
+func (h *Handler) renderVendorJSONEditError(
 	ctx *echo.Context,
 	err error,
 ) error {

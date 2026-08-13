@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
@@ -14,88 +13,140 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
+const (
+	defaultBrowseOffset = 0
+	defaultBrowseLimit  = 20
+)
+
+type browseQuery struct {
+	Status string
+	Search string
+	Offset int
+	Limit  int
+}
+
+type browseRequest struct {
+	params      choremodels.BrowseChoresParams
+	responseURL url.URL
+}
+
 func (h *Handler) browse(ctx *echo.Context) error {
-	offset, err := strconv.Atoi(ctx.QueryParamOr("offset", "0"))
+	request, err := parseBrowseRequest(ctx)
 	if err != nil {
 		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
-			apiErrorResponse{Error: "invalid offset"},
-		)
-	}
-	limit, err := strconv.Atoi(ctx.QueryParamOr("limit", "20"))
-	if err != nil {
-		return h.renderError(
-			ctx,
-			http.StatusUnprocessableEntity,
-			apiErrorResponse{Error: "invalid limit"},
+			apiErrorResponse{Error: err.Error()},
 		)
 	}
 
-	selectedStatus := choremodels.ChoreStatusActive
-	search := ""
-	collectionURL := *ctx.Request().URL
-	if hypermedia.Accepts(ctx.Request()) {
-		selectedStatus = choremodels.ChoreStatus(ctx.QueryParamOr("status", "active"))
-		search = ctx.QueryParamOr("search", "")
-	} else {
-		query := collectionURL.Query()
-		query.Del("status")
-		query.Del("search")
-		collectionURL.RawQuery = query.Encode()
-	}
 	page, err := h.service.Browse(
 		ctx.Request().Context(),
-		&choremodels.BrowseChoresParams{
-			Status: selectedStatus,
-			Search: search,
-			Offset: offset,
-			Limit:  limit,
-		},
+		&request.params,
 	)
 	if err != nil {
-		if isBrowseValidationError(err) {
-			return h.renderError(
-				ctx,
-				http.StatusUnprocessableEntity,
-				apiErrorResponse{Error: err.Error()},
-			)
-		}
-		logging.Default().Error("browse chores", "err", err)
-		return h.renderError(
-			ctx,
-			http.StatusInternalServerError,
-			apiErrorResponse{Error: "something went wrong"},
-		)
+		return h.renderBrowseError(ctx, err)
 	}
 
+	return h.renderCollection(
+		ctx,
+		http.StatusOK,
+		newBrowseResponse(request, page),
+		request.params.Status,
+		request.params.Search,
+	)
+}
+
+func parseBrowseRequest(ctx *echo.Context) (browseRequest, error) {
+	query := browseQuery{Offset: defaultBrowseOffset, Limit: defaultBrowseLimit}
+	err := echo.QueryParamsBinder(ctx).
+		String("status", &query.Status).
+		String("search", &query.Search).
+		Int("offset", &query.Offset).
+		Int("limit", &query.Limit).
+		BindError()
+	if err != nil {
+		return browseRequest{}, browseQueryError(err)
+	}
+	return browseRequest{
+		params: choremodels.BrowseChoresParams{
+			Status: choremodels.ChoreStatus(query.Status),
+			Search: query.Search,
+			Offset: query.Offset,
+			Limit:  query.Limit,
+		},
+		responseURL: *ctx.Request().URL,
+	}, nil
+}
+
+func browseQueryError(err error) error {
+	var bindingError *echo.BindingError
+	if !errors.As(err, &bindingError) {
+		return err
+	}
+	switch bindingError.Field {
+	case "offset":
+		return validationerrors.ErrInvalidOffset
+	case "limit":
+		return validationerrors.ErrInvalidLimit
+	default:
+		return err
+	}
+}
+
+func (h *Handler) renderBrowseError(ctx *echo.Context, err error) error {
+	if isBrowseValidationError(err) {
+		return h.renderError(
+			ctx,
+			http.StatusUnprocessableEntity,
+			apiErrorResponse{Error: err.Error()},
+		)
+	}
+	logging.Default().Error("browse chores", "err", err)
+	return h.renderError(
+		ctx,
+		http.StatusInternalServerError,
+		apiErrorResponse{Error: "something went wrong"},
+	)
+}
+
+func newBrowseResponse(
+	request browseRequest,
+	page *choremodels.ChorePage,
+) choreCollectionResponse {
 	items := make([]choreResponse, len(page.Chores))
 	for i := range page.Chores {
 		items[i] = newChoreResponse(&page.Chores[i])
 	}
-
-	links := api.Relations{
-		{Rel: "self", Href: collectionURL.RequestURI()},
-	}
-	if page.More {
-		links = append(links, api.Relation{
-			Rel:  "next",
-			Href: chorePageHref(&collectionURL, offset+limit),
-		})
-	}
-	if offset > 0 {
-		links = append(links, api.Relation{
-			Rel:  "previous",
-			Href: chorePageHref(&collectionURL, max(0, offset-limit)),
-		})
-	}
-
-	return h.renderCollection(ctx, http.StatusOK, choreCollectionResponse{
+	return choreCollectionResponse{
 		Items:   items,
 		More:    page.More,
-		Links:   links,
+		Links:   browseLinks(request, page.More),
 		Actions: api.Relations{createChoreNavigationAction()},
-	})
+	}
+}
+
+func browseLinks(request browseRequest, more bool) api.Relations {
+	links := api.Relations{{Rel: "self", Href: request.responseURL.RequestURI()}}
+	if more {
+		links = append(links, api.Relation{
+			Rel: "next",
+			Href: chorePageHref(
+				&request.responseURL,
+				request.params.Offset+request.params.Limit,
+			),
+		})
+	}
+	if request.params.Offset > 0 {
+		links = append(links, api.Relation{
+			Rel: "previous",
+			Href: chorePageHref(
+				&request.responseURL,
+				max(0, request.params.Offset-request.params.Limit),
+			),
+		})
+	}
+	return links
 }
 
 func chorePageHref(requestURL *url.URL, offset int) string {

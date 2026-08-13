@@ -3,7 +3,6 @@ package chores
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -18,13 +17,16 @@ func (h *Handler) ConfirmCompletion(ctx *echo.Context) error {
 	if !acceptsHTMXHTML(ctx) {
 		return hypermedia.NotAcceptable(ctx)
 	}
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreID(ctx)
+	if err != nil {
 		return hypermedia.NoContent(ctx, http.StatusUnprocessableEntity)
 	}
 	chore, err := h.service.Get(ctx.Request().Context(), id)
 	if err != nil {
 		return renderCompletionLoadError(ctx, err)
+	}
+	if chore.Status != choremodels.ChoreStatusActive {
+		return hypermedia.NoContent(ctx, http.StatusUnprocessableEntity)
 	}
 	return h.renderCompletionDialog(
 		ctx,

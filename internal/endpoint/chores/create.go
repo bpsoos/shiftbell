@@ -30,136 +30,184 @@ type createChoreRequest struct {
 func (h *Handler) create(ctx *echo.Context) error {
 	var request createChoreRequest
 	if err := binding.Bind(ctx, &request); err != nil {
-		if errors.Is(err, binding.ErrUnsupportedMediaType) {
-			return h.renderError(
-				ctx,
-				http.StatusUnsupportedMediaType,
-				apiErrorResponse{Error: binding.ErrUnsupportedMediaType.Error()},
-			)
-		}
-		return h.renderCreateFormError(
-			ctx,
-			http.StatusBadRequest,
-			request,
-			formFeedback{Error: apiErrorResponse{Error: "invalid JSON"}},
-		)
+		return h.renderCreateBindingError(ctx, request, err)
 	}
+	request.SaveAsChoreTemplate = saveAsTemplateRequested(ctx, request)
+	if request.IntervalDays != nil {
+		return h.scheduledRecurrenceNotImplemented(ctx)
+	}
+	deadline, err := time.Parse(time.DateOnly, request.Deadline)
+	if err != nil {
+		return h.renderInvalidCreateDeadline(ctx, request)
+	}
+
+	result, err := h.service.Create(
+		ctx.Request().Context(),
+		request.params(deadline),
+	)
+	if err != nil {
+		return h.renderCreateError(ctx, request, err)
+	}
+	if result == nil || result.Chore == nil {
+		return h.renderMissingCreateResult(ctx)
+	}
+	setCreateSuccessFlash(ctx, request)
+
+	return h.renderCreated(ctx, newChoreRepresentation(result.Chore))
+}
+
+func saveAsTemplateRequested(
+	ctx *echo.Context,
+	request createChoreRequest,
+) bool {
 	requestMediaType, _, _ := mime.ParseMediaType(
 		ctx.Request().Header.Get(echo.HeaderContentType),
 	)
 	if hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML &&
 		requestMediaType != echo.MIMEApplicationForm &&
 		requestMediaType != echo.MIMEMultipartForm {
-		request.SaveAsChoreTemplate = false
+		return false
 	}
-	if request.IntervalDays != nil {
-		return h.scheduledRecurrenceNotImplemented(ctx)
+	return request.SaveAsChoreTemplate
+}
+
+func (request createChoreRequest) params(
+	deadline time.Time,
+) *choremodels.CreateChoreParams {
+	return &choremodels.CreateChoreParams{
+		Name:                request.Name,
+		Description:         request.Description,
+		Deadline:            deadline,
+		ChoreTemplateId:     request.ChoreTemplateId,
+		ScheduleName:        request.ScheduleName,
+		IntervalDays:        request.IntervalDays,
+		SaveAsChoreTemplate: request.SaveAsChoreTemplate,
 	}
-	deadline, err := time.Parse(time.DateOnly, request.Deadline)
-	if err != nil {
-		response := apiErrorResponse{Error: validationerrors.ErrInvalidDeadline.Error()}
+}
+
+func (h *Handler) renderCreateBindingError(
+	ctx *echo.Context,
+	request createChoreRequest,
+	err error,
+) error {
+	if errors.Is(err, binding.ErrUnsupportedMediaType) {
+		return h.renderError(
+			ctx,
+			http.StatusUnsupportedMediaType,
+			apiErrorResponse{Error: binding.ErrUnsupportedMediaType.Error()},
+		)
+	}
+	return h.renderCreateFormError(
+		ctx,
+		http.StatusBadRequest,
+		request,
+		formFeedback{Error: apiErrorResponse{Error: "invalid JSON"}},
+	)
+}
+
+func (h *Handler) renderInvalidCreateDeadline(
+	ctx *echo.Context,
+	request createChoreRequest,
+) error {
+	response := apiErrorResponse{Error: validationerrors.ErrInvalidDeadline.Error()}
+	return h.renderCreateFormError(
+		ctx,
+		http.StatusUnprocessableEntity,
+		request,
+		formFeedback{
+			Values:      createFormValues(request),
+			FieldErrors: map[string]string{"deadline": response.Error},
+			Error:       response,
+		},
+	)
+}
+
+func (h *Handler) renderCreateError(
+	ctx *echo.Context,
+	request createChoreRequest,
+	err error,
+) error {
+	if errors.Is(err, choretemplatemodels.ErrNameConflict) {
+		return h.renderCreateNameConflict(ctx, request)
+	}
+	if errors.Is(err, choretemplatemodels.ErrInactive) {
+		return h.renderInactiveTemplateCreateError(ctx, request)
+	}
+	if isInvalidChoreCreateRequest(err) {
+		response := apiErrorResponse{Error: err.Error()}
 		return h.renderCreateFormError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			request,
 			formFeedback{
 				Values:      createFormValues(request),
-				FieldErrors: map[string]string{"deadline": response.Error},
+				FieldErrors: createFieldErrors(err),
 				Error:       response,
 			},
 		)
 	}
+	logging.Default().Error("create chore", "err", err)
+	return h.renderError(
+		ctx,
+		http.StatusInternalServerError,
+		apiErrorResponse{Error: "something went wrong"},
+	)
+}
 
-	result, err := h.service.Create(
-		ctx.Request().Context(),
-		&choremodels.CreateChoreParams{
-			Name:                request.Name,
-			Description:         request.Description,
-			Deadline:            deadline,
-			ChoreTemplateId:     request.ChoreTemplateId,
-			ScheduleName:        request.ScheduleName,
-			IntervalDays:        request.IntervalDays,
-			SaveAsChoreTemplate: request.SaveAsChoreTemplate,
+func (h *Handler) renderCreateNameConflict(
+	ctx *echo.Context,
+	request createChoreRequest,
+) error {
+	response := apiErrorResponse{
+		Error:   choretemplatemodels.ErrNameConflict.Error(),
+		Links:   api.Relations{},
+		Actions: api.Relations{createChoreSubmissionAction()},
+	}
+	return h.renderCreateFormError(
+		ctx,
+		http.StatusConflict,
+		request,
+		formFeedback{
+			Values:      createFormValues(request),
+			FieldErrors: map[string]string{"name": response.Error},
+			Error:       response,
 		},
 	)
-	if err != nil {
-		if errors.Is(err, choretemplatemodels.ErrNameConflict) {
-			response := apiErrorResponse{
-				Error: choretemplatemodels.ErrNameConflict.Error(),
-				Links: api.Relations{},
-				Actions: api.Relations{
-					{Rel: "create", Href: "/chores"},
-				},
-			}
-			return h.renderCreateFormError(
-				ctx,
-				http.StatusConflict,
-				request,
-				formFeedback{
-					Values:      createFormValues(request),
-					FieldErrors: map[string]string{"name": response.Error},
-					Error:       response,
-				},
-			)
-		}
-		if errors.Is(err, choretemplatemodels.ErrInactive) {
-			response := apiErrorResponse{
-				Error: choretemplatemodels.ErrInactive.Error(),
-				Links: api.Relations{
-					{Rel: "collection", Href: "/chores"},
-				},
-				Actions: api.Relations{
-					{Rel: "create", Href: "/chores"},
-				},
-			}
-			return h.renderCreateFormError(
-				ctx,
-				http.StatusUnprocessableEntity,
-				request,
-				formFeedback{
-					Values: createFormValues(request),
-					Error:  response,
-				},
-			)
-		}
-		if isInvalidChoreCreateRequest(err) {
-			response := apiErrorResponse{Error: err.Error()}
-			return h.renderCreateFormError(
-				ctx,
-				http.StatusUnprocessableEntity,
-				request,
-				formFeedback{
-					Values:      createFormValues(request),
-					FieldErrors: createFieldErrors(err),
-					Error:       response,
-				},
-			)
-		}
-		logging.Default().Error("create chore", "err", err)
-		return h.renderError(
-			ctx,
-			http.StatusInternalServerError,
-			apiErrorResponse{Error: "something went wrong"},
-		)
+}
+
+func (h *Handler) renderInactiveTemplateCreateError(
+	ctx *echo.Context,
+	request createChoreRequest,
+) error {
+	response := apiErrorResponse{
+		Error: choretemplatemodels.ErrInactive.Error(),
+		Links: api.Relations{
+			{Rel: "collection", Href: choreCollectionHref},
+		},
+		Actions: api.Relations{createChoreSubmissionAction()},
 	}
-	if result == nil || result.Chore == nil {
-		logging.Default().Error("create chore returned no chore")
-		return h.renderError(
-			ctx,
-			http.StatusInternalServerError,
-			apiErrorResponse{Error: "something went wrong"},
-		)
-	}
+	return h.renderCreateFormError(
+		ctx,
+		http.StatusUnprocessableEntity,
+		request,
+		formFeedback{Values: createFormValues(request), Error: response},
+	)
+}
+
+func (h *Handler) renderMissingCreateResult(ctx *echo.Context) error {
+	logging.Default().Error("create chore returned no chore")
+	return h.renderError(
+		ctx,
+		http.StatusInternalServerError,
+		apiErrorResponse{Error: "something went wrong"},
+	)
+}
+
+func setCreateSuccessFlash(ctx *echo.Context, request createChoreRequest) {
 	if request.SaveAsChoreTemplate &&
 		hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML {
 		setFlashCookie(ctx, choreAndTemplateCreatedFlashValue)
 	}
-
-	response := newChoreResponse(result.Chore)
-	return h.renderCreated(ctx, choreRepresentation{
-		Response: response,
-		Actions:  actionsForChore(result.Chore),
-	})
 }
 
 func createFormValues(request createChoreRequest) map[string]string {
