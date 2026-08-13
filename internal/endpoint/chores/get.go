@@ -44,12 +44,13 @@ func (h *Handler) get(ctx *echo.Context) error {
 	}
 
 	response := newChoreResponse(chore)
-	actions := activeOneOffActions(response.Links.Href("self"))
-	if chore.Status == choremodels.ChoreStatusCompleted {
-		actions = completedOneOffActions(response.Links.Href("self"))
-	}
-	return h.renderDetail(ctx, http.StatusOK, choreRepresentation{
-		Response: response,
-		Actions:  actions,
-	})
+	return h.renderDetail(
+		ctx,
+		http.StatusOK,
+		choreRepresentation{
+			Response: response,
+			Actions:  actionsForChore(chore),
+		},
+		"",
+	)
 }

@@ -73,6 +73,13 @@ func (t *Templater) TemplateOneOffForm(
 	return layouts.Frame("chores", fullPage, templateOneOffFormContent(form))
 }
 
+func (t *Templater) EditForm(
+	form choreviewmodels.EditForm,
+	fullPage bool,
+) templ.Component {
+	return layouts.Frame("chores", fullPage, editFormContent(form))
+}
+
 func (t *Templater) Error(
 	model choreviewmodels.Error,
 	fullPage bool,

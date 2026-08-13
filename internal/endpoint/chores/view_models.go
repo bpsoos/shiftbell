@@ -2,8 +2,10 @@ package chores
 
 import (
 	"strconv"
+	"time"
 
 	api "github.com/bpsoos/shiftbell/internal/models/api"
+	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 )
 
@@ -37,10 +39,47 @@ func completionDialogViewModel(
 
 func detailViewModel(
 	chore choreRepresentation,
+	notice string,
 ) choreviewmodels.Detail {
 	return choreviewmodels.Detail{
 		Chore:    chore,
 		BackHref: linkHref(chore.Links, "collection"),
+		EditHref: editFormHref(chore),
+		Notice:   notice,
+	}
+}
+
+func editFormViewModel(chore *choremodels.ChoreDetails) choreviewmodels.EditForm {
+	response := newChoreResponse(chore)
+	return choreviewmodels.EditForm{
+		ActionHref: response.Links.Href("self"),
+		CancelHref: response.Links.Href("self"),
+		Scheduled:  chore.ScheduleId != nil,
+		Name: choreviewmodels.Field{
+			Value: chore.Name,
+		},
+		Description: choreviewmodels.Field{
+			Value: chore.Description,
+		},
+		Deadline: choreviewmodels.Field{
+			Value: chore.Deadline.Format(time.DateOnly),
+		},
+	}
+}
+
+func editFormErrorViewModel(
+	chore *choremodels.ChoreDetails,
+	feedback formFeedback,
+) choreviewmodels.EditForm {
+	return choreviewmodels.EditForm{
+		ActionHref:              feedback.Action.Href,
+		CancelHref:              feedback.CancelHref,
+		Scheduled:               chore.ScheduleId != nil,
+		Name:                    fieldViewModel(feedback, "name"),
+		Description:             fieldViewModel(feedback, "description"),
+		Deadline:                fieldViewModel(feedback, "deadline"),
+		AlsoUpdateChoreTemplate: feedback.Values["also_update_chore_template"] == "true",
+		SummaryError:            formFeedbackMessage(feedback),
 	}
 }
 
@@ -161,7 +200,14 @@ func completionHref(chore choreResponse) string {
 	if selfHref == "" {
 		return ""
 	}
-	return activeOneOffActions(selfHref).Href("complete")
+	return selfHref + "/completion"
+}
+
+func editFormHref(chore choreRepresentation) string {
+	if href := chore.Actions.Href("edit"); href != "" {
+		return href + "/edit"
+	}
+	return ""
 }
 
 func formFeedbackMessage(feedback formFeedback) string {

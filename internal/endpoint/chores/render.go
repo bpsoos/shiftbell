@@ -36,6 +36,7 @@ func (h *Handler) renderDetail(
 	ctx *echo.Context,
 	status int,
 	chore choreRepresentation,
+	notice string,
 ) error {
 	switch hypermedia.Negotiate(ctx.Request()) {
 	case hypermedia.RepresentationJSON:
@@ -44,11 +45,23 @@ func (h *Handler) renderDetail(
 		return hypermedia.HTML(
 			ctx,
 			status,
-			h.view.Detail(detailViewModel(chore), fullPage(ctx)),
+			h.view.Detail(detailViewModel(chore, notice), fullPage(ctx)),
 		)
 	default:
 		return hypermedia.NotAcceptable(ctx)
 	}
+}
+
+func (h *Handler) renderEditForm(
+	ctx *echo.Context,
+	status int,
+	model choreviewmodels.EditForm,
+) error {
+	return hypermedia.HTML(
+		ctx,
+		status,
+		h.view.EditForm(model, fullPage(ctx)),
+	)
 }
 
 func (h *Handler) renderCompletionDialog(

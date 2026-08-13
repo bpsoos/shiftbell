@@ -93,7 +93,7 @@ func (h *Handler) completeVendorJSON(ctx *echo.Context) error {
 	response := newChoreResponse(result.Chore)
 	return hypermedia.JSON(ctx, http.StatusOK, choreRepresentation{
 		Response: response,
-		Actions:  completedOneOffActions(response.Links.Href("self")),
+		Actions:  actionsForChore(result.Chore),
 	})
 }
 

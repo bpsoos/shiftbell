@@ -156,6 +156,56 @@ var _ = Describe("Get chore", func() {
 		}`))
 	})
 
+	It(
+		"returns an active scheduled chore without a delete action",
+		func(ctx SpecContext) {
+			scheduleId := 7
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Get(ctx, 42).Return(&choremodels.ChoreDetails{
+				Id:          42,
+				ScheduleId:  &scheduleId,
+				Status:      choremodels.ChoreStatusActive,
+				Name:        "Kitchen",
+				Description: "Wash and fold.",
+				Deadline:    time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC),
+			}, nil).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			e := echo.New()
+			e.GET("/chores/:id", handler.Get)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores/42",
+				nil,
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
+
+			e.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"id": 42,
+			"schedule_id": 7,
+			"status": "active",
+			"name": "Kitchen",
+			"description": "Wash and fold.",
+			"deadline": "2020-02-03",
+			"completed_on": null,
+			"_links": [
+				{"rel": "self", "href": "/chores/42"},
+				{"rel": "collection", "href": "/chores"}
+			],
+			"_actions": [
+				{"rel": "edit", "href": "/chores/42"},
+				{"rel": "complete", "href": "/chores/42/completion"}
+			]
+		}`))
+		},
+	)
+
 	It("renders an active chore as read-only HTML", func(ctx SpecContext) {
 		deadline := time.Date(2026, time.August, 15, 0, 0, 0, 0, time.UTC)
 		service := NewMockService(GinkgoT())
@@ -188,6 +238,7 @@ var _ = Describe("Get chore", func() {
 		view.EXPECT().Detail(choreviewmodels.Detail{
 			Chore:    chore,
 			BackHref: "/chores",
+			EditHref: "/chores/42/edit",
 		}, true).Return(templ.Raw("detail sentinel")).Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
 			Service: service,

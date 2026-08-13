@@ -54,9 +54,31 @@ func activeOneOffActions(selfHref string) api.Relations {
 	}
 }
 
-func completedOneOffActions(selfHref string) api.Relations {
+func activeScheduledActions(selfHref string) api.Relations {
+	return api.Relations{
+		{Rel: "edit", Href: selfHref},
+		{Rel: "complete", Href: selfHref + "/completion"},
+	}
+}
+
+func completedChoreActions(selfHref string) api.Relations {
 	return api.Relations{
 		{Rel: "correct_completion", Href: selfHref + "/completion"},
 		{Rel: "delete", Href: selfHref},
+	}
+}
+
+func actionsForChore(chore *choremodels.Chore) api.Relations {
+	selfHref := fmt.Sprintf("/chores/%d", chore.Id)
+	switch chore.Status {
+	case choremodels.ChoreStatusActive:
+		if chore.ScheduleId != nil {
+			return activeScheduledActions(selfHref)
+		}
+		return activeOneOffActions(selfHref)
+	case choremodels.ChoreStatusCompleted:
+		return completedChoreActions(selfHref)
+	default:
+		return api.Relations{}
 	}
 }

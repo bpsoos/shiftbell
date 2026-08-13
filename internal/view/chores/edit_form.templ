@@ -1,0 +1,129 @@
+package chores
+
+import choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+
+templ editFormContent(form choreviewmodels.EditForm) {
+	@panelPage(form.CancelHref, "Chore", "edit-chore-heading") {
+		<div data-panel>
+			<header data-panel-header>
+				<h1 id="edit-chore-heading">Edit chore</h1>
+			</header>
+			<div data-panel-body>
+				<form
+					id="edit-chore-form"
+					action={ form.ActionHref }
+					method="post"
+					hx-patch={ form.ActionHref }
+					hx-target="#main"
+					hx-swap="outerHTML"
+					if form.SummaryError != "" {
+						aria-describedby="edit-chore-form-summary"
+					}
+				>
+					@formSummary("edit-chore-form-summary", form.SummaryError)
+					@editNameField(form.Name)
+					@editDescriptionField(form.Description)
+					@editDeadlineField(form.Deadline, form.Scheduled)
+					if form.Scheduled {
+						@editChoreTemplateField(form.AlsoUpdateChoreTemplate)
+					}
+					<div data-actions>
+						<a
+							class="btn btn-secondary"
+							href={ form.CancelHref }
+							hx-get={ form.CancelHref }
+							hx-target="#main"
+							hx-swap="outerHTML"
+							hx-push-url="true"
+						>Cancel</a>
+						<button class="btn btn-primary" data-primary-action type="submit">Save changes</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	}
+}
+
+templ editNameField(field choreviewmodels.Field) {
+	<div data-field>
+		<label class="form-label" for="edit-chore-name">Name</label>
+		<input
+			class={ formControlClass("form-control", field.Error) }
+			type="text"
+			id="edit-chore-name"
+			name="name"
+			value={ field.Value }
+			maxlength="200"
+			if field.Error != "" {
+				aria-describedby="edit-chore-name-error"
+				aria-invalid="true"
+			}
+			required
+		/>
+		@fieldFeedback("edit-chore-name-error", field.Error)
+	</div>
+}
+
+templ editDescriptionField(field choreviewmodels.Field) {
+	<div data-field>
+		<label class="form-label" for="edit-chore-description">Description</label>
+		<textarea
+			class={ formControlClass("form-control", field.Error) }
+			id="edit-chore-description"
+			name="description"
+			rows="4"
+			maxlength="2000"
+			if field.Error != "" {
+				aria-describedby="edit-chore-description-error"
+				aria-invalid="true"
+			}
+		>{ field.Value }</textarea>
+		@fieldFeedback("edit-chore-description-error", field.Error)
+	</div>
+}
+
+templ editDeadlineField(field choreviewmodels.Field, scheduled bool) {
+	<div data-field>
+		<label class="form-label" for="edit-chore-deadline">Deadline</label>
+		<input
+			class={ formControlClass("form-control", field.Error) }
+			type="date"
+			id="edit-chore-deadline"
+			name="deadline"
+			value={ field.Value }
+			if scheduled {
+				readonly
+				aria-describedby="edit-chore-deadline-help"
+			} else if field.Error != "" {
+				aria-describedby="edit-chore-deadline-error"
+				aria-invalid="true"
+			}
+			required
+		/>
+		if scheduled {
+			<div class="form-text" id="edit-chore-deadline-help">Scheduled chore deadlines cannot be edited.</div>
+		} else {
+			@fieldFeedback("edit-chore-deadline-error", field.Error)
+		}
+	</div>
+}
+
+templ editChoreTemplateField(checked bool) {
+	<label data-field data-save-template>
+		<input
+			class="form-check-input"
+			type="checkbox"
+			id="edit-chore-update-template"
+			name="also_update_chore_template"
+			value="true"
+			aria-describedby="edit-chore-update-template-help"
+			if checked {
+				checked
+			}
+		/>
+		<span data-save-template-copy>
+			<span data-save-template-title>Also update chore template</span>
+			<span data-save-template-help id="edit-chore-update-template-help">Apply name and description changes to the shared template. Template changes affect future generated chores.</span>
+		</span>
+	</label>
+}

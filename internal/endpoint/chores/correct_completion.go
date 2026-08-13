@@ -81,6 +81,6 @@ func (h *Handler) CorrectCompletion(ctx *echo.Context) error {
 	response := newChoreResponse(corrected)
 	return hypermedia.JSON(ctx, http.StatusOK, choreRepresentation{
 		Response: response,
-		Actions:  completedOneOffActions(response.Links.Href("self")),
+		Actions:  actionsForChore(corrected),
 	})
 }

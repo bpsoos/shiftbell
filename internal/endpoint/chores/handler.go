@@ -56,6 +56,7 @@ type View interface {
 	Creation(choreviewmodels.Creation, bool) templ.Component
 	ManualOneOffForm(choreviewmodels.ManualOneOffForm, bool) templ.Component
 	TemplateOneOffForm(choreviewmodels.TemplateOneOffForm, bool) templ.Component
+	EditForm(choreviewmodels.EditForm, bool) templ.Component
 	Error(choreviewmodels.Error, bool) templ.Component
 }
 
@@ -94,10 +95,14 @@ func (h *Handler) GetBatch(ctx *echo.Context) error {
 }
 
 func (h *Handler) Patch(ctx *echo.Context) error {
-	if !hypermedia.Accepts(ctx.Request()) {
+	if hypermedia.Accepts(ctx.Request()) {
+		return h.editVendorJSON(ctx)
+	}
+	ctx.Response().Header().Set(echo.HeaderVary, "Accept, HX-Request")
+	if !acceptsHTMXHTML(ctx) {
 		return hypermedia.NotAcceptable(ctx)
 	}
-	return h.edit(ctx)
+	return h.editHTMX(ctx)
 }
 
 func (h *Handler) Create(ctx *echo.Context) error {
@@ -112,4 +117,12 @@ func (h *Handler) New(ctx *echo.Context) error {
 		return hypermedia.NotAcceptable(ctx)
 	}
 	return h.newChore(ctx)
+}
+
+func (h *Handler) Edit(ctx *echo.Context) error {
+	ctx.Response().Header().Set(echo.HeaderVary, "Accept, HX-Request")
+	if !acceptsHTMXHTML(ctx) {
+		return hypermedia.NotAcceptable(ctx)
+	}
+	return h.editForm(ctx)
 }

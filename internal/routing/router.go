@@ -17,6 +17,7 @@ type ChoreTemplateHandler interface {
 type ChoreHandler interface {
 	Get(*echo.Context) error
 	GetBatch(*echo.Context) error
+	Edit(*echo.Context) error
 	Patch(*echo.Context) error
 	New(*echo.Context) error
 	Create(*echo.Context) error

@@ -5,6 +5,17 @@ type Field struct {
 	Error string
 }
 
+type EditForm struct {
+	ActionHref              string
+	CancelHref              string
+	Scheduled               bool
+	Name                    Field
+	Description             Field
+	Deadline                Field
+	AlsoUpdateChoreTemplate bool
+	SummaryError            string
+}
+
 type ManualOneOffForm struct {
 	ActionHref     string
 	CancelHref     string

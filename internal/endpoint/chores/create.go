@@ -158,7 +158,7 @@ func (h *Handler) create(ctx *echo.Context) error {
 	response := newChoreResponse(result.Chore)
 	return h.renderCreated(ctx, choreRepresentation{
 		Response: response,
-		Actions:  activeOneOffActions(response.Links.Href("self")),
+		Actions:  actionsForChore(result.Chore),
 	})
 }
 
