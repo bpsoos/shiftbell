@@ -12,6 +12,8 @@ import (
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 )
 
+const choreTemplateCollectionHref = "/chore-templates"
+
 type Service interface {
 	Browse(
 		context.Context,
@@ -68,8 +70,8 @@ func newResponse(choreTemplate *models.ChoreTemplate) response {
 		Description:   choreTemplate.Description,
 		DeactivatedAt: choreTemplate.DeactivatedAt,
 		Links: api.Relations{
-			{Rel: "self", Href: fmt.Sprintf("/chore-templates/%d", choreTemplate.Id)},
-			{Rel: "collection", Href: "/chore-templates"},
+			{Rel: "self", Href: resourceHref(choreTemplate.Id)},
+			{Rel: "collection", Href: choreTemplateCollectionHref},
 		},
 	}
 }
@@ -105,6 +107,10 @@ func activeActions(selfHref string) api.Relations {
 
 func collectionLink() api.Relations {
 	return api.Relations{
-		{Rel: "collection", Href: "/chore-templates"},
+		{Rel: "collection", Href: choreTemplateCollectionHref},
 	}
+}
+
+func resourceHref(id int) string {
+	return fmt.Sprintf("%s/%d", choreTemplateCollectionHref, id)
 }

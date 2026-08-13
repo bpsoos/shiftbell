@@ -3,7 +3,6 @@ package choretemplates
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -17,10 +16,10 @@ func (h *Handler) EditForm(ctx *echo.Context) error {
 		return hypermedia.NotAcceptable(ctx)
 	}
 
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreTemplateID(ctx)
+	if err != nil {
 		return h.renderError(ctx, http.StatusUnprocessableEntity, errorResponse{
-			Error: "invalid chore template id",
+			Error: err.Error(),
 			Links: collectionLink(),
 		})
 	}
@@ -29,17 +28,17 @@ func (h *Handler) EditForm(ctx *echo.Context) error {
 	if err != nil {
 		return h.renderEditLoadError(ctx, err)
 	}
-	if details.DeactivatedAt != nil {
-		return h.renderError(
+	if details.DeactivatedAt == nil {
+		return h.renderEditForm(
 			ctx,
-			http.StatusUnprocessableEntity,
-			resourceErrorResponse(id, models.ErrInactive.Error()),
+			http.StatusOK,
+			editFormViewModel(&details.ChoreTemplate),
 		)
 	}
-	return h.renderEditForm(
+	return h.renderError(
 		ctx,
-		http.StatusOK,
-		editFormViewModel(&details.ChoreTemplate),
+		http.StatusUnprocessableEntity,
+		resourceErrorResponse(id, models.ErrInactive.Error()),
 	)
 }
 

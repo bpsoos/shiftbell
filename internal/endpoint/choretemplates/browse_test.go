@@ -23,10 +23,69 @@ func TestBrowse(t *testing.T) {
 }
 
 var _ = Describe("Browse chore templates", func() {
-	It("ignores API-only filters for the HTML collection", func(ctx SpecContext) {
+	It("rejects a non-numeric offset", func(ctx SpecContext) {
+		handler := choretemplatesendpoint.NewHandler(
+			&choretemplatesendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},
+		)
+		e := echo.New()
+		e.GET("/chore-templates", handler.Browse)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chore-templates?offset=invalid",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(struct {
+			Status int
+			Body   string
+		}{response.Code, response.Body.String()}).To(Equal(struct {
+			Status int
+			Body   string
+		}{
+			http.StatusUnprocessableEntity,
+			"{\"error\":\"invalid offset\",\"_links\":[],\"_actions\":[]}\n",
+		}))
+	})
+
+	It("rejects a non-numeric limit", func(ctx SpecContext) {
+		handler := choretemplatesendpoint.NewHandler(
+			&choretemplatesendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},
+		)
+		e := echo.New()
+		e.GET("/chore-templates", handler.Browse)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chore-templates?limit=invalid",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(struct {
+			Status int
+			Body   string
+		}{response.Code, response.Body.String()}).To(Equal(struct {
+			Status int
+			Body   string
+		}{
+			http.StatusUnprocessableEntity,
+			"{\"error\":\"invalid limit\",\"_links\":[],\"_actions\":[]}\n",
+		}))
+	})
+
+	It("passes filters to the HTML collection", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Browse(ctx, &choretemplatemodels.BrowseChoreTemplatesParams{
-			Filter: choretemplatemodels.ChoreTemplateFilterActive,
+			Filter: choretemplatemodels.ChoreTemplateFilterDeactivated,
+			Search: "Kitchen",
 			Offset: 4,
 			Limit:  7,
 		}).Return(&choretemplatemodels.ChoreTemplatePage{}, nil).Once()
@@ -35,8 +94,14 @@ var _ = Describe("Browse chore templates", func() {
 			Collection: choretemplateapimodels.CollectionResponse{
 				Items: []choretemplateapimodels.Response{},
 				Links: api.Relations{
-					{Rel: "self", Href: "/chore-templates?limit=7&offset=4"},
-					{Rel: "previous", Href: "/chore-templates?limit=7&offset=0"},
+					{
+						Rel:  "self",
+						Href: "/chore-templates?state=deactivated&search=Kitchen&offset=4&limit=7",
+					},
+					{
+						Rel:  "previous",
+						Href: "/chore-templates?limit=7&offset=0&search=Kitchen&state=deactivated",
+					},
 				},
 				Actions: api.Relations{
 					{Rel: "create", Href: "/chore-templates"},
@@ -64,10 +129,11 @@ var _ = Describe("Browse chore templates", func() {
 		Expect(response.Body.String()).To(Equal("collection sentinel"))
 	})
 
-	It("ignores API-only search for the HTML picker", func(ctx SpecContext) {
+	It("passes search to the HTML picker", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Browse(ctx, &choretemplatemodels.BrowseChoreTemplatesParams{
 			Filter: choretemplatemodels.ChoreTemplateFilterActive,
+			Search: "Kitchen",
 			Offset: 4,
 			Limit:  7,
 		}).Return(&choretemplatemodels.ChoreTemplatePage{}, nil).Once()
@@ -78,11 +144,11 @@ var _ = Describe("Browse chore templates", func() {
 				Links: api.Relations{
 					{
 						Rel:  "self",
-						Href: "/chore-templates?limit=7&offset=4&picker=1",
+						Href: "/chore-templates?picker=1&search=Kitchen&offset=4&limit=7",
 					},
 					{
 						Rel:  "previous",
-						Href: "/chore-templates?limit=7&offset=0&picker=1",
+						Href: "/chore-templates?limit=7&offset=0&picker=1&search=Kitchen",
 					},
 				},
 			},
@@ -156,7 +222,6 @@ var _ = Describe("Browse chore templates", func() {
 	It("consumes the template deactivation success flash", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Browse(ctx, &choretemplatemodels.BrowseChoreTemplatesParams{
-			Filter: choretemplatemodels.ChoreTemplateFilterActive,
 			Offset: 0,
 			Limit:  20,
 		}).Return(&choretemplatemodels.ChoreTemplatePage{}, nil).Once()

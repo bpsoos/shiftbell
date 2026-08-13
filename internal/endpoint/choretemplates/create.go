@@ -25,15 +25,10 @@ func (h *Handler) Create(ctx *echo.Context) error {
 
 	var request createRequest
 	if err := json.NewDecoder(ctx.Request().Body).Decode(&request); err != nil {
-		action := createAction()
 		return hypermedia.JSON(
 			ctx,
 			http.StatusBadRequest,
-			errorResponse{
-				Error:   "invalid request body",
-				Links:   collectionLink(),
-				Actions: api.Relations{action},
-			},
+			createErrorResponse("invalid request body", collectionLink()),
 		)
 	}
 
@@ -45,32 +40,7 @@ func (h *Handler) Create(ctx *echo.Context) error {
 		},
 	)
 	if err != nil {
-		if errors.Is(err, models.ErrNameConflict) {
-			action := createAction()
-			return hypermedia.JSON(ctx, http.StatusConflict, errorResponse{
-				Error:   err.Error(),
-				Links:   api.Relations{},
-				Actions: api.Relations{action},
-			})
-		}
-		if isInvalidCreateRequestError(err) {
-			action := createAction()
-			return hypermedia.JSON(
-				ctx,
-				http.StatusUnprocessableEntity,
-				errorResponse{
-					Error:   err.Error(),
-					Links:   collectionLink(),
-					Actions: api.Relations{action},
-				},
-			)
-		}
-		logging.Default().Error("create chore template", "err", err)
-		return hypermedia.JSON(
-			ctx,
-			http.StatusInternalServerError,
-			errorResponse{Error: "something went wrong", Links: collectionLink()},
-		)
+		return h.renderCreateError(ctx, err)
 	}
 
 	representation := newRepresentation(choreTemplate)
@@ -78,11 +48,42 @@ func (h *Handler) Create(ctx *echo.Context) error {
 	return hypermedia.JSON(ctx, http.StatusCreated, representation)
 }
 
+func (h *Handler) renderCreateError(ctx *echo.Context, err error) error {
+	if errors.Is(err, models.ErrNameConflict) {
+		return hypermedia.JSON(
+			ctx,
+			http.StatusConflict,
+			createErrorResponse(err.Error(), api.Relations{}),
+		)
+	}
+	if isInvalidCreateRequestError(err) {
+		return hypermedia.JSON(
+			ctx,
+			http.StatusUnprocessableEntity,
+			createErrorResponse(err.Error(), collectionLink()),
+		)
+	}
+	logging.Default().Error("create chore template", "err", err)
+	return hypermedia.JSON(
+		ctx,
+		http.StatusInternalServerError,
+		errorResponse{Error: "something went wrong", Links: collectionLink()},
+	)
+}
+
 func isInvalidCreateRequestError(err error) bool {
 	return errors.Is(err, validationerrors.ErrInvalidName) ||
 		errors.Is(err, validationerrors.ErrInvalidDescription)
 }
 
+func createErrorResponse(message string, links api.Relations) errorResponse {
+	return errorResponse{
+		Error:   message,
+		Links:   links,
+		Actions: api.Relations{createAction()},
+	}
+}
+
 func createAction() api.Relation {
-	return api.Relation{Rel: "create", Href: "/chore-templates"}
+	return api.Relation{Rel: "create", Href: choreTemplateCollectionHref}
 }

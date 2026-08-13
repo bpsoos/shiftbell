@@ -3,7 +3,6 @@ package choretemplates
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -18,25 +17,25 @@ func (h *Handler) ConfirmDeactivation(ctx *echo.Context) error {
 		return hypermedia.NotAcceptable(ctx)
 	}
 
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreTemplateID(ctx)
+	if err != nil {
 		return hypermedia.NoContent(ctx, http.StatusUnprocessableEntity)
 	}
 	details, err := h.service.Get(ctx.Request().Context(), id)
 	if err != nil {
 		return h.renderDeactivationLoadError(ctx, err)
 	}
-	if details.DeactivatedAt != nil {
+	if details.DeactivatedAt == nil {
 		return h.renderConfirmationDialog(
 			ctx,
-			http.StatusUnprocessableEntity,
-			inactiveDeactivationDialogViewModel(&details.ChoreTemplate),
+			http.StatusOK,
+			deactivationDialogViewModel(&details.ChoreTemplate, ""),
 		)
 	}
 	return h.renderConfirmationDialog(
 		ctx,
-		http.StatusOK,
-		deactivationDialogViewModel(&details.ChoreTemplate, ""),
+		http.StatusUnprocessableEntity,
+		inactiveDeactivationDialogViewModel(&details.ChoreTemplate),
 	)
 }
 

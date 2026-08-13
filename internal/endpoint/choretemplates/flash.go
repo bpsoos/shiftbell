@@ -16,7 +16,7 @@ func setFlashCookie(ctx *echo.Context, value string) {
 	cookie := &http.Cookie{
 		Name:     flashCookieName,
 		Value:    value,
-		Path:     "/chore-templates",
+		Path:     choreTemplateCollectionHref,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	}
@@ -38,7 +38,7 @@ func consumeFlashCookie(ctx *echo.Context) string {
 func clearFlashCookie(ctx *echo.Context) {
 	cookie := &http.Cookie{
 		Name:     flashCookieName,
-		Path:     "/chore-templates",
+		Path:     choreTemplateCollectionHref,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,

@@ -3,7 +3,6 @@ package choretemplates
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -17,34 +16,18 @@ func (h *Handler) Get(ctx *echo.Context) error {
 		return hypermedia.NotAcceptable(ctx)
 	}
 
-	id, err := strconv.Atoi(ctx.ParamOr("id", ""))
-	if err != nil || id <= 0 {
+	id, err := parseChoreTemplateID(ctx)
+	if err != nil {
 		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
-			errorResponse{Error: "invalid chore template id"},
+			errorResponse{Error: err.Error()},
 		)
 	}
 
 	details, err := h.service.Get(ctx.Request().Context(), id)
 	if err != nil {
-		if errors.Is(err, models.ErrNotFound) {
-			return h.renderError(
-				ctx,
-				http.StatusNotFound,
-				errorResponse{
-					Error:   models.ErrNotFound.Error(),
-					Links:   collectionLink(),
-					Actions: api.Relations{},
-				},
-			)
-		}
-		logging.Default().Error("get chore template", "err", err)
-		return h.renderError(
-			ctx,
-			http.StatusInternalServerError,
-			errorResponse{Error: "something went wrong", Links: collectionLink()},
-		)
+		return h.renderGetError(ctx, err)
 	}
 
 	return h.renderDetail(
@@ -52,5 +35,25 @@ func (h *Handler) Get(ctx *echo.Context) error {
 		http.StatusOK,
 		newRepresentation(&details.ChoreTemplate),
 		"",
+	)
+}
+
+func (h *Handler) renderGetError(ctx *echo.Context, err error) error {
+	if errors.Is(err, models.ErrNotFound) {
+		return h.renderError(
+			ctx,
+			http.StatusNotFound,
+			errorResponse{
+				Error:   models.ErrNotFound.Error(),
+				Links:   collectionLink(),
+				Actions: api.Relations{},
+			},
+		)
+	}
+	logging.Default().Error("get chore template", "err", err)
+	return h.renderError(
+		ctx,
+		http.StatusInternalServerError,
+		errorResponse{Error: "something went wrong", Links: collectionLink()},
 	)
 }
