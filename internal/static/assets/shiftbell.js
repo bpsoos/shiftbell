@@ -146,9 +146,9 @@
 	};
 
 	document.addEventListener("click", (event) => {
-		const completeButton = event.target.closest?.("[data-complete-chore]");
-		if (completeButton) {
-			dialogTrigger = completeButton;
+		const dialogButton = event.target.closest?.("[data-complete-chore], [data-delete-action], [data-deactivate-action]");
+		if (dialogButton) {
+			dialogTrigger = dialogButton;
 		}
 
 		if (event.target.closest?.("[data-dialog-cancel]")) {

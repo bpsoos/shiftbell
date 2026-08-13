@@ -9,6 +9,7 @@ import (
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
 )
 
@@ -52,6 +53,7 @@ type formFeedback struct {
 type View interface {
 	Collection(choreviewmodels.Collection, bool) templ.Component
 	CompletionDialog(choreviewmodels.CompletionDialog) templ.Component
+	ConfirmationDialog(confirmationviewmodels.Dialog) templ.Component
 	Detail(choreviewmodels.Detail, bool) templ.Component
 	Creation(choreviewmodels.Creation, bool) templ.Component
 	ManualOneOffForm(choreviewmodels.ManualOneOffForm, bool) templ.Component
@@ -117,6 +119,14 @@ func (h *Handler) New(ctx *echo.Context) error {
 		return hypermedia.NotAcceptable(ctx)
 	}
 	return h.newChore(ctx)
+}
+
+func (h *Handler) ConfirmDeletion(ctx *echo.Context) error {
+	ctx.Response().Header().Set(echo.HeaderVary, "Accept, HX-Request")
+	if !acceptsHTMXHTML(ctx) {
+		return hypermedia.NotAcceptable(ctx)
+	}
+	return h.confirmDeletion(ctx)
 }
 
 func (h *Handler) Edit(ctx *echo.Context) error {

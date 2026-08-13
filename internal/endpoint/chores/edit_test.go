@@ -153,10 +153,11 @@ var _ = Describe("Edit chore", func() {
 		}
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Detail(choreviewmodels.Detail{
-			Chore:    chore,
-			BackHref: "/chores",
-			EditHref: "/chores/42/edit",
-			Notice:   "Chore updated.",
+			Chore:      chore,
+			BackHref:   "/chores",
+			EditHref:   "/chores/42/edit",
+			DeleteHref: "/chores/42/deletion",
+			Notice:     "Chore updated.",
 		}, false).Return(templ.Raw("updated detail sentinel")).Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
 			Service: service,
@@ -231,9 +232,10 @@ var _ = Describe("Edit chore", func() {
 						{Rel: "complete", Href: "/chores/42/completion"},
 					},
 				},
-				BackHref: "/chores",
-				EditHref: "/chores/42/edit",
-				Notice:   "Chore updated.",
+				BackHref:   "/chores",
+				EditHref:   "/chores/42/edit",
+				DeleteHref: "",
+				Notice:     "Chore updated.",
 			}, false).Return(templ.Raw("updated scheduled detail sentinel")).Once()
 			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
 				Service: service,

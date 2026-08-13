@@ -9,6 +9,7 @@ import (
 	choretemplateapimodels "github.com/bpsoos/shiftbell/internal/models/api/choretemplates"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	choretemplateviewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
+	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 )
 
 type Service interface {
@@ -43,6 +44,7 @@ type View interface {
 	Picker(choretemplateviewmodels.Picker, bool) templ.Component
 	Detail(choretemplateviewmodels.Detail, bool) templ.Component
 	EditForm(choretemplateviewmodels.EditForm, bool) templ.Component
+	ConfirmationDialog(confirmationviewmodels.Dialog) templ.Component
 	Error(choretemplateviewmodels.Error, bool) templ.Component
 }
 

@@ -4,6 +4,7 @@ import choretemplateapimodels "github.com/bpsoos/shiftbell/internal/models/api/c
 
 type Collection struct {
 	Collection choretemplateapimodels.CollectionResponse
+	Notice     string
 }
 
 func (model Collection) HasPagination() bool {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
 )
 
@@ -70,6 +71,14 @@ func (h *Handler) renderCompletionDialog(
 	model choreviewmodels.CompletionDialog,
 ) error {
 	return hypermedia.HTML(ctx, status, h.view.CompletionDialog(model))
+}
+
+func (h *Handler) renderConfirmationDialog(
+	ctx *echo.Context,
+	status int,
+	model confirmationviewmodels.Dialog,
+) error {
+	return hypermedia.HTML(ctx, status, h.view.ConfirmationDialog(model))
 }
 
 func (h *Handler) renderCreation(

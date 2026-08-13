@@ -19,8 +19,11 @@ templ detailContent(t *Templater, model choreviewmodels.Detail, today time.Time)
 			me > [data-chore-detail] { background: var(--sb-surface); border: 2px solid var(--sb-frame); overflow-wrap: anywhere; padding: 1.5rem 1.25rem 1.25rem; position: relative; }
 			me > [data-chore-detail]::before { background: var(--sb-accent); content: ""; height: 3px; left: 0; position: absolute; right: 0; top: 0; }
 			me [data-detail-header] { align-items: flex-start; display: flex; gap: 1rem; justify-content: space-between; }
+			me [data-detail-actions] { align-items: center; display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
 			me h1 { font-size: 1.875rem; letter-spacing: -0.035em; line-height: 1.1; margin: 0; }
-			me [data-edit-action] { flex: 0 0 auto; gap: 0.375rem; }
+			me [data-edit-action], me [data-delete-action] { gap: 0.375rem; }
+			me [data-delete-action] { --bs-btn-active-bg: color-mix(in srgb, var(--sb-danger) 14%, var(--sb-surface)); --bs-btn-active-border-color: var(--sb-danger); --bs-btn-active-color: var(--sb-danger); --bs-btn-border-color: var(--sb-danger); --bs-btn-color: var(--sb-danger); --bs-btn-hover-bg: color-mix(in srgb, var(--sb-danger) 10%, var(--sb-surface)); --bs-btn-hover-border-color: var(--sb-danger); --bs-btn-hover-color: var(--sb-danger); border-color: var(--sb-danger); color: var(--sb-danger); }
+			me [data-delete-action]:hover, me [data-delete-action]:focus-visible, me [data-delete-action]:active { border-color: var(--sb-danger); color: var(--sb-danger); }
 			me [data-deadline] { border-top: 1px solid var(--sb-border); margin-top: 1rem; padding-top: 0.875rem; }
 			me [data-due-state] { align-items: center; display: flex; font-size: 0.9375rem; font-weight: 650; gap: 0.375rem; }
 			me [data-due-state="overdue"] { color: var(--sb-danger); }
@@ -31,7 +34,7 @@ templ detailContent(t *Templater, model choreviewmodels.Detail, today time.Time)
 			@media sm- {
 				me > [data-chore-detail] { padding: 1.25rem 1rem 1rem; }
 				me h1 { font-size: 1.625rem; }
-				me [data-edit-action] { padding-inline: 0.625rem; }
+				me [data-edit-action], me [data-delete-action] { padding-inline: 0.625rem; }
 			}
 		</style>
 		if model.BackHref != "" {
@@ -53,27 +56,45 @@ templ detailContent(t *Templater, model choreviewmodels.Detail, today time.Time)
 				<span>{ model.Notice }</span>
 			</div>
 		}
-		@detailCard(t, model.Chore, model.EditHref, today)
+		@detailCard(t, model.Chore, model.EditHref, model.DeleteHref, today)
 	</section>
 }
 
-templ detailCard(t *Templater, chore choreapimodels.Representation, editHref string, today time.Time) {
+templ detailCard(t *Templater, chore choreapimodels.Representation, editHref string, deleteHref string, today time.Time) {
 	<article data-chore-detail>
 		<div data-detail-header>
 			<h1 id="chore-heading">{ chore.Name }</h1>
-			if editHref != "" {
-				<a
-					class="btn btn-outline-secondary"
-					data-edit-action
-					href={ editHref }
-					hx-get={ editHref }
-					hx-target="#main"
-					hx-swap="outerHTML"
-					hx-push-url="true"
-				>
-					@viewicons.PencilSimple()
-					<span>Edit</span>
-				</a>
+			if editHref != "" || deleteHref != "" {
+				<div data-detail-actions>
+					if editHref != "" {
+						<a
+							class="btn btn-outline-secondary"
+							data-edit-action
+							href={ editHref }
+							hx-get={ editHref }
+							hx-target="#main"
+							hx-swap="outerHTML"
+							hx-push-url="true"
+						>
+							@viewicons.PencilSimple()
+							<span>Edit</span>
+						</a>
+					}
+					if deleteHref != "" {
+						<button
+							class="btn btn-outline-secondary"
+							type="button"
+							data-delete-action
+							hx-get={ deleteHref }
+							hx-target="#dialog-root"
+							hx-swap="innerHTML"
+							aria-haspopup="dialog"
+						>
+							@viewicons.Trash()
+							<span>Delete</span>
+						</button>
+					}
+				</div>
 			}
 		</div>
 		<div data-deadline>

@@ -7,6 +7,8 @@ import (
 	"github.com/a-h/templ"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
+	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
+	confirmationview "github.com/bpsoos/shiftbell/internal/view/confirmation"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
 
@@ -48,6 +50,12 @@ func (t *Templater) EditForm(
 	fullPage bool,
 ) templ.Component {
 	return layouts.Frame("chore-templates", fullPage, editForm(model))
+}
+
+func (t *Templater) ConfirmationDialog(
+	model confirmationviewmodels.Dialog,
+) templ.Component {
+	return confirmationview.Dialog(model)
 }
 
 func (t *Templater) Error(

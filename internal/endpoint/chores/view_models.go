@@ -42,10 +42,11 @@ func detailViewModel(
 	notice string,
 ) choreviewmodels.Detail {
 	return choreviewmodels.Detail{
-		Chore:    chore,
-		BackHref: linkHref(chore.Links, "collection"),
-		EditHref: editFormHref(chore),
-		Notice:   notice,
+		Chore:      chore,
+		BackHref:   linkHref(chore.Links, "collection"),
+		EditHref:   editFormHref(chore),
+		DeleteHref: deletionConfirmationHref(chore),
+		Notice:     notice,
 	}
 }
 
@@ -206,6 +207,13 @@ func completionHref(chore choreResponse) string {
 func editFormHref(chore choreRepresentation) string {
 	if href := chore.Actions.Href("edit"); href != "" {
 		return href + "/edit"
+	}
+	return ""
+}
+
+func deletionConfirmationHref(chore choreRepresentation) string {
+	if href := chore.Actions.Href("delete"); href != "" {
+		return href + "/deletion"
 	}
 	return ""
 }

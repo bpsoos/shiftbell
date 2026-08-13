@@ -1,0 +1,73 @@
+package confirmation
+
+import (
+	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
+	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+)
+
+templ Dialog(model confirmationviewmodels.Dialog) {
+	<dialog data-confirmation-dialog aria-labelledby="confirmation-dialog-heading" tabindex="-1">
+		<style>
+			me { background: var(--sb-surface); border: 2px solid var(--sb-frame); border-radius: var(--sb-radius-overlay); box-shadow: 5px 5px 0 var(--sb-depth); color: var(--sb-text); max-height: calc(100dvh - 2rem); max-width: calc(100% - 2rem); overflow: auto; padding: 0; width: 30rem; }
+			me::backdrop { background: rgb(0 0 0 / 0.58); }
+			me [data-dialog-header] { background: var(--sb-subtle); border-bottom: 1px solid var(--sb-border); border-left: 3px solid var(--sb-danger); padding: 0.6875rem 1rem; }
+			me [data-dialog-header] h2 { font-size: 1.125rem; letter-spacing: -0.015em; margin: 0; }
+			me [data-dialog-body] { padding: 0.75rem 1rem; }
+			me [data-dialog-prompt] { line-height: 1.35; margin: 0 0 0.625rem; }
+			me [data-dialog-supporting] { color: var(--sb-muted); font-size: 0.875rem; line-height: 1.4; margin: 0; }
+			me [data-dialog-supporting] + [data-dialog-supporting] { margin-top: 0.25rem; }
+			me [data-dialog-error] { border: 1px solid var(--sb-danger); border-left-width: 3px; color: var(--sb-text); font-size: 0.875rem; margin: 0 0 0.75rem; padding: 0.625rem 0.75rem; }
+			me [data-dialog-actions] { border-top: 1px solid var(--sb-border); display: flex; gap: 0.5rem; justify-content: flex-end; padding: 0.625rem 1rem 0.75rem; }
+			me [data-dialog-actions] .btn { min-height: 44px; }
+			me [data-dialog-cancel] { background: transparent; border-color: transparent; color: var(--sb-muted-strong); padding-inline: 0.75rem; }
+			me [data-dialog-cancel]:hover, me [data-dialog-cancel]:focus-visible, me [data-dialog-cancel]:active { background: var(--sb-hover); border-color: transparent; color: var(--sb-text); }
+			me [data-destructive-action] { --bs-btn-active-color: var(--sb-surface); --bs-btn-color: var(--sb-surface); --bs-btn-hover-color: var(--sb-surface); --sb-button-face: var(--sb-danger); gap: 0.375rem; }
+			me [data-destructive-action]:hover, me [data-destructive-action]:active, me [data-destructive-action]:first-child:active { --sb-button-face: color-mix(in srgb, var(--sb-danger) 82%, var(--sb-text)); }
+			@media xs- {
+				me { border: 0; border-radius: var(--sb-radius-overlay) var(--sb-radius-overlay) 0 0; border-top: 3px solid var(--sb-frame); box-shadow: 0 -3px 0 var(--sb-depth); margin: auto 0 0; max-height: calc(100dvh - 1rem); max-width: none; width: 100%; }
+				me [data-dialog-actions] { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+				me [data-destructive-action] { flex: 1 1 auto; }
+			}
+		</style>
+		<form
+			data-confirmation-form
+			action={ model.ActionHref }
+			method="post"
+			if model.ActionMethod == "delete" {
+				hx-delete={ model.ActionHref }
+			} else {
+				hx-put={ model.ActionHref }
+			}
+			hx-target="#dialog-root"
+			hx-swap="innerHTML"
+		>
+			<header data-dialog-header>
+				<h2 id="confirmation-dialog-heading">{ model.Heading }</h2>
+			</header>
+			<div data-dialog-body>
+				if model.Error != "" {
+					<div data-dialog-error role="alert">{ model.Error }</div>
+				}
+				if model.Prompt != "" {
+					<p data-dialog-prompt>{ model.Prompt } <strong>“{ model.Name }”</strong> permanently?</p>
+				}
+				for _, supporting := range model.Supporting {
+					<p data-dialog-supporting>{ supporting }</p>
+				}
+			</div>
+			<footer data-dialog-actions>
+				<button class="btn" type="button" data-dialog-cancel>Cancel</button>
+				if model.ActionHref != "" {
+					<button class="btn btn-primary" type="submit" data-destructive-action>
+						if model.Icon == "trash" {
+							@viewicons.Trash()
+						} else if model.Icon == "archive" {
+							@viewicons.Archive()
+						}
+						<span>{ model.ActionLabel }</span>
+					</button>
+				}
+			</footer>
+		</form>
+	</dialog>
+}

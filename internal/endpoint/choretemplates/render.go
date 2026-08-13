@@ -3,6 +3,7 @@ package choretemplates
 import (
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choretemplateviewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
+	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
 )
 
@@ -15,13 +16,12 @@ func (h *Handler) renderCollection(
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, status, representation)
 	case hypermedia.RepresentationHTML:
+		model := collectionViewModel(representation)
+		model.Notice = consumeFlashCookie(ctx)
 		return hypermedia.HTML(
 			ctx,
 			status,
-			h.view.Collection(
-				collectionViewModel(representation),
-				fullPage(ctx),
-			),
+			h.view.Collection(model, fullPage(ctx)),
 		)
 	default:
 		return hypermedia.NotAcceptable(ctx)
@@ -76,6 +76,14 @@ func (h *Handler) renderEditForm(
 	model choretemplateviewmodels.EditForm,
 ) error {
 	return hypermedia.HTML(ctx, status, h.view.EditForm(model, fullPage(ctx)))
+}
+
+func (h *Handler) renderConfirmationDialog(
+	ctx *echo.Context,
+	status int,
+	model confirmationviewmodels.Dialog,
+) error {
+	return hypermedia.HTML(ctx, status, h.view.ConfirmationDialog(model))
 }
 
 func (h *Handler) renderError(

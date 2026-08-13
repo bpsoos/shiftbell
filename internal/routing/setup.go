@@ -25,12 +25,17 @@ func (r *Router) Setup(app *echo.Echo) error {
 	app.GET("/chores/:id/completion", r.choreHandler.ConfirmCompletion)
 	app.PUT("/chores/:id/completion", r.choreHandler.Complete)
 	app.PATCH("/chores/:id/completion", r.choreHandler.CorrectCompletion)
+	app.GET("/chores/:id/deletion", r.choreHandler.ConfirmDeletion)
 
 	app.POST("/chore-templates", r.choreTemplateHandler.Create)
 	app.GET("/chore-templates", r.choreTemplateHandler.Browse)
 	app.GET("/chore-templates/:id", r.choreTemplateHandler.Get)
 	app.GET("/chore-templates/:id/edit", r.choreTemplateHandler.EditForm)
 	app.PATCH("/chore-templates/:id", r.choreTemplateHandler.Edit)
+	app.GET(
+		"/chore-templates/:id/deactivation",
+		r.choreTemplateHandler.ConfirmDeactivation,
+	)
 	app.PUT("/chore-templates/:id/deactivation", r.choreTemplateHandler.Deactivate)
 	return nil
 }

@@ -12,6 +12,7 @@ type ChoreTemplateHandler interface {
 	Get(*echo.Context) error
 	EditForm(*echo.Context) error
 	Edit(*echo.Context) error
+	ConfirmDeactivation(*echo.Context) error
 	Deactivate(*echo.Context) error
 }
 
@@ -25,6 +26,7 @@ type ChoreHandler interface {
 	ConfirmCompletion(*echo.Context) error
 	Complete(*echo.Context) error
 	CorrectCompletion(*echo.Context) error
+	ConfirmDeletion(*echo.Context) error
 	Delete(*echo.Context) error
 }
 

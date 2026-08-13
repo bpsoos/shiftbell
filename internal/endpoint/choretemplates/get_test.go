@@ -45,6 +45,7 @@ var _ = Describe("Get chore template", func() {
 			},
 			CollectionHref: "/chore-templates",
 			EditHref:       "/chore-templates/8/edit",
+			DeactivateHref: "/chore-templates/8/deactivation",
 		}, true).Return(templ.Raw("detail sentinel")).Once()
 		handler := choretemplatesendpoint.NewHandler(&choretemplatesendpoint.HandlerDeps{
 			Service: service,

@@ -98,6 +98,7 @@ var _ = Describe("Edit chore template", func() {
 			ChoreTemplate:  representation,
 			CollectionHref: "/chore-templates",
 			EditHref:       "/chore-templates/8/edit",
+			DeactivateHref: "/chore-templates/8/deactivation",
 			Notice:         "Template updated.",
 		}, false).Return(templ.Raw("updated detail sentinel")).Once()
 		handler := choretemplatesendpoint.NewHandler(

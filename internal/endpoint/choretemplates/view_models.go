@@ -23,6 +23,7 @@ func detailViewModel(representation representation, notice string) viewmodels.De
 		ChoreTemplate:  representation,
 		CollectionHref: knownLink(representation.Links, "collection"),
 		EditHref:       editNavigationHref(representation),
+		DeactivateHref: deactivationConfirmationHref(representation),
 		Notice:         notice,
 	}
 }
@@ -87,6 +88,13 @@ func knownLink(links api.Relations, relation string) string {
 func editNavigationHref(representation representation) string {
 	if href := representation.Actions.Href("edit"); href != "" {
 		return href + "/edit"
+	}
+	return ""
+}
+
+func deactivationConfirmationHref(representation representation) string {
+	if href := representation.Actions.Href("deactivate"); href != "" {
+		return href
 	}
 	return ""
 }

@@ -7,6 +7,8 @@ import (
 
 	"github.com/a-h/templ"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
+	confirmationview "github.com/bpsoos/shiftbell/internal/view/confirmation"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
 
@@ -96,6 +98,12 @@ func (t *Templater) CompletionDialog(
 		model.CompletedOn.Value = today
 	}
 	return completionDialog(model)
+}
+
+func (t *Templater) ConfirmationDialog(
+	model confirmationviewmodels.Dialog,
+) templ.Component {
+	return confirmationview.Dialog(model)
 }
 
 func (t *Templater) localDate() string {

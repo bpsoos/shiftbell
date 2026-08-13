@@ -1,4 +1,4 @@
-package chores
+package choretemplates
 
 import (
 	"net/http"
@@ -7,20 +7,16 @@ import (
 )
 
 const (
-	flashCookieName                   = "shiftbell_flash"
-	choreAndTemplateCreatedFlashValue = "chore-and-template-created"
-	choreAndTemplateCreatedNotice     = "Chore added and template saved."
-	choreCompletedFlashValue          = "chore-completed"
-	choreCompletedNotice              = "Chore completed."
-	choreDeletedFlashValue            = "chore-deleted"
-	choreDeletedNotice                = "Chore deleted."
+	flashCookieName               = "shiftbell_template_flash"
+	templateDeactivatedFlashValue = "template-deactivated"
+	templateDeactivatedNotice     = "Template deactivated."
 )
 
 func setFlashCookie(ctx *echo.Context, value string) {
 	cookie := &http.Cookie{
 		Name:     flashCookieName,
 		Value:    value,
-		Path:     "/chores",
+		Path:     "/chore-templates",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	}
@@ -33,13 +29,8 @@ func consumeFlashCookie(ctx *echo.Context) string {
 		return ""
 	}
 	clearFlashCookie(ctx)
-	switch cookie.Value {
-	case choreAndTemplateCreatedFlashValue:
-		return choreAndTemplateCreatedNotice
-	case choreCompletedFlashValue:
-		return choreCompletedNotice
-	case choreDeletedFlashValue:
-		return choreDeletedNotice
+	if cookie.Value == templateDeactivatedFlashValue {
+		return templateDeactivatedNotice
 	}
 	return ""
 }
@@ -47,7 +38,7 @@ func consumeFlashCookie(ctx *echo.Context) string {
 func clearFlashCookie(ctx *echo.Context) {
 	cookie := &http.Cookie{
 		Name:     flashCookieName,
-		Path:     "/chores",
+		Path:     "/chore-templates",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,

@@ -152,4 +152,47 @@ var _ = Describe("Browse chore templates", func() {
 			"_actions": [{"rel": "create", "href": "/chore-templates"}]
 		}`))
 	})
+
+	It("consumes the template deactivation success flash", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		service.EXPECT().Browse(ctx, &choretemplatemodels.BrowseChoreTemplatesParams{
+			Filter: choretemplatemodels.ChoreTemplateFilterActive,
+			Offset: 0,
+			Limit:  20,
+		}).Return(&choretemplatemodels.ChoreTemplatePage{}, nil).Once()
+		view := NewMockView(GinkgoT())
+		view.EXPECT().Collection(viewmodels.Collection{
+			Collection: choretemplateapimodels.CollectionResponse{
+				Items: []choretemplateapimodels.Response{},
+				Links: api.Relations{{Rel: "self", Href: "/chore-templates"}},
+				Actions: api.Relations{
+					{Rel: "create", Href: "/chore-templates"},
+				},
+			},
+			Notice: "Template deactivated.",
+		}, true).Return(templ.Raw("collection sentinel")).Once()
+		handler := choretemplatesendpoint.NewHandler(&choretemplatesendpoint.HandlerDeps{
+			Service: service,
+			View:    view,
+		})
+		e := echo.New()
+		e.GET("/chore-templates", handler.Browse)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chore-templates",
+			nil,
+		)
+		request.Header.Set("Accept", "text/html")
+		request.AddCookie(&http.Cookie{
+			Name:  "shiftbell_template_flash",
+			Value: "template-deactivated",
+		})
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(Equal("collection sentinel"))
+	})
 })
