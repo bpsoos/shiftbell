@@ -1,0 +1,42 @@
+package collectioncontrols
+
+import viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+
+templ Bar(model Model) {
+	<form
+		data-collection-controls
+		action={ model.ActionHref }
+		method="get"
+		hx-get={ model.ActionHref }
+		hx-trigger="submit, input changed delay:275ms target:input[name='search']"
+		hx-target="#main"
+		hx-swap="outerHTML"
+		hx-push-url="true"
+	>
+		<style>
+			me { align-items: center; display: flex; gap: 0.625rem; margin-bottom: 0.875rem; min-width: 0; }
+			me [data-search-control] { display: block; flex: 1 1 12rem; margin: 0; min-width: 0; position: relative; }
+			me [data-search-control] > svg { color: var(--sb-muted); height: 1rem; left: 0.625rem; pointer-events: none; position: absolute; top: 50%; transform: translateY(-50%); width: 1rem; }
+			me [data-search-control] input { background: var(--sb-input); border: 1px solid var(--sb-control-border); border-radius: var(--sb-radius-control); color: var(--sb-text); font-size: 0.875rem; line-height: 1.25; min-height: 2.25rem; min-width: 0; padding: 0.4375rem 0.625rem 0.4375rem 2rem; width: 100%; }
+			me [data-search-control] input::placeholder { color: var(--sb-muted); opacity: 1; }
+			me [data-search-control] input:focus { border-color: var(--sb-accent); }
+		</style>
+		for _, input := range model.HiddenInputs {
+			<input type="hidden" name={ input.Name } value={ input.Value }/>
+		}
+		<label data-search-control>
+			<span class="visually-hidden">{ model.SearchPlaceholder }</span>
+			@viewicons.MagnifyingGlass()
+			<input
+				type="search"
+				id={ model.SearchInputID }
+				name="search"
+				value={ model.Search }
+				placeholder={ model.SearchPlaceholder }
+				if model.AutofocusSearch {
+					autofocus
+				}
+			/>
+		</label>
+	</form>
+}

@@ -16,12 +16,21 @@ func (h *Handler) renderCollection(
 	collection choreCollectionResponse,
 	selectedStatus choremodels.ChoreStatus,
 	search string,
+	searchOpen bool,
+	autofocusSearch bool,
 ) error {
 	switch hypermedia.Negotiate(ctx.Request()) {
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, status, collection)
 	case hypermedia.RepresentationHTML:
-		model := collectionViewModel(collection, selectedStatus, search)
+		ctx.Response().Header().Add(echo.HeaderVary, "HX-Current-URL")
+		model := collectionViewModel(
+			collection,
+			selectedStatus,
+			search,
+			searchOpen,
+			autofocusSearch,
+		)
 		model.Notice = consumeFlashCookie(ctx)
 		return hypermedia.HTML(
 			ctx,

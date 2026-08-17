@@ -195,8 +195,10 @@ var _ = Describe("Browse chores", func() {
 				Actions: api.Relations{
 					{Rel: "create", Href: "/chores/new"},
 				},
-				Status: choremodels.ChoreStatusCompleted,
-				Search: "Kitchen",
+				Status:          choremodels.ChoreStatusCompleted,
+				Search:          "Kitchen",
+				SearchOpen:      true,
+				AutofocusSearch: true,
 			}, false).Return(templ.Raw("collection sentinel")).Once()
 			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
 				Service: service,
@@ -212,6 +214,10 @@ var _ = Describe("Browse chores", func() {
 			)
 			request.Header.Set("Accept", "text/html")
 			request.Header.Set("HX-Request", "true")
+			request.Header.Set(
+				"HX-Current-URL",
+				"http://example.com/chores?status=completed&search=Kit",
+			)
 			response := httptest.NewRecorder()
 
 			e.ServeHTTP(response, request)

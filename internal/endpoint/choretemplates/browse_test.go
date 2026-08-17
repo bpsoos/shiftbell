@@ -107,7 +107,11 @@ var _ = Describe("Browse chore templates", func() {
 					{Rel: "create", Href: "/chore-templates"},
 				},
 			},
-		}, true).Return(templ.Raw("collection sentinel")).Once()
+			Filter:          choretemplatemodels.ChoreTemplateFilterDeactivated,
+			Search:          "Kitchen",
+			SearchOpen:      true,
+			AutofocusSearch: true,
+		}, false).Return(templ.Raw("collection sentinel")).Once()
 		handler := choretemplatesendpoint.NewHandler(&choretemplatesendpoint.HandlerDeps{
 			Service: service,
 			View:    view,
@@ -121,6 +125,11 @@ var _ = Describe("Browse chore templates", func() {
 			nil,
 		)
 		request.Header.Set("Accept", "text/html")
+		request.Header.Set("HX-Request", "true")
+		request.Header.Set(
+			"HX-Current-URL",
+			"http://example.com/chore-templates?state=deactivated&search=Kit",
+		)
 		response := httptest.NewRecorder()
 
 		e.ServeHTTP(response, request)
@@ -152,9 +161,11 @@ var _ = Describe("Browse chore templates", func() {
 					},
 				},
 			},
-			BackHref:   "/chores/new",
-			ManualHref: "/chores/new?source=manual",
-		}, true).Return(templ.Raw("picker sentinel")).Once()
+			BackHref:        "/chores/new",
+			ManualHref:      "/chores/new?source=manual",
+			Search:          "Kitchen",
+			AutofocusSearch: true,
+		}, false).Return(templ.Raw("picker sentinel")).Once()
 		handler := choretemplatesendpoint.NewHandler(&choretemplatesendpoint.HandlerDeps{
 			Service: service,
 			View:    view,
@@ -168,6 +179,11 @@ var _ = Describe("Browse chore templates", func() {
 			nil,
 		)
 		request.Header.Set("Accept", "text/html")
+		request.Header.Set("HX-Request", "true")
+		request.Header.Set(
+			"HX-Current-URL",
+			"http://example.com/chore-templates?picker=1&search=Kit",
+		)
 		response := httptest.NewRecorder()
 
 		e.ServeHTTP(response, request)
@@ -234,6 +250,7 @@ var _ = Describe("Browse chore templates", func() {
 					{Rel: "create", Href: "/chore-templates"},
 				},
 			},
+			Filter: choretemplatemodels.ChoreTemplateFilterActive,
 			Notice: "Template deactivated.",
 		}, true).Return(templ.Raw("collection sentinel")).Once()
 		handler := choretemplatesendpoint.NewHandler(&choretemplatesendpoint.HandlerDeps{

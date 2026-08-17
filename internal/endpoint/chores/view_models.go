@@ -13,6 +13,8 @@ func collectionViewModel(
 	collection choreCollectionResponse,
 	status choremodels.ChoreStatus,
 	search string,
+	searchOpen bool,
+	autofocusSearch bool,
 ) choreviewmodels.Collection {
 	if status == "" {
 		status = choremodels.ChoreStatusActive
@@ -25,11 +27,13 @@ func collectionViewModel(
 		}
 	}
 	return choreviewmodels.Collection{
-		Items:   items,
-		Links:   collection.Links,
-		Actions: collection.Actions,
-		Status:  status,
-		Search:  search,
+		Items:           items,
+		Links:           collection.Links,
+		Actions:         collection.Actions,
+		Status:          status,
+		Search:          search,
+		SearchOpen:      searchOpen,
+		AutofocusSearch: autofocusSearch,
 	}
 }
 

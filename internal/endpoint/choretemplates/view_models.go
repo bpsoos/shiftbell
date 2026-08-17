@@ -6,15 +6,36 @@ import (
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 )
 
-func collectionViewModel(representation collectionResponse) viewmodels.Collection {
-	return viewmodels.Collection{Collection: representation}
+func collectionViewModel(
+	representation collectionResponse,
+	filter models.ChoreTemplateFilter,
+	search string,
+	searchOpen bool,
+	autofocusSearch bool,
+) viewmodels.Collection {
+	if filter == "" {
+		filter = models.ChoreTemplateFilterActive
+	}
+	return viewmodels.Collection{
+		Collection:      representation,
+		Filter:          filter,
+		Search:          search,
+		SearchOpen:      searchOpen,
+		AutofocusSearch: autofocusSearch,
+	}
 }
 
-func pickerViewModel(representation pickerCollectionResponse) viewmodels.Picker {
+func pickerViewModel(
+	representation pickerCollectionResponse,
+	search string,
+	autofocusSearch bool,
+) viewmodels.Picker {
 	return viewmodels.Picker{
-		Collection: representation,
-		BackHref:   "/chores/new",
-		ManualHref: "/chores/new?source=manual",
+		Collection:      representation,
+		BackHref:        "/chores/new",
+		ManualHref:      "/chores/new?source=manual",
+		Search:          search,
+		AutofocusSearch: autofocusSearch,
 	}
 }
 

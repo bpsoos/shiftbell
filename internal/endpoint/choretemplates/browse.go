@@ -57,9 +57,49 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 
 	links := browseLinks(request, page.More)
 	if request.pickerRequested {
-		return h.renderPicker(ctx, http.StatusOK, pickerResponse(page, links))
+		return h.renderPicker(
+			ctx,
+			http.StatusOK,
+			pickerResponse(page, links),
+			request.params.Search,
+			searchChanged(
+				ctx.Request().Header.Get("HX-Current-URL"),
+				request.responseURL.Query().Has("search"),
+				request.params.Search,
+			),
+		)
 	}
-	return h.renderCollection(ctx, http.StatusOK, browseResponse(page, links))
+	return h.renderCollection(
+		ctx,
+		http.StatusOK,
+		browseResponse(page, links),
+		request.params.Filter,
+		request.params.Search,
+		request.responseURL.Query().Has("search"),
+		searchChanged(
+			ctx.Request().Header.Get("HX-Current-URL"),
+			request.responseURL.Query().Has("search"),
+			request.params.Search,
+		),
+	)
+}
+
+func searchChanged(
+	currentURLHeader string,
+	searchOpen bool,
+	search string,
+) bool {
+	if currentURLHeader == "" {
+		return false
+	}
+	currentURL, err := url.Parse(currentURLHeader)
+	if err != nil {
+		return false
+	}
+	currentQuery := currentURL.Query()
+	return currentURL.Path == choreTemplateCollectionHref &&
+		(currentQuery.Has("search") != searchOpen ||
+			currentQuery.Get("search") != search)
 }
 
 func parseBrowseRequest(ctx *echo.Context) (browseRequest, error) {

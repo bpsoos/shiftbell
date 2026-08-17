@@ -54,7 +54,31 @@ func (h *Handler) browse(ctx *echo.Context) error {
 		newBrowseResponse(request, page),
 		request.params.Status,
 		request.params.Search,
+		request.responseURL.Query().Has("search"),
+		searchChanged(
+			ctx.Request().Header.Get("HX-Current-URL"),
+			request.responseURL.Query().Has("search"),
+			request.params.Search,
+		),
 	)
+}
+
+func searchChanged(
+	currentURLHeader string,
+	searchOpen bool,
+	search string,
+) bool {
+	if currentURLHeader == "" {
+		return false
+	}
+	currentURL, err := url.Parse(currentURLHeader)
+	if err != nil {
+		return false
+	}
+	currentQuery := currentURL.Query()
+	return currentURL.Path == choreCollectionHref &&
+		(currentQuery.Has("search") != searchOpen ||
+			currentQuery.Get("search") != search)
 }
 
 func parseBrowseRequest(ctx *echo.Context) (browseRequest, error) {

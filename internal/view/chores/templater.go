@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/a-h/templ"
+	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	confirmationview "github.com/bpsoos/shiftbell/internal/view/confirmation"
@@ -37,7 +38,31 @@ func (t *Templater) Collection(
 	fullPage bool,
 ) templ.Component {
 	today := t.today()
+	if fullPage && model.SearchOpen {
+		model.AutofocusSearch = true
+	}
 	return layouts.Frame("chores", fullPage, collectionContent(t, model, today))
+}
+
+func choreCollectionViewHref(status choremodels.ChoreStatus) string {
+	if status == choremodels.ChoreStatusCompleted {
+		return "/chores?status=completed"
+	}
+	return "/chores"
+}
+
+func choreSearchHref(status choremodels.ChoreStatus) string {
+	if status == choremodels.ChoreStatusCompleted {
+		return "/chores?status=completed&search="
+	}
+	return "/chores?search="
+}
+
+func choreSearchPlaceholder(status choremodels.ChoreStatus) string {
+	if status == choremodels.ChoreStatusCompleted {
+		return "Search completed chores"
+	}
+	return "Search chores"
 }
 
 func (t *Templater) Detail(

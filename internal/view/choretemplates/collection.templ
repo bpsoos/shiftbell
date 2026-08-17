@@ -2,20 +2,39 @@ package choretemplates
 
 import (
 	choretemplateapimodels "github.com/bpsoos/shiftbell/internal/models/api/choretemplates"
+	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
 )
 
 templ collection(model viewmodels.Collection) {
-	<section aria-labelledby="chore-templates-heading">
+	<section
+		data-template-collection
+		data-collection-state={ string(model.Filter) }
+		aria-labelledby="chore-templates-heading"
+		hx-sync="this:replace"
+	>
 		<style>
-			me { margin-inline: auto; max-width: 52rem; }
-			me > header { margin-bottom: 1rem; }
+			me { margin-block-start: -0.5rem; margin-inline: auto; max-width: 52rem; }
+			me > header { align-items: flex-end; display: flex; justify-content: space-between; margin-bottom: 0.75rem; }
+			me[data-collection-state="deactivated"] > header { margin-bottom: 1.25rem; }
 			me > header h1 { font-size: 1.875rem; letter-spacing: -0.035em; line-height: 1; margin: 0; }
 			me > header h1::after { background: var(--sb-accent); content: ""; display: block; height: 3px; margin-top: 0.5rem; width: 2rem; }
-			me > header p { color: var(--sb-muted); font-size: 0.875rem; margin: 0.25rem 0 0; }
+			me [data-collection-utilities] { align-items: center; display: flex; gap: 0.75rem; justify-content: flex-end; line-height: 1; margin: 0 0 0.5rem; min-height: 1.5rem; }
+			me [data-utility-link] { color: var(--sb-muted); font-size: 0.75rem; font-weight: 500; text-decoration: none; }
+			me [data-utility-link]:hover, me [data-utility-link]:focus-visible { color: var(--sb-text); text-decoration: underline; text-underline-offset: 0.15em; }
+			me [data-search-toggle] { align-items: center; background: transparent; border: 0; color: var(--sb-muted); display: inline-flex; height: 1.5rem; justify-content: center; padding: 0.125rem; text-decoration: none; width: 1.5rem; }
+			me [data-search-toggle]:hover, me [data-search-toggle]:focus-visible { color: var(--sb-text); }
 			me [data-notice] { align-items: center; background: var(--sb-surface); border: 1px solid var(--sb-border); border-left: 3px solid var(--sb-accent); color: var(--sb-text); display: flex; font-size: 0.875rem; gap: 0.5rem; margin-bottom: 0.875rem; padding: 0.625rem 0.75rem; }
 			me [data-notice] svg { color: var(--sb-muted); flex: 0 0 auto; }
+			me [data-template-search] { align-items: center; display: flex; gap: 0.75rem; margin: 0 0 0.5rem; }
+			me [data-search-control] { display: block; flex: 1 1 auto; margin: 0; min-width: 0; position: relative; }
+			me [data-search-control] > svg { color: var(--sb-muted); height: 1rem; left: 0.625rem; pointer-events: none; position: absolute; top: 50%; transform: translateY(-50%); width: 1rem; }
+			me [data-search-control] input { background: var(--sb-input); border: 1px solid var(--sb-control-border); border-radius: var(--sb-radius-control); color: var(--sb-text); font-size: 0.875rem; line-height: 1.25; min-height: 2.25rem; min-width: 0; padding: 0.4375rem 0.625rem 0.4375rem 2rem; width: 100%; }
+			me [data-search-control] input::placeholder { color: var(--sb-muted); opacity: 1; }
+			me [data-search-control] input:focus { border-color: var(--sb-accent); }
+			me [data-search-close] { color: var(--sb-muted); flex: 0 0 auto; font-size: 0.8125rem; font-weight: 600; line-height: 1; }
+			me [data-search-close]:hover, me [data-search-close]:focus-visible { color: var(--sb-text); }
 			me [data-template-list] { background: var(--sb-surface); border: 2px solid var(--sb-frame); list-style: none; margin: 0; padding: 0; }
 			me [data-template-row] + [data-template-row] { border-top: 1px solid var(--sb-border); }
 			me [data-template-link] { align-items: center; color: var(--sb-text); display: flex; gap: 0.75rem; min-height: 4rem; min-width: 0; padding: 0.6875rem 0.875rem; text-decoration: none; }
@@ -36,10 +55,18 @@ templ collection(model viewmodels.Collection) {
 				me [data-template-description] { display: none; }
 				me [data-template-link] { min-height: 3.625rem; padding-inline: 0.75rem; }
 			}
+			@media xs- {
+				me { margin-block-start: -0.75rem; }
+			}
 		</style>
 		<header>
-			<h1 id="chore-templates-heading">Templates</h1>
-			<p>Reusable starting points for chores.</p>
+			<h1 id="chore-templates-heading">
+				if model.Filter == choretemplatemodels.ChoreTemplateFilterDeactivated {
+					Deactivated templates
+				} else {
+					Templates
+				}
+			</h1>
 		</header>
 		if model.Notice != "" {
 			<div data-notice role="status">
@@ -47,15 +74,104 @@ templ collection(model viewmodels.Collection) {
 				<span>{ model.Notice }</span>
 			</div>
 		}
+		if model.SearchOpen {
+			@templateSearch(model)
+		} else {
+			@templateCollectionUtilities(model)
+		}
 		@collectionResults(model)
 	</section>
+}
+
+templ templateCollectionUtilities(model viewmodels.Collection) {
+	<nav data-collection-utilities aria-label="Template collection">
+		if model.Filter == choretemplatemodels.ChoreTemplateFilterDeactivated {
+			<a
+				data-utility-link
+				href="/chore-templates"
+				hx-get="/chore-templates"
+				hx-target="#main"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+			>Back to templates</a>
+		} else {
+			<a
+				data-utility-link
+				href="/chore-templates?state=deactivated"
+				hx-get="/chore-templates?state=deactivated"
+				hx-target="#main"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+			>View deactivated</a>
+		}
+		<a
+			data-search-toggle
+			href={ templateSearchHref(model.Filter) }
+			hx-get={ templateSearchHref(model.Filter) }
+			hx-target="#main"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			aria-label={ templateSearchPlaceholder(model.Filter) }
+			title={ templateSearchPlaceholder(model.Filter) }
+		>
+			@viewicons.MagnifyingGlass()
+			<span class="visually-hidden">Search</span>
+		</a>
+	</nav>
+}
+
+templ templateSearch(model viewmodels.Collection) {
+	<form
+		data-template-search
+		action="/chore-templates"
+		method="get"
+		hx-get="/chore-templates"
+		hx-trigger="submit, input changed delay:275ms target:input[name='search']"
+		hx-target="#main"
+		hx-swap="outerHTML"
+		hx-push-url="true"
+	>
+		if model.Filter == choretemplatemodels.ChoreTemplateFilterDeactivated {
+			<input type="hidden" name="state" value="deactivated"/>
+		}
+		<label data-search-control>
+			<span class="visually-hidden">{ templateSearchPlaceholder(model.Filter) }</span>
+			@viewicons.MagnifyingGlass()
+			<input
+				type="search"
+				id="template-collection-search"
+				name="search"
+				value={ model.Search }
+				placeholder={ templateSearchPlaceholder(model.Filter) }
+				if model.AutofocusSearch {
+					autofocus
+				}
+			/>
+		</label>
+		<a
+			data-search-close
+			href={ templateCollectionViewHref(model.Filter) }
+			hx-get={ templateCollectionViewHref(model.Filter) }
+			hx-target="#main"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+		>Close</a>
+	</form>
 }
 
 templ collectionResults(model viewmodels.Collection) {
 	if len(model.Collection.Items) == 0 {
 		<div data-empty>
-			<h2>No templates</h2>
-			<p>No reusable chore templates are available.</p>
+			if model.Search != "" {
+				<h2>No matching templates</h2>
+				<p>Try a different search.</p>
+			} else if model.Filter == choretemplatemodels.ChoreTemplateFilterDeactivated {
+				<h2>No deactivated templates</h2>
+				<p>Deactivated templates will appear here.</p>
+			} else {
+				<h2>No templates</h2>
+				<p>Templates saved from chores will appear here.</p>
+			}
 		</div>
 	} else {
 		<ul data-template-list>

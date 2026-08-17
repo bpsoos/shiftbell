@@ -2,6 +2,7 @@ package choretemplates
 
 import (
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	choretemplateviewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
@@ -11,12 +12,23 @@ func (h *Handler) renderCollection(
 	ctx *echo.Context,
 	status int,
 	representation collectionResponse,
+	filter choretemplatemodels.ChoreTemplateFilter,
+	search string,
+	searchOpen bool,
+	autofocusSearch bool,
 ) error {
 	switch hypermedia.Negotiate(ctx.Request()) {
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, status, representation)
 	case hypermedia.RepresentationHTML:
-		model := collectionViewModel(representation)
+		ctx.Response().Header().Add(echo.HeaderVary, "HX-Current-URL")
+		model := collectionViewModel(
+			representation,
+			filter,
+			search,
+			searchOpen,
+			autofocusSearch,
+		)
 		model.Notice = consumeFlashCookie(ctx)
 		return hypermedia.HTML(
 			ctx,
@@ -32,16 +44,19 @@ func (h *Handler) renderPicker(
 	ctx *echo.Context,
 	status int,
 	representation pickerCollectionResponse,
+	search string,
+	autofocusSearch bool,
 ) error {
 	switch hypermedia.Negotiate(ctx.Request()) {
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, status, representation)
 	case hypermedia.RepresentationHTML:
+		ctx.Response().Header().Add(echo.HeaderVary, "HX-Current-URL")
 		return hypermedia.HTML(
 			ctx,
 			status,
 			h.view.Picker(
-				pickerViewModel(representation),
+				pickerViewModel(representation, search, autofocusSearch),
 				fullPage(ctx),
 			),
 		)

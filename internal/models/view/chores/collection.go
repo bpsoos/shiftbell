@@ -12,12 +12,14 @@ type CollectionItem struct {
 }
 
 type Collection struct {
-	Items   []CollectionItem
-	Links   api.Relations
-	Actions api.Relations
-	Status  choremodels.ChoreStatus
-	Search  string
-	Notice  string
+	Items           []CollectionItem
+	Links           api.Relations
+	Actions         api.Relations
+	Status          choremodels.ChoreStatus
+	Search          string
+	SearchOpen      bool
+	Notice          string
+	AutofocusSearch bool
 }
 
 func (model Collection) HasPagination() bool {
