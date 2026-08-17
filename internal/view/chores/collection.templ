@@ -3,7 +3,6 @@ package chores
 import (
 	"time"
 
-	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	collectioncontrols "github.com/bpsoos/shiftbell/internal/view/collectioncontrols"
@@ -14,7 +13,7 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 	<section
 		data-chore-collection
 		aria-labelledby="chores-heading"
-		hx-get={ model.Links.Href("self") }
+		hx-get={ model.SelfHref }
 		hx-trigger="choreCompleted from:body"
 		hx-target="#main"
 		hx-swap="outerHTML"
@@ -262,48 +261,42 @@ templ choreSummary(t *Templater, item choreviewmodels.CollectionItem, today time
 				hx-target="#dialog-root"
 				hx-swap="innerHTML"
 				aria-haspopup="dialog"
-				aria-label={ "Complete \u201c" + item.Chore.Name + "\u201d" }
-				title={ "Complete \u201c" + item.Chore.Name + "\u201d" }
+				aria-label={ "Complete \u201c" + item.Name + "\u201d" }
+				title={ "Complete \u201c" + item.Name + "\u201d" }
 			>
 				<span data-complete-icon="idle">@viewicons.Circle()</span>
 				<span data-complete-icon="preview">@viewicons.CheckCircle()</span>
 			</button>
 		}
-		if href := item.Chore.Links.Href("self"); href != "" {
-			<a
-				data-chore-detail
-				href={ href }
-				hx-get={ href }
-				hx-target="#main"
-				hx-swap="outerHTML"
-				hx-push-url="true"
-			>
-				@choreSummaryContent(t, item.Chore, today)
-			</a>
-		} else {
-			<div data-chore-detail>
-				@choreSummaryContent(t, item.Chore, today)
-			</div>
-		}
+		<a
+			data-chore-detail
+			href={ item.DetailHref }
+			hx-get={ item.DetailHref }
+			hx-target="#main"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+		>
+			@choreSummaryContent(t, item, today)
+		</a>
 	</li>
 }
 
-templ choreSummaryContent(t *Templater, chore choreapimodels.Response, today time.Time) {
+templ choreSummaryContent(t *Templater, item choreviewmodels.CollectionItem, today time.Time) {
 	<span data-chore-copy>
-		<span data-chore-name>{ chore.Name }</span>
-		if chore.Description != "" {
-			<span data-chore-description>{ chore.Description }</span>
+		<span data-chore-name>{ item.Name }</span>
+		if item.Description != "" {
+			<span data-chore-description>{ item.Description }</span>
 		}
 	</span>
-	if chore.Status == choremodels.ChoreStatusCompleted && chore.CompletedOn != nil {
-		<time datetime={ *chore.CompletedOn }>{ "Completed " + *chore.CompletedOn }</time>
+	if item.Status == choremodels.ChoreStatusCompleted && item.CompletedOn != nil {
+		<time datetime={ *item.CompletedOn }>{ "Completed " + *item.CompletedOn }</time>
 	} else {
 		<time
-			data-deadline-state={ t.deadlineState(chore.Deadline, today) }
-			datetime={ chore.Deadline }
-			aria-label={ t.deadlineAccessibleLabel(chore.Deadline) }
-			title={ t.deadlineAccessibleLabel(chore.Deadline) }
-		>{ t.relativeDeadline(chore.Deadline, today) }</time>
+			data-deadline-state={ t.deadlineState(item.Deadline, today) }
+			datetime={ item.Deadline }
+			aria-label={ t.deadlineAccessibleLabel(item.Deadline) }
+			title={ t.deadlineAccessibleLabel(item.Deadline) }
+		>{ t.relativeDeadline(item.Deadline, today) }</time>
 	}
 	<span data-row-caret>@viewicons.CaretRight()</span>
 }
@@ -340,11 +333,11 @@ templ collectionPagination(model choreviewmodels.Collection) {
 				me > a { gap: 0.375rem; }
 				me > a[rel="next"] { margin-left: auto; }
 			</style>
-			if previousHref := model.Links.Href("previous"); previousHref != "" {
+			if model.PreviousHref != "" {
 				<a
 					class="btn btn-outline-secondary"
-					href={ previousHref }
-					hx-get={ previousHref }
+					href={ model.PreviousHref }
+					hx-get={ model.PreviousHref }
 					hx-target="#main"
 					hx-swap="outerHTML"
 					hx-push-url="true"
@@ -354,11 +347,11 @@ templ collectionPagination(model choreviewmodels.Collection) {
 					<span>Previous</span>
 				</a>
 			}
-			if nextHref := model.Links.Href("next"); nextHref != "" {
+			if model.NextHref != "" {
 				<a
 					class="btn btn-outline-secondary"
-					href={ nextHref }
-					hx-get={ nextHref }
+					href={ model.NextHref }
+					hx-get={ model.NextHref }
 					hx-target="#main"
 					hx-swap="outerHTML"
 					hx-push-url="true"

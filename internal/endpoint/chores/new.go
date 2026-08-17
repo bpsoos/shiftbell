@@ -2,9 +2,9 @@ package chores
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
+	"github.com/bpsoos/shiftbell/internal/endpoint/routes"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
@@ -74,11 +74,17 @@ func (h *Handler) newManualChore(ctx *echo.Context, query newChoreQuery) error {
 			Choices: []choreCreationChoice{
 				{
 					Label: "One-off",
-					Href:  "/chores/new?source=manual&recurrence=one-off",
+					Href: (routes.ChoreCreation{
+						Source:     routes.ChoreCreationSourceManual,
+						Recurrence: routes.ChoreCreationRecurrenceOneOff,
+					}).Href(),
 				},
 				{
 					Label: "Scheduled",
-					Href:  "/chores/new?source=manual&recurrence=scheduled",
+					Href: (routes.ChoreCreation{
+						Source:     routes.ChoreCreationSourceManual,
+						Recurrence: routes.ChoreCreationRecurrenceScheduled,
+					}).Href(),
 				},
 			},
 		})
@@ -87,7 +93,12 @@ func (h *Handler) newManualChore(ctx *echo.Context, query newChoreQuery) error {
 	return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
 		Step: "source",
 		Choices: []choreCreationChoice{
-			{Label: "Specify new", Href: "/chores/new?source=manual"},
+			{
+				Label: "Specify new",
+				Href: (routes.ChoreCreation{
+					Source: routes.ChoreCreationSourceManual,
+				}).Href(),
+			},
 			{Label: "Select template", Href: "/chore-templates?picker=1"},
 		},
 	})
@@ -165,17 +176,17 @@ func (h *Handler) templateRecurrenceChoices(
 		Choices: []choreCreationChoice{
 			{
 				Label: "One-off",
-				Href: fmt.Sprintf(
-					"/chores/new?template_id=%d&recurrence=one-off",
-					template.Id,
-				),
+				Href: (routes.ChoreCreation{
+					ChoreTemplateId: template.Id,
+					Recurrence:      routes.ChoreCreationRecurrenceOneOff,
+				}).Href(),
 			},
 			{
 				Label: "Scheduled",
-				Href: fmt.Sprintf(
-					"/chores/new?template_id=%d&recurrence=scheduled",
-					template.Id,
-				),
+				Href: (routes.ChoreCreation{
+					ChoreTemplateId: template.Id,
+					Recurrence:      routes.ChoreCreationRecurrenceScheduled,
+				}).Href(),
 			},
 		},
 	})

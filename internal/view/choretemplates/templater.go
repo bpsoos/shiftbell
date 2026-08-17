@@ -1,11 +1,9 @@
 package choretemplates
 
 import (
-	"strings"
 	"time"
 
 	"github.com/a-h/templ"
-	api "github.com/bpsoos/shiftbell/internal/models/api"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
@@ -106,17 +104,6 @@ func (t *Templater) Error(
 
 func (t *Templater) formatTime(value time.Time) string {
 	return value.In(t.appTimezone).Format("2 Jan 2006, 15:04 MST")
-}
-
-func knownLink(links api.Relations, relation string) string {
-	return links.Href(relation)
-}
-
-func oneOffCreationHref(href string) string {
-	if strings.Contains(href, "?") {
-		return href + "&recurrence=one-off"
-	}
-	return href + "?recurrence=one-off"
 }
 
 func formControlClass(className string, errorMessage string) string {

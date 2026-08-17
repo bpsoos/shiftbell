@@ -1,6 +1,7 @@
 package choretemplates
 
 import (
+	"github.com/bpsoos/shiftbell/internal/endpoint/routes"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
@@ -16,8 +17,18 @@ func collectionViewModel(
 	if filter == "" {
 		filter = models.ChoreTemplateFilterActive
 	}
+	items := make([]viewmodels.CollectionItem, len(representation.Items))
+	for i, item := range representation.Items {
+		items[i] = viewmodels.CollectionItem{
+			Name:        item.Name,
+			Description: item.Description,
+			DetailHref:  item.Links.Href("self"),
+		}
+	}
 	return viewmodels.Collection{
-		Collection:      representation,
+		Items:           items,
+		PreviousHref:    representation.Links.Href("previous"),
+		NextHref:        representation.Links.Href("next"),
 		Filter:          filter,
 		Search:          search,
 		SearchOpen:      searchOpen,
@@ -30,10 +41,25 @@ func pickerViewModel(
 	search string,
 	autofocusSearch bool,
 ) viewmodels.Picker {
+	items := make([]viewmodels.PickerItem, len(representation.Items))
+	for i, item := range representation.Items {
+		items[i] = viewmodels.PickerItem{
+			Name: item.Name,
+			SelectHref: (routes.ChoreCreation{
+				ChoreTemplateId: item.Id,
+				Recurrence:      routes.ChoreCreationRecurrenceOneOff,
+			}).Href(),
+		}
+	}
 	return viewmodels.Picker{
-		Collection:      representation,
-		BackHref:        "/chores/new",
-		ManualHref:      "/chores/new?source=manual",
+		Items:        items,
+		PreviousHref: representation.Links.Href("previous"),
+		NextHref:     representation.Links.Href("next"),
+		BackHref:     (routes.ChoreCreation{}).Href(),
+		ManualHref: (routes.ChoreCreation{
+			Source:     routes.ChoreCreationSourceManual,
+			Recurrence: routes.ChoreCreationRecurrenceOneOff,
+		}).Href(),
 		Search:          search,
 		AutofocusSearch: autofocusSearch,
 	}

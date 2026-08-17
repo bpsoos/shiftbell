@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bpsoos/shiftbell/internal/endpoint/routes"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
@@ -48,7 +49,7 @@ func newChoreRepresentation(chore *choremodels.Chore) choreRepresentation {
 }
 
 func createChoreNavigationAction() api.Relation {
-	return api.Relation{Rel: "create", Href: choreCollectionHref + "/new"}
+	return api.Relation{Rel: "create", Href: (routes.ChoreCreation{}).Href()}
 }
 
 func createChoreSubmissionAction() api.Relation {

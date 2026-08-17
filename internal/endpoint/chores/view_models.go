@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bpsoos/shiftbell/internal/endpoint/routes"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
@@ -22,13 +23,20 @@ func collectionViewModel(
 	items := make([]choreviewmodels.CollectionItem, len(collection.Items))
 	for i, chore := range collection.Items {
 		items[i] = choreviewmodels.CollectionItem{
-			Chore:        chore,
+			Status:       chore.Status,
+			Name:         chore.Name,
+			Description:  chore.Description,
+			Deadline:     chore.Deadline,
+			CompletedOn:  chore.CompletedOn,
+			DetailHref:   chore.Links.Href("self"),
 			CompleteHref: completionHref(chore),
 		}
 	}
 	return choreviewmodels.Collection{
 		Items:           items,
-		Links:           collection.Links,
+		SelfHref:        collection.Links.Href("self"),
+		PreviousHref:    collection.Links.Href("previous"),
+		NextHref:        collection.Links.Href("next"),
 		CreateHref:      collection.Actions.Href("create"),
 		Status:          status,
 		Search:          search,
@@ -103,7 +111,10 @@ func creationViewModel(
 	for _, choice := range creation.Choices {
 		switch choice.Label {
 		case "Specify new":
-			model.SpecifyNewHref = choice.Href
+			model.CreateFromScratchHref = (routes.ChoreCreation{
+				Source:     routes.ChoreCreationSourceManual,
+				Recurrence: routes.ChoreCreationRecurrenceOneOff,
+			}).Href()
 		case "Select template":
 			model.SelectTemplateHref = choice.Href
 		case "One-off":

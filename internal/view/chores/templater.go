@@ -2,7 +2,6 @@ package chores
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/a-h/templ"
@@ -150,7 +149,7 @@ func (t *Templater) deadlineGroups(
 		{Label: "Upcoming", State: "upcoming"},
 	}
 	for _, chore := range chores {
-		switch t.deadlineState(chore.Chore.Deadline, today) {
+		switch t.deadlineState(chore.Deadline, today) {
 		case "overdue":
 			groups[0].Chores = append(groups[0].Chores, chore)
 		case "today":
@@ -228,13 +227,6 @@ func calendarDayDifference(deadline time.Time, today time.Time) int {
 		today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC,
 	)
 	return int(deadlineUTC.Sub(todayUTC) / (24 * time.Hour))
-}
-
-func oneOffCreationHref(href string) string {
-	if strings.Contains(href, "?") {
-		return href + "&recurrence=one-off"
-	}
-	return href + "?recurrence=one-off"
 }
 
 func formControlClass(className string, errorMessage string) string {

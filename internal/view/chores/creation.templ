@@ -30,19 +30,9 @@ templ creationPage(backHref string) {
 templ creationSource(model choreviewmodels.Creation) {
 	@panel("create-chore-heading", "Add chore") {
 		<p>Choose how to define this chore.</p>
-		if model.HasSourceOptions() {
-			@creationOptions() {
-				if model.SpecifyNewHref != "" {
-					@creationOption(oneOffCreationHref(model.SpecifyNewHref), "Create from scratch", "Enter a name, description, and deadline.")
-				}
-				if model.SelectTemplateHref != "" {
-					@creationOption(model.SelectTemplateHref, "Use a template", "Start with a reusable chore definition.")
-				}
-			}
-		} else {
-			@unavailableNotice() {
-				No creation source is available.
-			}
+		@creationOptions() {
+			@creationOption(model.CreateFromScratchHref, "Create from scratch", "Enter a name, description, and deadline.")
+			@creationOption(model.SelectTemplateHref, "Use a template", "Start with a reusable chore definition.")
 		}
 	}
 }

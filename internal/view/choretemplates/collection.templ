@@ -1,7 +1,6 @@
 package choretemplates
 
 import (
-	choretemplateapimodels "github.com/bpsoos/shiftbell/internal/models/api/choretemplates"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	collectioncontrols "github.com/bpsoos/shiftbell/internal/view/collectioncontrols"
@@ -147,10 +146,10 @@ templ templateSearch(model viewmodels.Collection) {
 }
 
 templ collectionResults(model viewmodels.Collection) {
-	if len(model.Collection.Items) == 0 {
+	if len(model.Items) == 0 {
 		@collectionEmptyState(model)
 	} else {
-		@templateList(model.Collection.Items)
+		@templateList(model.Items)
 	}
 	@collectionPagination(model)
 }
@@ -175,7 +174,7 @@ templ collectionEmptyState(model viewmodels.Collection) {
 	</div>
 }
 
-templ templateList(items []choretemplateapimodels.Response) {
+templ templateList(items []viewmodels.CollectionItem) {
 	<ul>
 		<style>
 			me { background: var(--sb-surface); border: 2px solid var(--sb-frame); list-style: none; margin: 0; padding: 0; }
@@ -194,21 +193,15 @@ templ templateList(items []choretemplateapimodels.Response) {
 		</style>
 		for _, item := range items {
 			<li>
-				if href := knownLink(item.Links, "self"); href != "" {
-					<a data-template-link href={ href } hx-get={ href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">
-						@templateRowContent(item)
-					</a>
-				} else {
-					<div data-template-link>
-						@templateRowContent(item)
-					</div>
-				}
+				<a data-template-link href={ item.DetailHref } hx-get={ item.DetailHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">
+					@templateRowContent(item)
+				</a>
 			</li>
 		}
 	</ul>
 }
 
-templ templateRowContent(item choretemplateapimodels.Response) {
+templ templateRowContent(item viewmodels.CollectionItem) {
 	<span data-template-copy>
 		<span data-template-name>{ item.Name }</span>
 		if item.Description != "" {
@@ -226,14 +219,14 @@ templ collectionPagination(model viewmodels.Collection) {
 				me > a { gap: 0.375rem; }
 				me > a[rel="next"] { margin-left: auto; }
 			</style>
-			if previous := knownLink(model.Collection.Links, "previous"); previous != "" {
-				<a class="btn btn-outline-secondary" href={ previous } hx-get={ previous } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="prev">
+			if model.PreviousHref != "" {
+				<a class="btn btn-outline-secondary" href={ model.PreviousHref } hx-get={ model.PreviousHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="prev">
 					@viewicons.CaretLeft()
 					<span>Previous</span>
 				</a>
 			}
-			if next := knownLink(model.Collection.Links, "next"); next != "" {
-				<a class="btn btn-outline-secondary" href={ next } hx-get={ next } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="next">
+			if model.NextHref != "" {
+				<a class="btn btn-outline-secondary" href={ model.NextHref } hx-get={ model.NextHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="next">
 					<span>Next</span>
 					@viewicons.CaretRight()
 				</a>

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/a-h/templ"
+	"github.com/bpsoos/shiftbell/internal/endpoint/routes"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choretemplateapimodels "github.com/bpsoos/shiftbell/internal/models/api/choretemplates"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
@@ -91,8 +92,10 @@ func newPickerItemResponse(choreTemplate *models.ChoreTemplate) pickerItemRespon
 		Name: choreTemplate.Name,
 		Links: api.Relations{
 			{
-				Rel:  "select",
-				Href: fmt.Sprintf("/chores/new?template_id=%d", choreTemplate.Id),
+				Rel: "select",
+				Href: (routes.ChoreCreation{
+					ChoreTemplateId: choreTemplate.Id,
+				}).Href(),
 			},
 		},
 	}

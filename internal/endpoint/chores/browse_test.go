@@ -8,8 +8,6 @@ import (
 	"github.com/a-h/templ"
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
-	api "github.com/bpsoos/shiftbell/internal/models/api"
-	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/labstack/echo/v5"
@@ -170,28 +168,14 @@ var _ = Describe("Browse chores", func() {
 			view := NewMockView(GinkgoT())
 			view.EXPECT().Collection(choreviewmodels.Collection{
 				Items: []choreviewmodels.CollectionItem{{
-					Chore: choreapimodels.Response{
-						Id:          42,
-						Status:      choremodels.ChoreStatusCompleted,
-						Name:        "Kitchen",
-						Description: "Wash and fold",
-						Deadline:    "2026-08-15",
-						Links: api.Relations{
-							{Rel: "self", Href: "/chores/42"},
-							{Rel: "collection", Href: "/chores"},
-						},
-					},
+					Status:      choremodels.ChoreStatusCompleted,
+					Name:        "Kitchen",
+					Description: "Wash and fold",
+					Deadline:    "2026-08-15",
+					DetailHref:  "/chores/42",
 				}},
-				Links: api.Relations{
-					{
-						Rel:  "self",
-						Href: "/chores?status=completed&search=Kitchen&offset=4&limit=7",
-					},
-					{
-						Rel:  "previous",
-						Href: "/chores?limit=7&offset=0&search=Kitchen&status=completed",
-					},
-				},
+				SelfHref:        "/chores?status=completed&search=Kitchen&offset=4&limit=7",
+				PreviousHref:    "/chores?limit=7&offset=0&search=Kitchen&status=completed",
 				CreateHref:      "/chores/new",
 				Status:          choremodels.ChoreStatusCompleted,
 				Search:          "Kitchen",
@@ -234,7 +218,7 @@ var _ = Describe("Browse chores", func() {
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Collection(choreviewmodels.Collection{
 			Items:      []choreviewmodels.CollectionItem{},
-			Links:      api.Relations{{Rel: "self", Href: "/chores"}},
+			SelfHref:   "/chores",
 			CreateHref: "/chores/new",
 			Status:     choremodels.ChoreStatusActive,
 			Notice:     "Chore added and template saved.",
@@ -272,7 +256,7 @@ var _ = Describe("Browse chores", func() {
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Collection(choreviewmodels.Collection{
 			Items:      []choreviewmodels.CollectionItem{},
-			Links:      api.Relations{{Rel: "self", Href: "/chores"}},
+			SelfHref:   "/chores",
 			CreateHref: "/chores/new",
 			Status:     choremodels.ChoreStatusActive,
 			Notice:     "Chore completed.",
@@ -310,7 +294,7 @@ var _ = Describe("Browse chores", func() {
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Collection(choreviewmodels.Collection{
 			Items:      []choreviewmodels.CollectionItem{},
-			Links:      api.Relations{{Rel: "self", Href: "/chores"}},
+			SelfHref:   "/chores",
 			CreateHref: "/chores/new",
 			Status:     choremodels.ChoreStatusActive,
 			Notice:     "Chore deleted.",

@@ -1299,11 +1299,11 @@ func getManualChoreRecurrence(
 		"Choices": Equal([]shiftbellapi.ChoreCreationChoice{
 			{
 				Label: "One-off",
-				Href:  "/chores/new?source=manual&recurrence=one-off",
+				Href:  "/chores/new?recurrence=one-off&source=manual",
 			},
 			{
 				Label: "Scheduled",
-				Href:  "/chores/new?source=manual&recurrence=scheduled",
+				Href:  "/chores/new?recurrence=scheduled&source=manual",
 			},
 		}),
 		"Actions": BeEmpty(),
@@ -1394,14 +1394,14 @@ func getTemplateChoreRecurrence(
 			{
 				Label: "One-off",
 				Href: fmt.Sprintf(
-					"/chores/new?template_id=%d&recurrence=one-off",
+					"/chores/new?recurrence=one-off&template_id=%d",
 					template.Id,
 				),
 			},
 			{
 				Label: "Scheduled",
 				Href: fmt.Sprintf(
-					"/chores/new?template_id=%d&recurrence=scheduled",
+					"/chores/new?recurrence=scheduled&template_id=%d",
 					template.Id,
 				),
 			},

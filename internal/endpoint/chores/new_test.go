@@ -4,9 +4,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/a-h/templ"
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -62,6 +65,37 @@ var _ = Describe("Start chore creation", func() {
 		}`))
 	})
 
+	It("maps required source actions into the HTML view", func(ctx SpecContext) {
+		view := NewMockView(GinkgoT())
+		view.EXPECT().Creation(choreviewmodels.Creation{
+			Creation: choreapimodels.CreationResponse{
+				Step: "source",
+				Choices: []choreapimodels.CreationChoice{
+					{
+						Label: "Specify new",
+						Href:  "/chores/new?source=manual",
+					},
+					{Label: "Select template", Href: "/chore-templates?picker=1"},
+				},
+			},
+			BackHref:              "/chores",
+			CreateFromScratchHref: "/chores/new?recurrence=one-off&source=manual",
+			SelectTemplateHref:    "/chore-templates?picker=1",
+		}, false).Return(templ.Raw("creation sentinel")).Once()
+		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{View: view})
+		e := echo.New()
+		e.GET("/chores/new", handler.New)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/chores/new", nil)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("HX-Request", "true")
+		response := httptest.NewRecorder()
+
+		e.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(Equal("creation sentinel"))
+	})
+
 	It(
 		"offers one-off and scheduled recurrence for a manual source",
 		func(ctx SpecContext) {
@@ -85,11 +119,11 @@ var _ = Describe("Start chore creation", func() {
 			"choices": [
 				{
 					"label": "One-off",
-					"href": "/chores/new?source=manual&recurrence=one-off"
+					"href": "/chores/new?recurrence=one-off&source=manual"
 				},
 				{
 					"label": "Scheduled",
-					"href": "/chores/new?source=manual&recurrence=scheduled"
+					"href": "/chores/new?recurrence=scheduled&source=manual"
 				}
 			],
 			"_actions": []
@@ -182,11 +216,11 @@ var _ = Describe("Start chore creation", func() {
 			"choices": [
 				{
 					"label": "One-off",
-					"href": "/chores/new?template_id=42&recurrence=one-off"
+					"href": "/chores/new?recurrence=one-off&template_id=42"
 				},
 				{
 					"label": "Scheduled",
-					"href": "/chores/new?template_id=42&recurrence=scheduled"
+					"href": "/chores/new?recurrence=scheduled&template_id=42"
 				}
 			],
 			"_actions": []

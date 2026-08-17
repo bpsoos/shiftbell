@@ -8,8 +8,6 @@ import (
 	"github.com/a-h/templ"
 	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
-	api "github.com/bpsoos/shiftbell/internal/models/api"
-	choretemplateapimodels "github.com/bpsoos/shiftbell/internal/models/api/choretemplates"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	"github.com/labstack/echo/v5"
@@ -91,22 +89,8 @@ var _ = Describe("Browse chore templates", func() {
 		}).Return(&choretemplatemodels.ChoreTemplatePage{}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Collection(viewmodels.Collection{
-			Collection: choretemplateapimodels.CollectionResponse{
-				Items: []choretemplateapimodels.Response{},
-				Links: api.Relations{
-					{
-						Rel:  "self",
-						Href: "/chore-templates?state=deactivated&search=Kitchen&offset=4&limit=7",
-					},
-					{
-						Rel:  "previous",
-						Href: "/chore-templates?limit=7&offset=0&search=Kitchen&state=deactivated",
-					},
-				},
-				Actions: api.Relations{
-					{Rel: "create", Href: "/chore-templates"},
-				},
-			},
+			Items:           []viewmodels.CollectionItem{},
+			PreviousHref:    "/chore-templates?limit=7&offset=0&search=Kitchen&state=deactivated",
 			Filter:          choretemplatemodels.ChoreTemplateFilterDeactivated,
 			Search:          "Kitchen",
 			SearchOpen:      true,
@@ -145,24 +129,21 @@ var _ = Describe("Browse chore templates", func() {
 			Search: "Kitchen",
 			Offset: 4,
 			Limit:  7,
-		}).Return(&choretemplatemodels.ChoreTemplatePage{}, nil).Once()
+		}).Return(&choretemplatemodels.ChoreTemplatePage{
+			ChoreTemplates: []choretemplatemodels.ChoreTemplate{{
+				Id:   42,
+				Name: "Kitchen",
+			}},
+		}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Picker(viewmodels.Picker{
-			Collection: choretemplateapimodels.PickerCollectionResponse{
-				Items: []choretemplateapimodels.PickerItemResponse{},
-				Links: api.Relations{
-					{
-						Rel:  "self",
-						Href: "/chore-templates?picker=1&search=Kitchen&offset=4&limit=7",
-					},
-					{
-						Rel:  "previous",
-						Href: "/chore-templates?limit=7&offset=0&picker=1&search=Kitchen",
-					},
-				},
-			},
+			Items: []viewmodels.PickerItem{{
+				Name:       "Kitchen",
+				SelectHref: "/chores/new?recurrence=one-off&template_id=42",
+			}},
+			PreviousHref:    "/chore-templates?limit=7&offset=0&picker=1&search=Kitchen",
 			BackHref:        "/chores/new",
-			ManualHref:      "/chores/new?source=manual",
+			ManualHref:      "/chores/new?recurrence=one-off&source=manual",
 			Search:          "Kitchen",
 			AutofocusSearch: true,
 		}, false).Return(templ.Raw("picker sentinel")).Once()
@@ -243,13 +224,7 @@ var _ = Describe("Browse chore templates", func() {
 		}).Return(&choretemplatemodels.ChoreTemplatePage{}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Collection(viewmodels.Collection{
-			Collection: choretemplateapimodels.CollectionResponse{
-				Items: []choretemplateapimodels.Response{},
-				Links: api.Relations{{Rel: "self", Href: "/chore-templates"}},
-				Actions: api.Relations{
-					{Rel: "create", Href: "/chore-templates"},
-				},
-			},
+			Items:  []viewmodels.CollectionItem{},
 			Filter: choretemplatemodels.ChoreTemplateFilterActive,
 			Notice: "Template deactivated.",
 		}, true).Return(templ.Raw("collection sentinel")).Once()

@@ -1,19 +1,22 @@
 package chores
 
-import (
-	api "github.com/bpsoos/shiftbell/internal/models/api"
-	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
-	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
-)
+import choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 
 type CollectionItem struct {
-	Chore        choreapimodels.Response
+	Status       choremodels.ChoreStatus
+	Name         string
+	Description  string
+	Deadline     string
+	CompletedOn  *string
+	DetailHref   string
 	CompleteHref string
 }
 
 type Collection struct {
 	Items           []CollectionItem
-	Links           api.Relations
+	SelfHref        string
+	PreviousHref    string
+	NextHref        string
 	CreateHref      string
 	Status          choremodels.ChoreStatus
 	Search          string
@@ -23,6 +26,5 @@ type Collection struct {
 }
 
 func (model Collection) HasPagination() bool {
-	return model.Links.Href("previous") != "" ||
-		model.Links.Href("next") != ""
+	return model.PreviousHref != "" || model.NextHref != ""
 }
