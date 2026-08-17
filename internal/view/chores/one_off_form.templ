@@ -22,8 +22,7 @@ templ templateOneOffFormContent(form choreviewmodels.TemplateOneOffForm) {
 	@creationPage(form.CancelHref) {
 		@oneOffFormPanel(form.ActionHref, form.CancelHref, form.SummaryError) {
 			if form.HasSelectedTemplate() {
-				<div data-selected>
-					<div data-caption>Using chore template</div>
+				@selectedTemplate("Using chore template") {
 					if form.ChoreTemplateName != "" {
 						<strong>{ form.ChoreTemplateName }</strong>
 					} else {
@@ -32,7 +31,7 @@ templ templateOneOffFormContent(form choreviewmodels.TemplateOneOffForm) {
 					if form.ChoreTemplateDescription != "" {
 						<p>{ form.ChoreTemplateDescription }</p>
 					}
-				</div>
+				}
 			}
 			<input type="hidden" name="chore_template_id" value={ strconv.Itoa(form.ChoreTemplateId) }/>
 			@createDeadlineField(form.Deadline)
@@ -41,47 +40,40 @@ templ templateOneOffFormContent(form choreviewmodels.TemplateOneOffForm) {
 }
 
 templ oneOffFormPanel(actionHref string, cancelHref string, summaryError string) {
-	<div data-panel>
-		<header data-panel-header>
-			<h1 id="create-chore-heading">Add chore</h1>
-		</header>
-		<div data-panel-body>
-			if actionHref == "" {
-				<div class="alert alert-danger" data-unavailable role="alert">The creation action is not available.</div>
-			} else {
-				<form
-					id="create-chore-form"
-					action={ actionHref }
-					method="post"
-					hx-post={ actionHref }
-					hx-target="#main"
-					hx-swap="outerHTML"
-					if summaryError != "" {
-						aria-describedby="create-chore-form-summary"
+	@panel("create-chore-heading", "Add chore") {
+		@panelForm() {
+			<form
+				id="create-chore-form"
+				action={ actionHref }
+				method="post"
+				hx-post={ actionHref }
+				hx-target="#main"
+				hx-swap="outerHTML"
+				if summaryError != "" {
+					aria-describedby="create-chore-form-summary"
+				}
+			>
+				@formSummary("create-chore-form-summary", summaryError)
+				{ children... }
+				@formActions() {
+					if cancelHref != "" {
+						<a
+							class="btn btn-secondary"
+							href={ cancelHref }
+							hx-get={ cancelHref }
+							hx-target="#main"
+							hx-swap="outerHTML"
+							hx-push-url="true"
+						>Cancel</a>
 					}
-				>
-					@formSummary("create-chore-form-summary", summaryError)
-					{ children... }
-					<div data-actions>
-						if cancelHref != "" {
-							<a
-								class="btn btn-secondary"
-								href={ cancelHref }
-								hx-get={ cancelHref }
-								hx-target="#main"
-								hx-swap="outerHTML"
-								hx-push-url="true"
-							>Cancel</a>
-						}
-						<button class="btn btn-primary" data-primary-action type="submit">
-							@viewicons.Plus()
-							<span>Add chore</span>
-						</button>
-					</div>
-				</form>
-			}
-		</div>
-	</div>
+					<button class="btn btn-primary" data-primary-action type="submit">
+						@viewicons.Plus()
+						<span>Add chore</span>
+					</button>
+				}
+			</form>
+		}
+	}
 }
 
 templ createNameField(field choreviewmodels.Field) {
@@ -142,7 +134,7 @@ templ createDeadlineField(field choreviewmodels.Field) {
 }
 
 templ createSaveAsTemplateField(checked bool) {
-	<label data-field data-save-template>
+	@saveTemplateField() {
 		<input
 			class="form-check-input"
 			type="checkbox"
@@ -158,5 +150,5 @@ templ createSaveAsTemplateField(checked bool) {
 			<span data-save-template-title>Also save as template</span>
 			<span data-save-template-help id="create-chore-save-as-template-help">Create a reusable template from this name and description.</span>
 		</span>
-	</label>
+	}
 }

@@ -14,7 +14,7 @@ type CollectionItem struct {
 type Collection struct {
 	Items           []CollectionItem
 	Links           api.Relations
-	Actions         api.Relations
+	CreateHref      string
 	Status          choremodels.ChoreStatus
 	Search          string
 	SearchOpen      bool

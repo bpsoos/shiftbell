@@ -192,9 +192,7 @@ var _ = Describe("Browse chores", func() {
 						Href: "/chores?limit=7&offset=0&search=Kitchen&status=completed",
 					},
 				},
-				Actions: api.Relations{
-					{Rel: "create", Href: "/chores/new"},
-				},
+				CreateHref:      "/chores/new",
 				Status:          choremodels.ChoreStatusCompleted,
 				Search:          "Kitchen",
 				SearchOpen:      true,
@@ -235,13 +233,11 @@ var _ = Describe("Browse chores", func() {
 		}).Return(&choremodels.ChorePage{}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Collection(choreviewmodels.Collection{
-			Items: []choreviewmodels.CollectionItem{},
-			Links: api.Relations{{Rel: "self", Href: "/chores"}},
-			Actions: api.Relations{
-				{Rel: "create", Href: "/chores/new"},
-			},
-			Status: choremodels.ChoreStatusActive,
-			Notice: "Chore added and template saved.",
+			Items:      []choreviewmodels.CollectionItem{},
+			Links:      api.Relations{{Rel: "self", Href: "/chores"}},
+			CreateHref: "/chores/new",
+			Status:     choremodels.ChoreStatusActive,
+			Notice:     "Chore added and template saved.",
 		}, true).Return(templ.Raw("collection sentinel")).Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
 			Service: service,
@@ -275,13 +271,11 @@ var _ = Describe("Browse chores", func() {
 		}).Return(&choremodels.ChorePage{}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Collection(choreviewmodels.Collection{
-			Items: []choreviewmodels.CollectionItem{},
-			Links: api.Relations{{Rel: "self", Href: "/chores"}},
-			Actions: api.Relations{
-				{Rel: "create", Href: "/chores/new"},
-			},
-			Status: choremodels.ChoreStatusActive,
-			Notice: "Chore completed.",
+			Items:      []choreviewmodels.CollectionItem{},
+			Links:      api.Relations{{Rel: "self", Href: "/chores"}},
+			CreateHref: "/chores/new",
+			Status:     choremodels.ChoreStatusActive,
+			Notice:     "Chore completed.",
 		}, true).Return(templ.Raw("collection sentinel")).Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
 			Service: service,
@@ -315,13 +309,11 @@ var _ = Describe("Browse chores", func() {
 		}).Return(&choremodels.ChorePage{}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Collection(choreviewmodels.Collection{
-			Items: []choreviewmodels.CollectionItem{},
-			Links: api.Relations{{Rel: "self", Href: "/chores"}},
-			Actions: api.Relations{
-				{Rel: "create", Href: "/chores/new"},
-			},
-			Status: choremodels.ChoreStatusActive,
-			Notice: "Chore deleted.",
+			Items:      []choreviewmodels.CollectionItem{},
+			Links:      api.Relations{{Rel: "self", Href: "/chores"}},
+			CreateHref: "/chores/new",
+			Status:     choremodels.ChoreStatusActive,
+			Notice:     "Chore deleted.",
 		}, true).Return(templ.Raw("collection sentinel")).Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
 			Service: service,

@@ -29,7 +29,7 @@ func collectionViewModel(
 	return choreviewmodels.Collection{
 		Items:           items,
 		Links:           collection.Links,
-		Actions:         collection.Actions,
+		CreateHref:      collection.Actions.Href("create"),
 		Status:          status,
 		Search:          search,
 		SearchOpen:      searchOpen,

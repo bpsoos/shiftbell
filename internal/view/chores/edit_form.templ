@@ -4,11 +4,8 @@ import choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 
 templ editFormContent(form choreviewmodels.EditForm) {
 	@panelPage(form.CancelHref, "Chore", "edit-chore-heading") {
-		<div data-panel>
-			<header data-panel-header>
-				<h1 id="edit-chore-heading">Edit chore</h1>
-			</header>
-			<div data-panel-body>
+		@panel("edit-chore-heading", "Edit chore") {
+			@panelForm() {
 				<form
 					id="edit-chore-form"
 					action={ form.ActionHref }
@@ -27,7 +24,7 @@ templ editFormContent(form choreviewmodels.EditForm) {
 					if form.Scheduled {
 						@editChoreTemplateField(form.AlsoUpdateChoreTemplate)
 					}
-					<div data-actions>
+					@formActions() {
 						<a
 							class="btn btn-secondary"
 							href={ form.CancelHref }
@@ -37,10 +34,10 @@ templ editFormContent(form choreviewmodels.EditForm) {
 							hx-push-url="true"
 						>Cancel</a>
 						<button class="btn btn-primary" data-primary-action type="submit">Save changes</button>
-					</div>
+					}
 				</form>
-			</div>
-		</div>
+			}
+		}
 	}
 }
 
@@ -109,7 +106,7 @@ templ editDeadlineField(field choreviewmodels.Field, scheduled bool) {
 }
 
 templ editChoreTemplateField(checked bool) {
-	<label data-field data-save-template>
+	@saveTemplateField() {
 		<input
 			class="form-check-input"
 			type="checkbox"
@@ -125,5 +122,5 @@ templ editChoreTemplateField(checked bool) {
 			<span data-save-template-title>Also update chore template</span>
 			<span data-save-template-help id="edit-chore-update-template-help">Apply name and description changes to the shared template. Template changes affect future generated chores.</span>
 		</span>
-	</label>
+	}
 }
