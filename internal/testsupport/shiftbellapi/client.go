@@ -18,6 +18,7 @@ const (
 	RelationCollection        = "collection"
 	RelationChores            = "chores"
 	RelationChoreTemplates    = "chore_templates"
+	RelationSchedules         = "schedules"
 	RelationNext              = "next"
 	RelationPrevious          = "previous"
 	RelationCreate            = "create"

@@ -12,27 +12,31 @@ import (
 )
 
 var _ = Describe("Get home", func() {
-	It("advertises the chore and chore-template collections", func(ctx SpecContext) {
-		handler := home.NewHandler()
-		e := echo.New()
-		e.GET("/", handler.Get)
-		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
-		request.Header.Set("Accept", hypermedia.MediaType)
-		response := httptest.NewRecorder()
+	It(
+		"advertises the chore, chore-template and schedule collections",
+		func(ctx SpecContext) {
+			handler := home.NewHandler()
+			e := echo.New()
+			e.GET("/", handler.Get)
+			request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
 
-		e.ServeHTTP(response, request)
+			e.ServeHTTP(response, request)
 
-		Expect(response.Code).To(Equal(http.StatusOK))
-		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
-		Expect(response.Header().Get("Vary")).To(Equal("Accept"))
-		Expect(response.Body.Bytes()).To(MatchJSON(`{
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+			Expect(response.Header().Get("Vary")).To(Equal("Accept"))
+			Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"_links": [
 				{"rel": "self", "href": "/"},
 				{"rel": "chores", "href": "/chores"},
-				{"rel": "chore_templates", "href": "/chore-templates"}
+				{"rel": "chore_templates", "href": "/chore-templates"},
+				{"rel": "schedules", "href": "/schedules"}
 			]
 		}`))
-	})
+		},
+	)
 
 	It("redirects browser navigation to the chore collection", func(ctx SpecContext) {
 		handler := home.NewHandler()

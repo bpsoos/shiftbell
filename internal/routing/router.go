@@ -6,6 +6,10 @@ type HomeHandler interface {
 	Get(*echo.Context) error
 }
 
+type ScheduleHandler interface {
+	Browse(*echo.Context) error
+}
+
 type ChoreTemplateHandler interface {
 	Browse(*echo.Context) error
 	Create(*echo.Context) error
@@ -31,12 +35,14 @@ type ChoreHandler interface {
 }
 
 type RouterDeps struct {
+	ScheduleHandler      ScheduleHandler
 	HomeHandler          HomeHandler
 	ChoreTemplateHandler ChoreTemplateHandler
 	ChoreHandler         ChoreHandler
 }
 
 type Router struct {
+	scheduleHandler      ScheduleHandler
 	homeHandler          HomeHandler
 	choreTemplateHandler ChoreTemplateHandler
 	choreHandler         ChoreHandler
@@ -44,6 +50,7 @@ type Router struct {
 
 func NewRouter(deps *RouterDeps) *Router {
 	return &Router{
+		scheduleHandler:      deps.ScheduleHandler,
 		homeHandler:          deps.HomeHandler,
 		choreTemplateHandler: deps.ChoreTemplateHandler,
 		choreHandler:         deps.ChoreHandler,

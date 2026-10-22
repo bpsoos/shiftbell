@@ -20,6 +20,7 @@ func (h *Handler) Get(ctx *echo.Context) error {
 				{Rel: "self", Href: "/"},
 				{Rel: "chores", Href: "/chores"},
 				{Rel: "chore_templates", Href: "/chore-templates"},
+				{Rel: "schedules", Href: "/schedules"},
 			},
 		})
 	case hypermedia.RepresentationHTML:

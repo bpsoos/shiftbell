@@ -9,14 +9,17 @@ import (
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/endpoint/home"
+	schedulesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/schedules"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	"github.com/bpsoos/shiftbell/internal/migrations"
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
 	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretemplates"
+	schedulespersistence "github.com/bpsoos/shiftbell/internal/persistence/schedules"
 	"github.com/bpsoos/shiftbell/internal/routing"
 	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	choretemplatesservice "github.com/bpsoos/shiftbell/internal/service/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/service/normalization"
+	schedulesservice "github.com/bpsoos/shiftbell/internal/service/schedules"
 	choresview "github.com/bpsoos/shiftbell/internal/view/chores"
 	choretemplatesview "github.com/bpsoos/shiftbell/internal/view/choretemplates"
 	"github.com/jmoiron/sqlx"
@@ -105,6 +108,18 @@ func execute() int {
 	})
 
 	router := routing.NewRouter(&routing.RouterDeps{
+		ScheduleHandler: schedulesendpoint.NewHandler(&schedulesendpoint.HandlerDeps{
+			Service: schedulesservice.NewService(
+				&schedulesservice.Deps{
+					Persister: schedulespersistence.NewPersister(
+						&schedulespersistence.PersisterDeps{Db: db},
+					),
+					Normalizer: normalizer,
+					Now:        time.Now,
+				},
+				&schedulesservice.Config{},
+			),
+		}),
 		HomeHandler:          home.NewHandler(),
 		ChoreHandler:         choresHandler,
 		ChoreTemplateHandler: choreTemplatesHandler,

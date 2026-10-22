@@ -15,6 +15,7 @@ func (r *Router) Setup(app *echo.Echo) error {
 	app.StaticFS("/assets", assetsFS)
 
 	app.GET("/", r.homeHandler.Get)
+	app.GET("/schedules", r.scheduleHandler.Browse)
 	app.GET("/chores", r.choreHandler.GetBatch)
 	app.GET("/chores/new", r.choreHandler.New)
 	app.POST("/chores", r.choreHandler.Create)

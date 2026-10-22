@@ -34,6 +34,10 @@ var _ = Describe("Chore template API", func() {
 				shiftbellapi.Relation{Rel: shiftbellapi.RelationSelf, Href: "/"},
 				shiftbellapi.Relation{Rel: shiftbellapi.RelationChores, Href: "/chores"},
 				shiftbellapi.Relation{
+					Rel:  shiftbellapi.RelationSchedules,
+					Href: "/schedules",
+				},
+				shiftbellapi.Relation{
 					Rel:  shiftbellapi.RelationChoreTemplates,
 					Href: "/chore-templates",
 				},
