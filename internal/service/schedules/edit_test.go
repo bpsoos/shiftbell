@@ -112,4 +112,43 @@ var _ = Describe("Edit", func() {
 		Expect(err).To(MatchError("edit schedule: persistence failed"))
 		Expect(errors.Is(err, persistErr)).To(BeTrue())
 	})
+
+	DescribeTable(
+		"preserves schedule mutation errors",
+		func(ctx SpecContext, persistErr error) {
+			normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
+			persister.EXPECT().
+				Edit(ctx, &models.EditScheduleParams{Id: 42, Name: "Name", IntervalDays: 14}).
+				Return(nil, persistErr).
+				Once()
+
+			result, err := service.Edit(
+				ctx,
+				&models.EditScheduleParams{Id: 42, Name: "name", IntervalDays: 14},
+			)
+
+			Expect(result).To(BeNil())
+			Expect(errors.Is(err, persistErr)).To(BeTrue())
+		},
+		Entry("name conflict", models.ErrNameConflict),
+		Entry("inactive", models.ErrInactive),
+		Entry("not found", models.ErrNotFound),
+	)
+
+	DescribeTable("accepts interval boundaries", func(ctx SpecContext, interval int) {
+		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
+		persisted := &models.Schedule{Id: 42, Name: "Name", IntervalDays: interval}
+		persister.EXPECT().
+			Edit(ctx, &models.EditScheduleParams{Id: 42, Name: "Name", IntervalDays: interval}).
+			Return(persisted, nil).
+			Once()
+
+		result, err := service.Edit(
+			ctx,
+			&models.EditScheduleParams{Id: 42, Name: "name", IntervalDays: interval},
+		)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result).To(BeIdenticalTo(persisted))
+	}, Entry("minimum", 1), Entry("maximum", 3650))
 })

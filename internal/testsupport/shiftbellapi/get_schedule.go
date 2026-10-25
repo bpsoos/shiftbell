@@ -9,7 +9,7 @@ import (
 
 type GetScheduleResult struct {
 	StatusCode      int
-	SuccessResponse *Schedule
+	SuccessResponse *ScheduleRepresentation
 	ErrorResponse   *ErrorResponse
 }
 
@@ -33,7 +33,7 @@ func (c *APIClient) GetSchedule(
 		}
 		return result, nil
 	}
-	var schedule Schedule
+	var schedule ScheduleRepresentation
 	if err := json.Unmarshal(body, &schedule); err != nil {
 		return nil, fmt.Errorf("decode get schedule response: %w", err)
 	}

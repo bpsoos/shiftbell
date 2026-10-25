@@ -1,7 +1,6 @@
 package acceptance_test
 
 import (
-	"context"
 	"net/http"
 	"os"
 	"strconv"
@@ -73,7 +72,8 @@ var _ = Describe("Schedule API", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(details.StatusCode).To(Equal(http.StatusOK))
 			Expect(details.ErrorResponse).To(BeNil())
-			Expect(details.SuccessResponse).To(Equal(&item))
+			Expect(details.SuccessResponse).NotTo(BeNil())
+			Expect(details.SuccessResponse.Schedule).To(Equal(item))
 
 			By("following the template and active chore links from schedule details")
 			templateHref := details.SuccessResponse.Links.Href(
@@ -107,6 +107,57 @@ var _ = Describe("Schedule API", func() {
 			).To(ContainElement(item))
 		},
 	)
+
+	It("edits a schedule without changing its active chore", func(ctx SpecContext) {
+		baseURL := os.Getenv("SHIFTBELL_BASE_URL")
+		Expect(baseURL).NotTo(BeEmpty())
+		client := shiftbellapi.NewAPIClient(baseURL)
+		created := createScheduledChore(ctx, client, uniqueChoreName("Schedule edit"), 7)
+		Expect(created.Chore.ScheduleId).NotTo(BeNil())
+		var item shiftbellapi.Schedule
+		Expect(
+			browseAllSchedules(ctx, client),
+		).To(ContainElement(HaveField("Id", *created.Chore.ScheduleId), &item))
+		details, err := client.GetSchedule(
+			ctx,
+			item.Links.Href(shiftbellapi.RelationSelf),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(details.StatusCode).To(Equal(http.StatusOK))
+		Expect(details.SuccessResponse).NotTo(BeNil())
+
+		By("following the advertised edit action")
+		editHref := details.SuccessResponse.Actions.Href(shiftbellapi.RelationEdit)
+		Expect(editHref).NotTo(BeEmpty())
+		name := item.Name + " updated"
+		edited, err := client.EditSchedule(ctx, editHref, shiftbellapi.EditScheduleParams{
+			Name: "  " + name + "  ", IntervalDays: 14,
+		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(edited.StatusCode).To(Equal(http.StatusOK))
+		Expect(edited.ErrorResponse).To(BeNil())
+		expected := *details.SuccessResponse
+		expected.Name = name
+		expected.IntervalDays = 14
+		Expect(edited.SuccessResponse).To(Equal(&expected))
+
+		By("verifying the edit persisted and the active chore is unchanged")
+		persisted, err := client.GetSchedule(
+			ctx,
+			item.Links.Href(shiftbellapi.RelationSelf),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(persisted.StatusCode).To(Equal(http.StatusOK))
+		Expect(persisted.SuccessResponse).To(Equal(&expected))
+		chore, err := client.GetChore(
+			ctx,
+			item.Links.Href(shiftbellapi.RelationActiveChore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(chore.StatusCode).To(Equal(http.StatusOK))
+		Expect(chore.SuccessResponse).NotTo(BeNil())
+		Expect(chore.SuccessResponse.Chore).To(Equal(created.Chore))
+	})
 
 	It(
 		"returns not found for an unknown schedule with a usable collection link",
@@ -774,31 +825,3 @@ var _ = Describe("Schedule API", func() {
 		},
 	)
 })
-
-func browseAllSchedules(
-	ctx context.Context,
-	client *shiftbellapi.APIClient,
-) []shiftbellapi.Schedule {
-	GinkgoHelper()
-	home, err := client.GetHome(ctx)
-	Expect(err).NotTo(HaveOccurred())
-	href := home.Home.Links.Href(shiftbellapi.RelationSchedules)
-	Expect(href).NotTo(BeEmpty())
-	return browseAllSchedulesFrom(ctx, client, href)
-}
-
-func browseAllSchedulesFrom(
-	ctx context.Context,
-	client *shiftbellapi.APIClient,
-	href string,
-) []shiftbellapi.Schedule {
-	GinkgoHelper()
-	items := make([]shiftbellapi.Schedule, 0)
-	for href != "" {
-		collection, err := client.GetSchedules(ctx, href)
-		Expect(err).NotTo(HaveOccurred())
-		items = append(items, collection.Items...)
-		href = collection.Links.Href(shiftbellapi.RelationNext)
-	}
-	return items
-}

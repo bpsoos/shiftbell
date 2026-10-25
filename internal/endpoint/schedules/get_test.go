@@ -59,7 +59,8 @@ var _ = Describe("Get", func() {
 			"id":42,"name":"Weekly laundry","chore_template_id":7,"chore_template_name":"Wash clothes",
 			"interval_days":7,"deactivated_at":null,"active_chore_id":11,"active_chore_deadline":"2020-04-02T00:00:00Z",
 			"_links":[{"rel":"self","href":"/schedules/42"},{"rel":"collection","href":"/schedules"},
-				{"rel":"chore_template","href":"/chore-templates/7"},{"rel":"active_chore","href":"/chores/11"}]
+				{"rel":"chore_template","href":"/chore-templates/7"},{"rel":"active_chore","href":"/chores/11"}],
+			"_actions":[{"rel":"edit","href":"/schedules/42"}]
 		}`))
 		},
 	)
@@ -90,7 +91,7 @@ var _ = Describe("Get", func() {
 			"id":42,"name":"Weekly laundry","chore_template_id":7,"chore_template_name":"Wash clothes",
 			"interval_days":7,"deactivated_at":"2020-04-03T10:00:00Z","active_chore_id":null,"active_chore_deadline":null,
 			"_links":[{"rel":"self","href":"/schedules/42"},{"rel":"collection","href":"/schedules"},
-				{"rel":"chore_template","href":"/chore-templates/7"}]
+				{"rel":"chore_template","href":"/chore-templates/7"}],"_actions":[]
 		}`))
 	})
 

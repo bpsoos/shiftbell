@@ -20,13 +20,6 @@ func NewPersister(deps *PersisterDeps) *Persister {
 	return &Persister{db: deps.Db}
 }
 
-func (p *Persister) Edit(
-	_ context.Context,
-	_ *models.EditScheduleParams,
-) (*models.Schedule, error) {
-	return nil, errors.New("edit schedule: not implemented")
-}
-
 func (p *Persister) Deactivate(
 	_ context.Context,
 	_ *models.DeactivateScheduleParams,

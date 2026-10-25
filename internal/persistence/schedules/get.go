@@ -7,10 +7,19 @@ import (
 	"fmt"
 
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
+	"github.com/jmoiron/sqlx"
 )
 
 func (p *Persister) Get(ctx context.Context, id int) (*models.ScheduleDetails, error) {
-	row := p.db.QueryRowContext(
+	return getSchedule(ctx, p.db, id)
+}
+
+func getSchedule(
+	ctx context.Context,
+	queryer sqlx.QueryerContext,
+	id int,
+) (*models.ScheduleDetails, error) {
+	row := queryer.QueryRowxContext(
 		ctx,
 		`
 			select s.id, s.name, s.chore_template_id, t.name, s.interval_days,

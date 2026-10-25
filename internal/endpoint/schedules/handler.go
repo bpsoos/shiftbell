@@ -9,6 +9,7 @@ import (
 type Service interface {
 	Browse(context.Context, *models.BrowseSchedulesParams) (*models.SchedulePage, error)
 	Get(context.Context, int) (*models.ScheduleDetails, error)
+	Edit(context.Context, *models.EditScheduleParams) (*models.Schedule, error)
 }
 
 type HandlerDeps struct {

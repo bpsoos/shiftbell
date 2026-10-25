@@ -20,9 +20,39 @@ type response struct {
 	Links               api.Relations `json:"_links"`
 }
 
+type representation struct {
+	response
+	Actions api.Relations `json:"_actions"`
+}
+
+type errorResponse struct {
+	Error   string        `json:"error"`
+	Links   api.Relations `json:"_links"`
+	Actions api.Relations `json:"_actions,omitempty"`
+}
+
+func resourceHref(id int) string {
+	return "/schedules/" + strconv.Itoa(id)
+}
+
+func collectionLink() api.Relations {
+	return api.Relations{{Rel: "collection", Href: "/schedules"}}
+}
+
+func newRepresentation(schedule *models.Schedule) representation {
+	actions := api.Relations{}
+	if schedule.DeactivatedAt == nil {
+		actions = append(
+			actions,
+			api.Relation{Rel: "edit", Href: resourceHref(schedule.Id)},
+		)
+	}
+	return representation{response: newResponse(schedule), Actions: actions}
+}
+
 func newResponse(schedule *models.Schedule) response {
 	links := api.Relations{
-		{Rel: "self", Href: "/schedules/" + strconv.Itoa(schedule.Id)},
+		{Rel: "self", Href: resourceHref(schedule.Id)},
 		{Rel: "collection", Href: "/schedules"},
 		{
 			Rel:  "chore_template",

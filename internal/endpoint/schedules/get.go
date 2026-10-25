@@ -6,15 +6,9 @@ import (
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
-	api "github.com/bpsoos/shiftbell/internal/models/api"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
 	"github.com/labstack/echo/v5"
 )
-
-type errorResponse struct {
-	Error string        `json:"error"`
-	Links api.Relations `json:"_links"`
-}
 
 func (h *Handler) Get(ctx *echo.Context) error {
 	if hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationJSON {
@@ -32,7 +26,7 @@ func (h *Handler) Get(ctx *echo.Context) error {
 	if err != nil {
 		return h.renderGetError(ctx, err)
 	}
-	return hypermedia.JSON(ctx, http.StatusOK, newResponse(schedule))
+	return hypermedia.JSON(ctx, http.StatusOK, newRepresentation(schedule))
 }
 
 func (h *Handler) renderGetError(ctx *echo.Context, err error) error {
@@ -49,8 +43,4 @@ func (h *Handler) renderGetError(ctx *echo.Context, err error) error {
 		http.StatusInternalServerError,
 		errorResponse{Error: "something went wrong", Links: collectionLink()},
 	)
-}
-
-func collectionLink() api.Relations {
-	return api.Relations{{Rel: "collection", Href: "/schedules"}}
 }
