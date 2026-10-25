@@ -1083,6 +1083,78 @@ var _ = Describe("Chore API", func() {
 		)
 	})
 
+	It(
+		"rejects direct deletion of an active scheduled chore without changing its schedule",
+		func(ctx SpecContext) {
+			scope := uniqueChoreName("Reject scheduled deletion")
+			template := createChoreTemplate(
+				ctx,
+				client,
+				discoverChoreTemplateCollection(
+					ctx,
+					client,
+				),
+				scope,
+				"Keep this scheduled chore.",
+			)
+			form := getTemplateOneOffChoreForm(ctx, client,
+				discoverChoreCollection(ctx, client), template.ChoreTemplate)
+			interval := 7
+			result, err := client.CreateChore(
+				ctx,
+				form.Actions.Href(shiftbellapi.RelationCreate),
+				shiftbellapi.CreateChoreParams{
+					ChoreTemplateId: &template.ChoreTemplate.Id,
+					ScheduleName:    scope + " weekly",
+					IntervalDays:    &interval,
+					Deadline:        "2020-08-01",
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.StatusCode).To(Equal(http.StatusCreated))
+			Expect(result.SuccessResponse).NotTo(BeNil())
+			created := result.SuccessResponse
+			Expect(created.Chore.ScheduleId).NotTo(BeNil())
+			Expect(created.Actions.Href(shiftbellapi.RelationDelete)).To(BeEmpty())
+			deadline := "2020-08-01T00:00:00Z"
+			schedule := shiftbellapi.Schedule{
+				Id:                  *created.Chore.ScheduleId,
+				Name:                scope + " weekly",
+				ChoreTemplateId:     template.ChoreTemplate.Id,
+				ChoreTemplateName:   template.ChoreTemplate.Name,
+				IntervalDays:        interval,
+				ActiveChoreId:       &created.Chore.Id,
+				ActiveChoreDeadline: &deadline,
+			}
+			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
+
+			By("sending DELETE directly despite the missing delete action")
+			deleted, err := client.DeleteChore(
+				ctx,
+				created.Chore.Links.Href(shiftbellapi.RelationSelf),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deleted.StatusCode).To(Equal(http.StatusConflict))
+			Expect(deleted.ErrorResponse).NotTo(BeNil())
+			Expect(
+				deleted.ErrorResponse.Error,
+			).To(Equal("active scheduled chore cannot be deleted"))
+
+			By("retrieving the unchanged chore and its schedule")
+			retrieved, err := client.GetChore(
+				ctx,
+				created.Chore.Links.Href(shiftbellapi.RelationSelf),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(retrieved.StatusCode).To(Equal(http.StatusOK))
+			Expect(retrieved.ErrorResponse).To(BeNil())
+			Expect(retrieved.SuccessResponse).NotTo(BeNil())
+			Expect(retrieved.SuccessResponse.Chore).To(Equal(created.Chore))
+			Expect(retrieved.SuccessResponse.Actions).To(ConsistOf(created.Actions))
+			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
+		},
+	)
+
 	When("permanently deleting a one-off chore", func() {
 		DescribeTable("deletes the chore",
 			func(ctx SpecContext, prepare prepareOneOffChoreForDeletion) {

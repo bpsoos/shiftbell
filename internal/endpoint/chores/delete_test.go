@@ -88,6 +88,74 @@ var _ = Describe("Delete chore", func() {
 		Expect(response.Body.String()).To(BeEmpty())
 	})
 
+	It(
+		"returns a conflict when an active scheduled chore cannot be deleted",
+		func(ctx SpecContext) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Delete(ctx, 42).Return(
+				errors.Join(errors.New("delete chore"), choremodels.ErrActiveScheduledCannotDelete),
+			).
+				Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			app := echo.New()
+			app.DELETE("/chores/:id", handler.Delete)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodDelete,
+				"/chores/42",
+				nil,
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusConflict))
+			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+			Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"error": "active scheduled chore cannot be deleted",
+			"_links": [],
+			"_actions": []
+		}`))
+			Expect(response.Header().Get("Set-Cookie")).To(BeEmpty())
+		},
+	)
+
+	It(
+		"rejects HTMX deletion of an active scheduled chore without a success redirect",
+		func(ctx SpecContext) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Delete(ctx, 42).Return(
+				errors.Join(errors.New("delete chore"), choremodels.ErrActiveScheduledCannotDelete),
+			).
+				Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			app := echo.New()
+			app.DELETE("/chores/:id", handler.Delete)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodDelete,
+				"/chores/42",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusConflict))
+			Expect(response.Header().Get("HX-Redirect")).To(BeEmpty())
+			Expect(response.Header().Get("HX-Trigger")).To(BeEmpty())
+			Expect(response.Header().Get("Set-Cookie")).To(BeEmpty())
+			Expect(response.Body.String()).To(BeEmpty())
+		},
+	)
+
 	It("deletes a chore from an HTMX dialog and redirects", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Delete(ctx, 42).Return(nil).Once()

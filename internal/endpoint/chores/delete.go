@@ -34,6 +34,15 @@ func (h *Handler) deleteVendorJSON(ctx *echo.Context) error {
 		if errors.Is(err, choremodels.ErrNotFound) {
 			return hypermedia.NoContent(ctx, http.StatusNoContent)
 		}
+		if errors.Is(err, choremodels.ErrActiveScheduledCannotDelete) {
+			return hypermedia.JSON(
+				ctx,
+				http.StatusConflict,
+				apiErrorResponse{
+					Error: choremodels.ErrActiveScheduledCannotDelete.Error(),
+				},
+			)
+		}
 		logging.Default().Error("delete chore", "err", err)
 		return hypermedia.JSON(
 			ctx,
@@ -52,6 +61,9 @@ func (h *Handler) deleteHTMX(ctx *echo.Context) error {
 	if err := h.service.Delete(ctx.Request().Context(), id); err != nil {
 		if errors.Is(err, choremodels.ErrNotFound) {
 			return h.renderDeleted(ctx)
+		}
+		if errors.Is(err, choremodels.ErrActiveScheduledCannotDelete) {
+			return hypermedia.NoContent(ctx, http.StatusConflict)
 		}
 		logging.Default().Error("delete chore", "err", err)
 		return h.renderDeletionError(ctx, id)

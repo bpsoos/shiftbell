@@ -3,6 +3,7 @@ package chores_test
 import (
 	"errors"
 
+	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -38,5 +39,16 @@ var _ = Describe("Delete", func() {
 
 		Expect(err).To(MatchError("delete chore: persistence failed"))
 		Expect(errors.Is(err, persistErr)).To(BeTrue())
+	})
+
+	It("preserves the active scheduled deletion restriction", func(ctx SpecContext) {
+		persister.EXPECT().
+			Delete(ctx, 42).
+			Return(choremodels.ErrActiveScheduledCannotDelete).
+			Once()
+
+		err := service.Delete(ctx, 42)
+
+		Expect(errors.Is(err, choremodels.ErrActiveScheduledCannotDelete)).To(BeTrue())
 	})
 })
