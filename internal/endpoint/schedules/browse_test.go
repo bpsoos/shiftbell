@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/endpoint/schedules"
@@ -151,6 +152,57 @@ var _ = Describe("Browse", func() {
 		Entry("unknown", "invalid"),
 		Entry("wrong case", "Active"),
 	)
+
+	DescribeTable(
+		"preserves search in pagination and state navigation",
+		func(ctx SpecContext, state models.ScheduleFilter) {
+			search := "Laundry & towels + folding"
+			service.EXPECT().
+				Browse(ctx, &models.BrowseSchedulesParams{Filter: state, Search: search, Offset: 20, Limit: 20}).
+				Return(&models.SchedulePage{More: true}, nil).
+				Once()
+			encodedSearch := url.QueryEscape(search)
+			request := httptest.NewRequestWithContext(ctx, http.MethodGet,
+				"/schedules?state="+string(state)+"&offset=20&search="+encodedSearch, nil)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.Bytes()).To(MatchJSON(fmt.Sprintf(`{
+			"items":[],"more":true,"_links":[
+				{"rel":"self","href":"/schedules?state=%s&offset=20&search=%s"},
+				{"rel":"active","href":"/schedules?search=%s&state=active"},
+				{"rel":"deactivated","href":"/schedules?search=%s&state=deactivated"},
+				{"rel":"next","href":"/schedules?offset=40&search=%s&state=%s"},
+				{"rel":"previous","href":"/schedules?offset=0&search=%s&state=%s"}
+			]
+		}`, state, encodedSearch, encodedSearch, encodedSearch, encodedSearch, state, encodedSearch, state)))
+		},
+		Entry("active schedules", models.ScheduleFilterActive),
+		Entry("deactivated schedules", models.ScheduleFilterDeactivated),
+	)
+
+	It("returns validation feedback for an invalid search", func(ctx SpecContext) {
+		service.EXPECT().
+			Browse(ctx, &models.BrowseSchedulesParams{Search: "invalid search", Limit: 20}).
+			Return(nil, fmt.Errorf("browse schedules: %w", validationerrors.ErrInvalidSearch)).
+			Once()
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/schedules?search=invalid+search",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+
+		app.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+		Expect(response.Body.Bytes()).To(MatchJSON(`{"error":"invalid search"}`))
+	})
 
 	It("conceals persistence failures", func(ctx SpecContext) {
 		service.EXPECT().Browse(ctx, mock.Anything).

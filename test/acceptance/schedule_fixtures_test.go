@@ -23,17 +23,34 @@ func createScheduledChore(
 		name,
 		"Reusable steps.",
 	)
+	return createTemplateScheduledChore(
+		ctx,
+		client,
+		template.ChoreTemplate,
+		name+" weekly",
+		interval,
+	)
+}
+
+func createTemplateScheduledChore(
+	ctx context.Context,
+	client *shiftbellapi.APIClient,
+	template shiftbellapi.ChoreTemplate,
+	scheduleName string,
+	interval int,
+) *shiftbellapi.CreateChoreResponse {
+	GinkgoHelper()
 	form := getTemplateOneOffChoreForm(
 		ctx,
 		client,
 		discoverChoreCollection(ctx, client),
-		template.ChoreTemplate,
+		template,
 	)
 	created, err := client.CreateChore(
 		ctx,
 		form.Actions.Href(shiftbellapi.RelationCreate),
 		shiftbellapi.CreateChoreParams{
-			ChoreTemplateId: &template.ChoreTemplate.Id, ScheduleName: name + " weekly",
+			ChoreTemplateId: &template.Id, ScheduleName: scheduleName,
 			IntervalDays: &interval, Deadline: "2020-02-03",
 		},
 	)

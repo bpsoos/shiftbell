@@ -31,6 +31,129 @@ var _ = Describe("Browse", func() {
 		Expect(page).To(Equal(&models.SchedulePage{Schedules: []models.Schedule{}}))
 	})
 
+	When("searching schedule and template names", func() {
+		BeforeEach(func(ctx SpecContext) {
+			_, err := db.ExecContext(
+				ctx,
+				`insert into chore_templates (id, name, description) values
+				(1, 'Reusable kitchen routine', 'Secret description'),
+				(2, 'Bathroom', 'Other description'), (3, 'Percent%_ template', null)`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = db.ExecContext(
+				ctx,
+				`insert into schedules (id, name, chore_template_id, interval_days, deactivated_at) values
+				(1, 'Morning kitchen', 1, 7, null), (2, 'Kitchen evening', 2, 14, null),
+				(3, 'Archived rotation', 1, 30, '2020-03-27'),
+				(4, 'Unrelated routine', 2, 7, null), (5, 'Percent%_ schedule', 3, 7, null)`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		DescribeTable(
+			"matches literal substrings within the selected state",
+			func(ctx SpecContext, search string, filter models.ScheduleFilter, expectedIDs []int) {
+				page, err := persister.Browse(
+					ctx,
+					&models.BrowseSchedulesParams{
+						Search: search,
+						Filter: filter,
+						Limit:  20,
+					},
+				)
+
+				Expect(err).NotTo(HaveOccurred())
+				ids := make([]int, 0, len(page.Schedules))
+				for _, schedule := range page.Schedules {
+					ids = append(ids, schedule.Id)
+				}
+				Expect(ids).To(Equal(expectedIDs))
+				Expect(page.More).To(BeFalse())
+			},
+			Entry(
+				"schedule name with different case",
+				"CHEN EVE",
+				models.ScheduleFilterActive,
+				[]int{2},
+			),
+			Entry(
+				"template name with different case",
+				"ABLE KIT",
+				models.ScheduleFilterActive,
+				[]int{1},
+			),
+			Entry(
+				"both names without duplicates",
+				"KITCHEN",
+				models.ScheduleFilterActive,
+				[]int{2, 1},
+			),
+			Entry(
+				"deactivated schedule by template name",
+				"ABLE KIT",
+				models.ScheduleFilterDeactivated,
+				[]int{3},
+			),
+			Entry(
+				"deactivated schedule by schedule name",
+				"IVED ROT",
+				models.ScheduleFilterDeactivated,
+				[]int{3},
+			),
+			Entry(
+				"active matches excluded from deactivated state",
+				"EVENING",
+				models.ScheduleFilterDeactivated,
+				[]int{},
+			),
+			Entry("empty search", "", models.ScheduleFilterActive, []int{5, 4, 2, 1}),
+			Entry("no match", "missing", models.ScheduleFilterActive, []int{}),
+			Entry(
+				"descriptions excluded",
+				"Secret",
+				models.ScheduleFilterActive,
+				[]int{},
+			),
+			Entry("percent is literal", "%", models.ScheduleFilterActive, []int{5}),
+			Entry("underscore is literal", "_", models.ScheduleFilterActive, []int{5}),
+			Entry(
+				"SQL syntax is literal",
+				"' OR 1=1 --",
+				models.ScheduleFilterActive,
+				[]int{},
+			),
+		)
+
+		It("filters before ordering and pagination", func(ctx SpecContext) {
+			first, err := persister.Browse(
+				ctx,
+				&models.BrowseSchedulesParams{
+					Search: "KITCHEN",
+					Filter: models.ScheduleFilterActive,
+					Limit:  1,
+				},
+			)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(first.Schedules).To(HaveLen(1))
+			Expect(first.Schedules[0].Id).To(Equal(2))
+			Expect(first.More).To(BeTrue())
+			second, err := persister.Browse(
+				ctx,
+				&models.BrowseSchedulesParams{
+					Search: "KITCHEN",
+					Filter: models.ScheduleFilterActive,
+					Limit:  1,
+					Offset: 1,
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(second.Schedules).To(HaveLen(1))
+			Expect(second.Schedules[0].Id).To(Equal(1))
+			Expect(second.More).To(BeFalse())
+		})
+	})
+
 	When("schedules exist", func() {
 		BeforeEach(func() {
 			_, err := db.Exec(

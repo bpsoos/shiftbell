@@ -33,6 +33,60 @@ var _ = Describe("Schedule API", func() {
 		}))
 	})
 
+	When("searching schedules", func() {
+		var (
+			client         *shiftbellapi.APIClient
+			scope          string
+			collectionHref string
+			created        *shiftbellapi.CreateChoreResponse
+		)
+		BeforeEach(func(ctx SpecContext) {
+			baseURL := os.Getenv("SHIFTBELL_BASE_URL")
+			Expect(baseURL).NotTo(BeEmpty())
+			client = shiftbellapi.NewAPIClient(baseURL)
+			scope = uniqueChoreName("Schedule search")
+			template := createChoreTemplate(
+				ctx,
+				client,
+				discoverChoreTemplateCollection(ctx, client),
+				scope+" template",
+				"Reusable steps.",
+			)
+			created = createTemplateScheduledChore(
+				ctx,
+				client,
+				template.ChoreTemplate,
+				scope+" schedule",
+				7,
+			)
+			createScheduledChore(ctx, client, scope+" unrelated", 7)
+			Expect(created.Chore.ScheduleId).NotTo(BeNil())
+			home, err := client.GetHome(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			collectionHref = home.Home.Links.Href(shiftbellapi.RelationSchedules)
+			Expect(collectionHref).NotTo(BeEmpty())
+		})
+
+		DescribeTable(
+			"finds a schedule by a case-insensitive name substring",
+			func(ctx SpecContext, fragment string) {
+				collection, err := client.BrowseSchedules(
+					ctx,
+					shiftbellapi.BrowseSchedulesParams{
+						Href:   collectionHref,
+						Search: strings.ToUpper(scope + " " + fragment),
+					},
+				)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(collection.Items).To(HaveLen(1))
+				Expect(collection.Items[0].Id).To(Equal(*created.Chore.ScheduleId))
+			},
+			Entry("schedule name", "sch"),
+			Entry("template name", "tem"),
+		)
+	})
+
 	It(
 		"navigates from the schedule collection to its details, template, and active chore",
 		func(ctx SpecContext) {

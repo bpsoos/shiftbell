@@ -22,10 +22,11 @@ func (p *Persister) Browse(
 		from schedules s
 		join chore_templates t on t.id = s.chore_template_id
 		left join chores c on c.schedule_id = s.id and c.is_complete = 0
-		where %s and (? = '' or instr(lower(s.name), lower(?)) > 0)
+		where %s and (? = '' or instr(lower(s.name), lower(?)) > 0
+			or instr(lower(t.name), lower(?)) > 0)
 		order by s.id desc
 		limit ? offset ?
-	`, stateCondition), params.Search, params.Search, params.Limit+1, params.Offset)
+	`, stateCondition), params.Search, params.Search, params.Search, params.Limit+1, params.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("select schedules: %w", err)
 	}

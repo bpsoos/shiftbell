@@ -2,6 +2,7 @@ package schedules_test
 
 import (
 	"errors"
+	"strings"
 
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
@@ -103,20 +104,54 @@ var _ = Describe("Browse", func() {
 		Expect(err).To(MatchError(validationerrors.ErrInvalidLimit))
 	})
 
-	It("rejects an invalid search", func() {
-		normalizer.EXPECT().
-			NormalizeSearch("invalid search").
-			Return("", validationerrors.ErrDisallowedCharacter).
-			Once()
+	DescribeTable(
+		"rejects invalid searches",
+		func(search string, normalizationErr error) {
+			normalizer.EXPECT().
+				NormalizeSearch(search).
+				Return("", normalizationErr).
+				Once()
 
-		result, err := service.Browse(
-			GinkgoT().Context(),
-			&models.BrowseSchedulesParams{Search: "invalid search", Limit: 10},
-		)
+			result, err := service.Browse(
+				GinkgoT().Context(),
+				&models.BrowseSchedulesParams{Search: search, Limit: 10},
+			)
 
-		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(validationerrors.ErrInvalidSearch))
-	})
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError(validationerrors.ErrInvalidSearch))
+		},
+		Entry(
+			"control character",
+			"invalid\x00search",
+			validationerrors.ErrDisallowedCharacter,
+		),
+		Entry("too long", strings.Repeat("x", 201), validationerrors.ErrTooLong),
+		Entry("invalid UTF-8", string([]byte{0xff}), validationerrors.ErrInvalidUTF8),
+	)
+
+	It(
+		"treats a normalized empty search as unfiltered within the selected state",
+		func(ctx SpecContext) {
+			page := &models.SchedulePage{}
+			normalizer.EXPECT().NormalizeSearch("   ").Return("", nil).Once()
+			persister.EXPECT().
+				Browse(ctx, &models.BrowseSchedulesParams{Filter: models.ScheduleFilterDeactivated, Limit: 20}).
+				Return(page, nil).
+				Once()
+
+			result, err := service.Browse(
+				ctx,
+				&models.BrowseSchedulesParams{
+					Filter: models.ScheduleFilterDeactivated,
+					Search: "   ",
+					Limit:  20,
+				},
+			)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(BeIdenticalTo(page))
+		},
+	)
 
 	It("preserves persistence errors", func(ctx SpecContext) {
 		persistErr := errors.New("persistence failed")

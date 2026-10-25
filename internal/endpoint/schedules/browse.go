@@ -51,6 +51,7 @@ func parseBrowseRequest(ctx *echo.Context) (models.BrowseSchedulesParams, error)
 	var state string
 	err := echo.QueryParamsBinder(ctx).
 		String("state", &state).
+		String("search", &params.Search).
 		Int("offset", &params.Offset).
 		BindError()
 	if err != nil || params.Offset < 0 {
@@ -64,6 +65,10 @@ func (h *Handler) renderBrowseError(ctx *echo.Context, err error) error {
 	if errors.Is(err, validationerrors.ErrInvalidFilter) {
 		return hypermedia.JSON(ctx, http.StatusUnprocessableEntity,
 			map[string]string{"error": validationerrors.ErrInvalidFilter.Error()})
+	}
+	if errors.Is(err, validationerrors.ErrInvalidSearch) {
+		return hypermedia.JSON(ctx, http.StatusUnprocessableEntity,
+			map[string]string{"error": validationerrors.ErrInvalidSearch.Error()})
 	}
 	logging.Default().Error("browse schedules", "err", err)
 	return hypermedia.JSON(ctx, http.StatusInternalServerError,
