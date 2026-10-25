@@ -43,30 +43,27 @@ func createScheduledChore(
 	return created.SuccessResponse
 }
 
-func browseAllSchedules(
+func createDeactivatedSchedule(
 	ctx context.Context,
 	client *shiftbellapi.APIClient,
-) []shiftbellapi.Schedule {
+	name string,
+) *shiftbellapi.ScheduleRepresentation {
 	GinkgoHelper()
-	home, err := client.GetHome(ctx)
+	created := createScheduledChore(ctx, client, name, 7)
+	Expect(created.Chore.ScheduleId).NotTo(BeNil())
+	var item shiftbellapi.Schedule
+	Expect(
+		browseAllSchedules(ctx, client),
+	).To(ContainElement(HaveField("Id", *created.Chore.ScheduleId), &item))
+	details, err := client.GetSchedule(ctx, item.Links.Href(shiftbellapi.RelationSelf))
 	Expect(err).NotTo(HaveOccurred())
-	href := home.Home.Links.Href(shiftbellapi.RelationSchedules)
+	Expect(details.StatusCode).To(Equal(http.StatusOK))
+	Expect(details.SuccessResponse).NotTo(BeNil())
+	href := details.SuccessResponse.Actions.Href(shiftbellapi.RelationDeactivate)
 	Expect(href).NotTo(BeEmpty())
-	return browseAllSchedulesFrom(ctx, client, href)
-}
-
-func browseAllSchedulesFrom(
-	ctx context.Context,
-	client *shiftbellapi.APIClient,
-	href string,
-) []shiftbellapi.Schedule {
-	GinkgoHelper()
-	items := make([]shiftbellapi.Schedule, 0)
-	for href != "" {
-		collection, err := client.GetSchedules(ctx, href)
-		Expect(err).NotTo(HaveOccurred())
-		items = append(items, collection.Items...)
-		href = collection.Links.Href(shiftbellapi.RelationNext)
-	}
-	return items
+	deactivated, err := client.DeactivateSchedule(ctx, href)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(deactivated.StatusCode).To(Equal(http.StatusOK))
+	Expect(deactivated.SuccessResponse).NotTo(BeNil())
+	return deactivated.SuccessResponse
 }

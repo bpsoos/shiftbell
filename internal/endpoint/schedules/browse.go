@@ -1,6 +1,7 @@
 package schedules
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -29,18 +30,13 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 		return hypermedia.JSON(
 			ctx,
 			http.StatusUnprocessableEntity,
-			map[string]string{"error": "invalid offset"},
+			map[string]string{"error": err.Error()},
 		)
 	}
 
 	page, err := h.service.Browse(ctx.Request().Context(), &params)
 	if err != nil {
-		logging.Default().Error("browse schedules", "err", err)
-		return hypermedia.JSON(
-			ctx,
-			http.StatusInternalServerError,
-			map[string]string{"error": "something went wrong"},
-		)
+		return h.renderBrowseError(ctx, err)
 	}
 
 	return hypermedia.JSON(
@@ -52,13 +48,26 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 
 func parseBrowseRequest(ctx *echo.Context) (models.BrowseSchedulesParams, error) {
 	params := models.BrowseSchedulesParams{Limit: 20}
+	var state string
 	err := echo.QueryParamsBinder(ctx).
+		String("state", &state).
 		Int("offset", &params.Offset).
 		BindError()
 	if err != nil || params.Offset < 0 {
 		return models.BrowseSchedulesParams{}, validationerrors.ErrInvalidOffset
 	}
+	params.Filter = models.ScheduleFilter(state)
 	return params, nil
+}
+
+func (h *Handler) renderBrowseError(ctx *echo.Context, err error) error {
+	if errors.Is(err, validationerrors.ErrInvalidFilter) {
+		return hypermedia.JSON(ctx, http.StatusUnprocessableEntity,
+			map[string]string{"error": validationerrors.ErrInvalidFilter.Error()})
+	}
+	logging.Default().Error("browse schedules", "err", err)
+	return hypermedia.JSON(ctx, http.StatusInternalServerError,
+		map[string]string{"error": "something went wrong"})
 }
 
 func browseResponse(page *models.SchedulePage, links api.Relations) collectionResponse {
@@ -74,7 +83,14 @@ func browseLinks(
 	params models.BrowseSchedulesParams,
 	more bool,
 ) api.Relations {
-	links := api.Relations{{Rel: "self", Href: requestURL.RequestURI()}}
+	links := api.Relations{
+		{Rel: "self", Href: requestURL.RequestURI()},
+		{Rel: "active", Href: scheduleStateHref(requestURL, models.ScheduleFilterActive)},
+		{
+			Rel:  "deactivated",
+			Href: scheduleStateHref(requestURL, models.ScheduleFilterDeactivated),
+		},
+	}
 	if more {
 		links = append(
 			links,
@@ -102,4 +118,13 @@ func schedulePageHref(requestURL *url.URL, offset int) string {
 	query.Set("offset", strconv.Itoa(offset))
 	pageURL.RawQuery = query.Encode()
 	return pageURL.RequestURI()
+}
+
+func scheduleStateHref(requestURL *url.URL, state models.ScheduleFilter) string {
+	stateURL := *requestURL
+	query := stateURL.Query()
+	query.Set("state", string(state))
+	query.Del("offset")
+	stateURL.RawQuery = query.Encode()
+	return stateURL.RequestURI()
 }

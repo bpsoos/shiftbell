@@ -72,15 +72,18 @@ var _ = Describe("Browse", func() {
 		Expect(result).To(BeIdenticalTo(page))
 	})
 
-	It("rejects an invalid filter", func() {
+	DescribeTable("rejects invalid filters", func(filter models.ScheduleFilter) {
 		result, err := service.Browse(
 			GinkgoT().Context(),
-			&models.BrowseSchedulesParams{Filter: "all", Limit: 10},
+			&models.BrowseSchedulesParams{Filter: filter, Limit: 10},
 		)
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidFilter))
-	})
+	}, Entry("combined state", models.ScheduleFilter("all")),
+		Entry("unknown", models.ScheduleFilter("invalid")),
+		Entry("wrong case", models.ScheduleFilter("Active")),
+	)
 
 	It("rejects invalid pagination", func() {
 		result, err := service.Browse(

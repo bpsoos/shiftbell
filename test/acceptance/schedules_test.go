@@ -245,6 +245,53 @@ var _ = Describe("Schedule API", func() {
 	)
 
 	It(
+		"discovers deactivated schedules and follows their read-only details",
+		func(ctx SpecContext) {
+			baseURL := os.Getenv("SHIFTBELL_BASE_URL")
+			Expect(baseURL).NotTo(BeEmpty())
+			client := shiftbellapi.NewAPIClient(baseURL)
+			deactivated := createDeactivatedSchedule(
+				ctx,
+				client,
+				uniqueChoreName("Deactivated browsing"),
+			)
+			home, err := client.GetHome(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			collectionHref := home.Home.Links.Href(shiftbellapi.RelationSchedules)
+			Expect(collectionHref).NotTo(BeEmpty())
+			active, err := client.GetSchedules(ctx, collectionHref)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("following the deactivated collection link")
+			deactivatedHref := active.Links.Href(shiftbellapi.RelationDeactivated)
+			Expect(deactivatedHref).NotTo(BeEmpty())
+			archived, err := client.GetSchedules(ctx, deactivatedHref)
+			Expect(err).NotTo(HaveOccurred())
+			var item shiftbellapi.Schedule
+			Expect(
+				archived.Items,
+			).To(ContainElement(HaveField("Id", deactivated.Id), &item))
+			Expect(item).To(Equal(deactivated.Schedule))
+
+			By("following the deactivated schedule's read-only details")
+			href := item.Links.Href(shiftbellapi.RelationSelf)
+			Expect(href).NotTo(BeEmpty())
+			details, err := client.GetSchedule(ctx, href)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(details.StatusCode).To(Equal(http.StatusOK))
+			Expect(details.SuccessResponse).To(Equal(deactivated))
+			Expect(details.SuccessResponse.Actions).To(BeEmpty())
+
+			By("switching back to active schedules")
+			activeHref := archived.Links.Href(shiftbellapi.RelationActive)
+			Expect(activeHref).NotTo(BeEmpty())
+			Expect(
+				browseAllSchedulesFrom(ctx, client, activeHref),
+			).NotTo(ContainElement(HaveField("Id", deactivated.Id)))
+		},
+	)
+
+	It(
 		"returns not found for an unknown schedule with a usable collection link",
 		func(ctx SpecContext) {
 			baseURL := os.Getenv("SHIFTBELL_BASE_URL")

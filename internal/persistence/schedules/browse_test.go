@@ -131,5 +131,37 @@ var _ = Describe("Browse", func() {
 				page.Schedules[0].DeactivatedAt,
 			).To(gstruct.PointTo(Equal(time.Date(2026, 8, 1, 0, 0, 0, 0, time.UTC))))
 		})
+
+		DescribeTable(
+			"paginates within the selected state",
+			func(ctx SpecContext, filter models.ScheduleFilter, firstID, secondID int) {
+				_, err := db.ExecContext(
+					ctx,
+					`insert into schedules (id, name, chore_template_id, interval_days, deactivated_at)
+				values (4, 'Another old laundry', 1, 14, '2026-08-02 00:00:00')`,
+				)
+				Expect(err).NotTo(HaveOccurred())
+
+				first, err := persister.Browse(
+					ctx,
+					&models.BrowseSchedulesParams{Filter: filter, Limit: 1},
+				)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(first.More).To(BeTrue())
+				Expect(first.Schedules).To(HaveLen(1))
+				Expect(first.Schedules[0].Id).To(Equal(firstID))
+				second, err := persister.Browse(
+					ctx,
+					&models.BrowseSchedulesParams{Filter: filter, Limit: 1, Offset: 1},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(second.More).To(BeFalse())
+				Expect(second.Schedules).To(HaveLen(1))
+				Expect(second.Schedules[0].Id).To(Equal(secondID))
+			},
+			Entry("active", models.ScheduleFilterActive, 2, 1),
+			Entry("deactivated", models.ScheduleFilterDeactivated, 4, 3),
+		)
 	})
 })
