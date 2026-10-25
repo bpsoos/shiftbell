@@ -30,6 +30,13 @@ func deactivateActiveChoreTemplate(
 	if err != nil {
 		return nil, err
 	}
+	references, err := activeScheduleReferences(ctx, tx, params.Id)
+	if err != nil {
+		return nil, err
+	}
+	if len(references) > 0 {
+		return nil, &models.ActiveScheduleReferencesError{Schedules: references}
+	}
 	_, err = tx.ExecContext(
 		ctx,
 		`
@@ -47,4 +54,22 @@ func deactivateActiveChoreTemplate(
 	choreTemplate.DeactivatedAt = &params.DeactivatedAt
 
 	return choreTemplate, nil
+}
+
+func activeScheduleReferences(
+	ctx context.Context,
+	tx *sqlx.Tx,
+	choreTemplateID int,
+) ([]models.ActiveScheduleReference, error) {
+	references := make([]models.ActiveScheduleReference, 0)
+	err := tx.SelectContext(ctx, &references, `
+		select id, name
+		from schedules
+		where chore_template_id = ? and deactivated_at is null
+		order by id desc
+	`, choreTemplateID)
+	if err != nil {
+		return nil, fmt.Errorf("select active schedule references: %w", err)
+	}
+	return references, nil
 }

@@ -351,6 +351,8 @@ var _ = Describe("Chore template API", func() {
 
 			deactivated, err := client.DeactivateChoreTemplate(ctx, deactivateHref)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(deactivated.StatusCode).To(Equal(http.StatusOK))
+			Expect(deactivated.ErrorResponse).To(BeNil())
 			Expect(deactivated.ChoreTemplate).To(gstruct.MatchAllFields(gstruct.Fields{
 				"Id":            Equal(created.ChoreTemplate.Id),
 				"Name":          Equal(name),
@@ -391,6 +393,91 @@ var _ = Describe("Chore template API", func() {
 					"Name": Equal(name),
 				}),
 			}))
+		},
+	)
+
+	It(
+		"rejects deactivation while an active schedule references the template",
+		func(ctx SpecContext) {
+			scope := uniqueChoreTemplateName("Referenced template")
+			template := createChoreTemplate(
+				ctx,
+				client,
+				discoverChoreTemplateCollection(
+					ctx,
+					client,
+				),
+				scope,
+				"Keep this template active.",
+			)
+			form := getTemplateOneOffChoreForm(ctx, client,
+				discoverChoreCollection(ctx, client), template.ChoreTemplate)
+			interval := 7
+			result, err := client.CreateChore(
+				ctx,
+				form.Actions.Href(shiftbellapi.RelationCreate),
+				shiftbellapi.CreateChoreParams{
+					ChoreTemplateId: &template.ChoreTemplate.Id,
+					ScheduleName:    scope + " weekly",
+					IntervalDays:    &interval,
+					Deadline:        "2020-08-01",
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.StatusCode).To(Equal(http.StatusCreated))
+			Expect(result.SuccessResponse).NotTo(BeNil())
+			created := result.SuccessResponse
+			Expect(created.Chore.ScheduleId).NotTo(BeNil())
+			deadline := "2020-08-01T00:00:00Z"
+			schedule := shiftbellapi.Schedule{
+				Id:                  *created.Chore.ScheduleId,
+				Name:                scope + " weekly",
+				ChoreTemplateId:     template.ChoreTemplate.Id,
+				ChoreTemplateName:   template.ChoreTemplate.Name,
+				IntervalDays:        interval,
+				ActiveChoreId:       &created.Chore.Id,
+				ActiveChoreDeadline: &deadline,
+			}
+			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
+
+			By("attempting to deactivate the referenced template")
+			blocked, err := client.DeactivateChoreTemplate(
+				ctx,
+				template.Actions.Href(shiftbellapi.RelationDeactivate),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(blocked.StatusCode).To(Equal(http.StatusConflict))
+			Expect(blocked.ErrorResponse).NotTo(BeNil())
+			Expect(
+				blocked.ErrorResponse.Error,
+			).To(Equal("chore template has 1 active schedule references"))
+
+			By("verifying the template remains active and unchanged")
+			retrievedTemplate, err := client.GetChoreTemplate(
+				ctx,
+				template.ChoreTemplate.Links.Href(shiftbellapi.RelationSelf),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(retrievedTemplate.StatusCode).To(Equal(http.StatusOK))
+			Expect(retrievedTemplate.SuccessResponse).NotTo(BeNil())
+			Expect(
+				retrievedTemplate.SuccessResponse.ChoreTemplate,
+			).To(Equal(template.ChoreTemplate))
+			Expect(
+				retrievedTemplate.SuccessResponse.Actions,
+			).To(ConsistOf(template.Actions))
+
+			By("verifying the schedule and its active chore are unchanged")
+			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
+			retrievedChore, err := client.GetChore(
+				ctx,
+				created.Chore.Links.Href(shiftbellapi.RelationSelf),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(retrievedChore.StatusCode).To(Equal(http.StatusOK))
+			Expect(retrievedChore.SuccessResponse).NotTo(BeNil())
+			Expect(retrievedChore.SuccessResponse.Chore).To(Equal(created.Chore))
+			Expect(retrievedChore.SuccessResponse.Actions).To(ConsistOf(created.Actions))
 		},
 	)
 

@@ -141,6 +141,8 @@ var _ = Describe("Schedule API", func() {
 				template.Actions.Href(shiftbellapi.RelationDeactivate),
 			)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(deactivated.StatusCode).To(Equal(http.StatusOK))
+			Expect(deactivated.ErrorResponse).To(BeNil())
 			Expect(deactivated.ChoreTemplate.DeactivatedAt).NotTo(BeNil())
 			interval := 7
 

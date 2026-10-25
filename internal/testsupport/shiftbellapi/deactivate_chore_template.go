@@ -20,16 +20,23 @@ func (c *APIClient) DeactivateChoreTemplate(
 	if err != nil {
 		return nil, fmt.Errorf("create deactivate chore template request: %w", err)
 	}
-	_, responseBody, err := c.do(request, http.StatusOK)
+	statusCode, _, responseBody, err := c.doResponse(request)
 	if err != nil {
 		return nil, err
+	}
+	result := &DeactivateChoreTemplateResult{StatusCode: statusCode}
+	if statusCode != http.StatusOK {
+		result.ErrorResponse, err = decodeErrorResponse(responseBody)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
 	}
 	var representation choreTemplateRepresentation
 	if err := json.Unmarshal(responseBody, &representation); err != nil {
 		return nil, fmt.Errorf("decode deactivate chore template response: %w", err)
 	}
-	return &DeactivateChoreTemplateResult{
-		ChoreTemplate: representation.ChoreTemplate,
-		Actions:       representation.Actions,
-	}, nil
+	result.ChoreTemplate = representation.ChoreTemplate
+	result.Actions = representation.Actions
+	return result, nil
 }

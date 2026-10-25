@@ -255,6 +255,8 @@ type EditChoreTemplateResult struct {
 }
 
 type DeactivateChoreTemplateResult struct {
+	StatusCode    int
+	ErrorResponse *ErrorResponse
 	ChoreTemplate ChoreTemplate
 	Actions       Relations
 }

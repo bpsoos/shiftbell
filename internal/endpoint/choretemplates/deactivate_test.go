@@ -7,6 +7,7 @@ import (
 
 	"github.com/a-h/templ"
 	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
+	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
@@ -123,6 +124,45 @@ var _ = Describe("Deactivate chore template", func() {
 			Expect(response.Code).To(Equal(http.StatusConflict))
 			Expect(response.Header().Get("HX-Redirect")).To(BeEmpty())
 			Expect(response.Body.String()).To(Equal("blocked dialog sentinel"))
+		},
+	)
+
+	It(
+		"returns a JSON conflict when active schedules block deactivation",
+		func(ctx SpecContext) {
+			blocked := &choretemplatemodels.ActiveScheduleReferencesError{
+				Schedules: []choretemplatemodels.ActiveScheduleReference{
+					{Id: 7, Name: "Weekly"},
+				},
+			}
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Deactivate(ctx, 8).Return(nil, errors.Join(
+				errors.New("deactivate chore template"), blocked,
+			)).Once()
+			handler := choretemplatesendpoint.NewHandler(
+				&choretemplatesendpoint.HandlerDeps{Service: service},
+			)
+			app := echo.New()
+			app.PUT("/chore-templates/:id/deactivation", handler.Deactivate)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPut,
+				"/chore-templates/8/deactivation",
+				nil,
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusConflict))
+			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+			Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"error":"chore template has 1 active schedule references",
+			"_links":[{"rel":"self","href":"/chore-templates/8"},{"rel":"collection","href":"/chore-templates"}],
+			"_actions":[]
+		}`))
+			Expect(response.Header().Get("Set-Cookie")).To(BeEmpty())
 		},
 	)
 

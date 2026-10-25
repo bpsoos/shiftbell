@@ -372,6 +372,8 @@ var _ = Describe("Chore API", func() {
 			deactivateHref := template.Actions.Href(shiftbellapi.RelationDeactivate)
 			deactivated, err := client.DeactivateChoreTemplate(ctx, deactivateHref)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(deactivated.StatusCode).To(Equal(http.StatusOK))
+			Expect(deactivated.ErrorResponse).To(BeNil())
 			Expect(deactivated.ChoreTemplate.DeactivatedAt).NotTo(BeNil())
 			Expect(deactivated.Actions).To(BeEmpty())
 
