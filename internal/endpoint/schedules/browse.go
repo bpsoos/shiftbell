@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -13,17 +12,6 @@ import (
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	"github.com/labstack/echo/v5"
 )
-
-type response struct {
-	Id                  int        `json:"id"`
-	Name                string     `json:"name"`
-	ChoreTemplateId     int        `json:"chore_template_id"`
-	ChoreTemplateName   string     `json:"chore_template_name"`
-	IntervalDays        int        `json:"interval_days"`
-	DeactivatedAt       *time.Time `json:"deactivated_at"`
-	ActiveChoreId       *int       `json:"active_chore_id"`
-	ActiveChoreDeadline *time.Time `json:"active_chore_deadline"`
-}
 
 type collectionResponse struct {
 	Items []response    `json:"items"`
@@ -76,7 +64,7 @@ func parseBrowseRequest(ctx *echo.Context) (models.BrowseSchedulesParams, error)
 func browseResponse(page *models.SchedulePage, links api.Relations) collectionResponse {
 	items := make([]response, len(page.Schedules))
 	for i, schedule := range page.Schedules {
-		items[i] = response(schedule)
+		items[i] = newResponse(&schedule)
 	}
 	return collectionResponse{Items: items, More: page.More, Links: links}
 }

@@ -8,6 +8,7 @@ type HomeHandler interface {
 
 type ScheduleHandler interface {
 	Browse(*echo.Context) error
+	Get(*echo.Context) error
 }
 
 type ChoreTemplateHandler interface {

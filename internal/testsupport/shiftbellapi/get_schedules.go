@@ -14,14 +14,15 @@ type ScheduleCollection struct {
 }
 
 type Schedule struct {
-	Id                  int     `json:"id"`
-	Name                string  `json:"name"`
-	ChoreTemplateId     int     `json:"chore_template_id"`
-	ChoreTemplateName   string  `json:"chore_template_name"`
-	IntervalDays        int     `json:"interval_days"`
-	DeactivatedAt       *string `json:"deactivated_at"`
-	ActiveChoreId       *int    `json:"active_chore_id"`
-	ActiveChoreDeadline *string `json:"active_chore_deadline"`
+	Id                  int       `json:"id"`
+	Name                string    `json:"name"`
+	ChoreTemplateId     int       `json:"chore_template_id"`
+	ChoreTemplateName   string    `json:"chore_template_name"`
+	IntervalDays        int       `json:"interval_days"`
+	DeactivatedAt       *string   `json:"deactivated_at"`
+	ActiveChoreId       *int      `json:"active_chore_id"`
+	ActiveChoreDeadline *string   `json:"active_chore_deadline"`
+	Links               Relations `json:"_links"`
 }
 
 func (c *APIClient) GetSchedules(

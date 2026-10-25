@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/bpsoos/shiftbell/internal/testsupport/shiftbellapi"
@@ -32,6 +33,102 @@ var _ = Describe("Schedule API", func() {
 			Rel: shiftbellapi.RelationSelf, Href: href,
 		}))
 	})
+
+	It(
+		"navigates from the schedule collection to its details, template, and active chore",
+		func(ctx SpecContext) {
+			baseURL := os.Getenv("SHIFTBELL_BASE_URL")
+			Expect(baseURL).NotTo(BeEmpty())
+			client := shiftbellapi.NewAPIClient(baseURL)
+			scope := uniqueChoreName("Schedule navigation")
+			template := createChoreTemplate(ctx, client,
+				discoverChoreTemplateCollection(ctx, client), scope, "Reusable steps.")
+			form := getTemplateOneOffChoreForm(ctx, client,
+				discoverChoreCollection(ctx, client), template.ChoreTemplate)
+			interval := 7
+			created, err := client.CreateChore(
+				ctx,
+				form.Actions.Href(shiftbellapi.RelationCreate),
+				shiftbellapi.CreateChoreParams{
+					ChoreTemplateId: &template.ChoreTemplate.Id,
+					ScheduleName:    scope + " weekly",
+					IntervalDays:    &interval,
+					Deadline:        "2020-02-03",
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(created.StatusCode).To(Equal(http.StatusCreated))
+			Expect(created.SuccessResponse).NotTo(BeNil())
+			chore := created.SuccessResponse.Chore
+			Expect(chore.ScheduleId).NotTo(BeNil())
+
+			By("following the schedule link advertised by its collection item")
+			var item shiftbellapi.Schedule
+			Expect(
+				browseAllSchedules(ctx, client),
+			).To(ContainElement(HaveField("Id", *chore.ScheduleId), &item))
+			href := item.Links.Href(shiftbellapi.RelationSelf)
+			Expect(href).NotTo(BeEmpty())
+			details, err := client.GetSchedule(ctx, href)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(details.StatusCode).To(Equal(http.StatusOK))
+			Expect(details.ErrorResponse).To(BeNil())
+			Expect(details.SuccessResponse).To(Equal(&item))
+
+			By("following the template and active chore links from schedule details")
+			templateHref := details.SuccessResponse.Links.Href(
+				shiftbellapi.RelationChoreTemplate,
+			)
+			Expect(templateHref).NotTo(BeEmpty())
+			linkedTemplate, err := client.GetChoreTemplate(ctx, templateHref)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(linkedTemplate.StatusCode).To(Equal(http.StatusOK))
+			Expect(linkedTemplate.SuccessResponse).NotTo(BeNil())
+			Expect(
+				linkedTemplate.SuccessResponse.ChoreTemplate,
+			).To(Equal(template.ChoreTemplate))
+			choreHref := details.SuccessResponse.Links.Href(
+				shiftbellapi.RelationActiveChore,
+			)
+			Expect(choreHref).NotTo(BeEmpty())
+			linkedChore, err := client.GetChore(ctx, choreHref)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(linkedChore.StatusCode).To(Equal(http.StatusOK))
+			Expect(linkedChore.SuccessResponse).NotTo(BeNil())
+			Expect(linkedChore.SuccessResponse.Chore).To(Equal(chore))
+
+			By("following the collection link back to the schedule item")
+			collectionHref := details.SuccessResponse.Links.Href(
+				shiftbellapi.RelationCollection,
+			)
+			Expect(collectionHref).NotTo(BeEmpty())
+			Expect(
+				browseAllSchedulesFrom(ctx, client, collectionHref),
+			).To(ContainElement(item))
+		},
+	)
+
+	It(
+		"returns not found for an unknown schedule with a usable collection link",
+		func(ctx SpecContext) {
+			baseURL := os.Getenv("SHIFTBELL_BASE_URL")
+			Expect(baseURL).NotTo(BeEmpty())
+			client := shiftbellapi.NewAPIClient(baseURL)
+
+			result, err := client.GetSchedule(ctx, "/schedules/9223372036854775807")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.StatusCode).To(Equal(http.StatusNotFound))
+			Expect(result.SuccessResponse).To(BeNil())
+			Expect(result.ErrorResponse).NotTo(BeNil())
+			Expect(result.ErrorResponse.Error).To(Equal("schedule not found"))
+			href := result.ErrorResponse.Links.Href(shiftbellapi.RelationCollection)
+			Expect(href).NotTo(BeEmpty())
+			collection, err := client.GetSchedules(ctx, href)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(collection.Items).NotTo(BeNil())
+		},
+	)
 
 	It(
 		"creates a scheduled chore from a template and lists its schedule",
@@ -105,6 +202,23 @@ var _ = Describe("Schedule API", func() {
 				IntervalDays:        interval,
 				ActiveChoreId:       &created.Chore.Id,
 				ActiveChoreDeadline: &deadline,
+				Links: shiftbellapi.Relations{
+					{
+						Rel:  shiftbellapi.RelationSelf,
+						Href: "/schedules/" + strconv.Itoa(*created.Chore.ScheduleId),
+					},
+					{Rel: shiftbellapi.RelationCollection, Href: "/schedules"},
+					{
+						Rel: shiftbellapi.RelationChoreTemplate,
+						Href: template.ChoreTemplate.Links.Href(
+							shiftbellapi.RelationSelf,
+						),
+					},
+					{
+						Rel:  shiftbellapi.RelationActiveChore,
+						Href: created.Chore.Links.Href(shiftbellapi.RelationSelf),
+					},
+				},
 			}))
 
 			By("finding the same association when browsing chores")
@@ -212,6 +326,23 @@ var _ = Describe("Schedule API", func() {
 				IntervalDays:        interval,
 				ActiveChoreId:       &successor.Id,
 				ActiveChoreDeadline: &deadline,
+				Links: shiftbellapi.Relations{
+					{
+						Rel:  shiftbellapi.RelationSelf,
+						Href: "/schedules/" + strconv.Itoa(*created.Chore.ScheduleId),
+					},
+					{Rel: shiftbellapi.RelationCollection, Href: "/schedules"},
+					{
+						Rel: shiftbellapi.RelationChoreTemplate,
+						Href: template.ChoreTemplate.Links.Href(
+							shiftbellapi.RelationSelf,
+						),
+					},
+					{
+						Rel:  shiftbellapi.RelationActiveChore,
+						Href: successor.Links.Href(shiftbellapi.RelationSelf),
+					},
+				},
 			}
 			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
 
@@ -291,6 +422,23 @@ var _ = Describe("Schedule API", func() {
 				IntervalDays:        interval,
 				ActiveChoreId:       &created.Chore.Id,
 				ActiveChoreDeadline: &deadline,
+				Links: shiftbellapi.Relations{
+					{
+						Rel:  shiftbellapi.RelationSelf,
+						Href: "/schedules/" + strconv.Itoa(*created.Chore.ScheduleId),
+					},
+					{Rel: shiftbellapi.RelationCollection, Href: "/schedules"},
+					{
+						Rel: shiftbellapi.RelationChoreTemplate,
+						Href: template.ChoreTemplate.Links.Href(
+							shiftbellapi.RelationSelf,
+						),
+					},
+					{
+						Rel:  shiftbellapi.RelationActiveChore,
+						Href: created.Chore.Links.Href(shiftbellapi.RelationSelf),
+					},
+				},
 			}
 			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
 
@@ -405,6 +553,23 @@ var _ = Describe("Schedule API", func() {
 				IntervalDays:        interval,
 				ActiveChoreId:       &successor.Id,
 				ActiveChoreDeadline: &deadline,
+				Links: shiftbellapi.Relations{
+					{
+						Rel:  shiftbellapi.RelationSelf,
+						Href: "/schedules/" + strconv.Itoa(*completed.Chore.ScheduleId),
+					},
+					{Rel: shiftbellapi.RelationCollection, Href: "/schedules"},
+					{
+						Rel: shiftbellapi.RelationChoreTemplate,
+						Href: template.ChoreTemplate.Links.Href(
+							shiftbellapi.RelationSelf,
+						),
+					},
+					{
+						Rel:  shiftbellapi.RelationActiveChore,
+						Href: successor.Links.Href(shiftbellapi.RelationSelf),
+					},
+				},
 			}
 			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
 		})
@@ -527,6 +692,24 @@ var _ = Describe("Schedule API", func() {
 				deadline := "2020-04-10T00:00:00Z"
 				schedule.ActiveChoreId = &laterChore.Id
 				schedule.ActiveChoreDeadline = &deadline
+				schedule.Links = shiftbellapi.Relations{
+					{
+						Rel:  shiftbellapi.RelationSelf,
+						Href: schedule.Links.Href(shiftbellapi.RelationSelf),
+					},
+					{
+						Rel:  shiftbellapi.RelationCollection,
+						Href: schedule.Links.Href(shiftbellapi.RelationCollection),
+					},
+					{
+						Rel:  shiftbellapi.RelationChoreTemplate,
+						Href: schedule.Links.Href(shiftbellapi.RelationChoreTemplate),
+					},
+					{
+						Rel:  shiftbellapi.RelationActiveChore,
+						Href: laterChore.Links.Href(shiftbellapi.RelationSelf),
+					},
+				}
 				Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
 			},
 		)
@@ -601,6 +784,15 @@ func browseAllSchedules(
 	Expect(err).NotTo(HaveOccurred())
 	href := home.Home.Links.Href(shiftbellapi.RelationSchedules)
 	Expect(href).NotTo(BeEmpty())
+	return browseAllSchedulesFrom(ctx, client, href)
+}
+
+func browseAllSchedulesFrom(
+	ctx context.Context,
+	client *shiftbellapi.APIClient,
+	href string,
+) []shiftbellapi.Schedule {
+	GinkgoHelper()
 	items := make([]shiftbellapi.Schedule, 0)
 	for href != "" {
 		collection, err := client.GetSchedules(ctx, href)

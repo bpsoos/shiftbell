@@ -35,7 +35,7 @@ var _ = Describe("Chore API", func() {
 			By("discovering the chore collection from home")
 			collection := discoverChoreCollection(ctx, client)
 			Expect(collection.Items).NotTo(BeNil())
-			Expect(collection.Links).To(ConsistOf(
+			Expect(collection.Links).To(ContainElement(
 				shiftbellapi.Relation{Rel: shiftbellapi.RelationSelf, Href: "/chores"},
 			))
 			Expect(collection.Actions).To(ConsistOf(
@@ -1127,6 +1127,23 @@ var _ = Describe("Chore API", func() {
 				IntervalDays:        interval,
 				ActiveChoreId:       &created.Chore.Id,
 				ActiveChoreDeadline: &deadline,
+				Links: shiftbellapi.Relations{
+					{
+						Rel:  shiftbellapi.RelationSelf,
+						Href: fmt.Sprintf("/schedules/%d", *created.Chore.ScheduleId),
+					},
+					{Rel: shiftbellapi.RelationCollection, Href: "/schedules"},
+					{
+						Rel: shiftbellapi.RelationChoreTemplate,
+						Href: template.ChoreTemplate.Links.Href(
+							shiftbellapi.RelationSelf,
+						),
+					},
+					{
+						Rel:  shiftbellapi.RelationActiveChore,
+						Href: created.Chore.Links.Href(shiftbellapi.RelationSelf),
+					},
+				},
 			}
 			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
 

@@ -20,10 +20,6 @@ func NewPersister(deps *PersisterDeps) *Persister {
 	return &Persister{db: deps.Db}
 }
 
-func (p *Persister) Get(_ context.Context, _ int) (*models.ScheduleDetails, error) {
-	return nil, errors.New("get schedule: not implemented")
-}
-
 func (p *Persister) Edit(
 	_ context.Context,
 	_ *models.EditScheduleParams,

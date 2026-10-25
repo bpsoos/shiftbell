@@ -19,6 +19,8 @@ const (
 	RelationChores            = "chores"
 	RelationChoreTemplates    = "chore_templates"
 	RelationSchedules         = "schedules"
+	RelationChoreTemplate     = "chore_template"
+	RelationActiveChore       = "active_chore"
 	RelationNext              = "next"
 	RelationPrevious          = "previous"
 	RelationCreate            = "create"

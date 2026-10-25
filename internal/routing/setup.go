@@ -16,6 +16,7 @@ func (r *Router) Setup(app *echo.Echo) error {
 
 	app.GET("/", r.homeHandler.Get)
 	app.GET("/schedules", r.scheduleHandler.Browse)
+	app.GET("/schedules/:id", r.scheduleHandler.Get)
 	app.GET("/chores", r.choreHandler.GetBatch)
 	app.GET("/chores/new", r.choreHandler.New)
 	app.POST("/chores", r.choreHandler.Create)
