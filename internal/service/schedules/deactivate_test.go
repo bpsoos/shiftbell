@@ -30,7 +30,7 @@ var _ = Describe("Deactivate", func() {
 	})
 
 	It(
-		"atomically deactivates the schedule and removes its active chore",
+		"passes the deactivation timestamp to persistence and returns the schedule",
 		func(ctx SpecContext) {
 			persisted := &models.Schedule{
 				Id:            42,
@@ -61,5 +61,17 @@ var _ = Describe("Deactivate", func() {
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError("deactivate schedule: persistence failed"))
 		Expect(errors.Is(err, persistErr)).To(BeTrue())
+	})
+
+	It("preserves the not-found error", func(ctx SpecContext) {
+		persister.EXPECT().
+			Deactivate(ctx, &models.DeactivateScheduleParams{Id: 42, DeactivatedAt: deactivatedAt}).
+			Return(nil, models.ErrNotFound).
+			Once()
+
+		result, err := service.Deactivate(ctx, 42)
+
+		Expect(result).To(BeNil())
+		Expect(errors.Is(err, models.ErrNotFound)).To(BeTrue())
 	})
 })

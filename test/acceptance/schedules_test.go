@@ -160,6 +160,91 @@ var _ = Describe("Schedule API", func() {
 	})
 
 	It(
+		"permanently deactivates a schedule while preserving completed history",
+		func(ctx SpecContext) {
+			baseURL := os.Getenv("SHIFTBELL_BASE_URL")
+			Expect(baseURL).NotTo(BeEmpty())
+			client := shiftbellapi.NewAPIClient(baseURL)
+			created := createScheduledChore(
+				ctx,
+				client,
+				uniqueChoreName("Schedule deactivation"),
+				7,
+			)
+			completed, err := client.CompleteChore(
+				ctx,
+				created.Actions.Href(shiftbellapi.RelationComplete),
+				shiftbellapi.CompleteChoreParams{CompletedOn: "2020-03-26"},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completed.StatusCode).To(Equal(http.StatusOK))
+			Expect(completed.SuccessResponse).NotTo(BeNil())
+			Expect(created.Chore.ScheduleId).NotTo(BeNil())
+			var item shiftbellapi.Schedule
+			Expect(
+				browseAllSchedules(ctx, client),
+			).To(ContainElement(HaveField("Id", *created.Chore.ScheduleId), &item))
+			details, err := client.GetSchedule(
+				ctx,
+				item.Links.Href(shiftbellapi.RelationSelf),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(details.StatusCode).To(Equal(http.StatusOK))
+			Expect(details.SuccessResponse).NotTo(BeNil())
+			activeHref := details.SuccessResponse.Links.Href(
+				shiftbellapi.RelationActiveChore,
+			)
+			Expect(activeHref).NotTo(BeEmpty())
+
+			By("following the advertised permanent deactivation action")
+			deactivationHref := details.SuccessResponse.Actions.Href(
+				shiftbellapi.RelationDeactivate,
+			)
+			Expect(deactivationHref).NotTo(BeEmpty())
+			deactivated, err := client.DeactivateSchedule(ctx, deactivationHref)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deactivated.StatusCode).To(Equal(http.StatusOK))
+			Expect(deactivated.ErrorResponse).To(BeNil())
+			Expect(deactivated.SuccessResponse).NotTo(BeNil())
+			Expect(deactivated.SuccessResponse.Id).To(Equal(item.Id))
+			Expect(deactivated.SuccessResponse.DeactivatedAt).NotTo(BeNil())
+			Expect(deactivated.SuccessResponse.ActiveChoreId).To(BeNil())
+			Expect(deactivated.SuccessResponse.ActiveChoreDeadline).To(BeNil())
+			Expect(deactivated.SuccessResponse.Actions).To(BeEmpty())
+			Expect(
+				deactivated.SuccessResponse.Links.Href(shiftbellapi.RelationActiveChore),
+			).To(BeEmpty())
+
+			By("verifying the schedule is read-only and excluded from active schedules")
+			persisted, err := client.GetSchedule(
+				ctx,
+				item.Links.Href(shiftbellapi.RelationSelf),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(persisted.StatusCode).To(Equal(http.StatusOK))
+			Expect(persisted.SuccessResponse).To(Equal(deactivated.SuccessResponse))
+			Expect(
+				browseAllSchedules(ctx, client),
+			).NotTo(ContainElement(HaveField("Id", item.Id)))
+
+			By("verifying the active chore was removed but completed history remains")
+			removed, err := client.GetChore(ctx, activeHref)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(removed.StatusCode).To(Equal(http.StatusNotFound))
+			history, err := client.GetChore(
+				ctx,
+				completed.SuccessResponse.Chore.Links.Href(shiftbellapi.RelationSelf),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(history.StatusCode).To(Equal(http.StatusOK))
+			Expect(history.SuccessResponse).NotTo(BeNil())
+			Expect(
+				history.SuccessResponse.Chore,
+			).To(Equal(completed.SuccessResponse.Chore))
+		},
+	)
+
+	It(
 		"returns not found for an unknown schedule with a usable collection link",
 		func(ctx SpecContext) {
 			baseURL := os.Getenv("SHIFTBELL_BASE_URL")

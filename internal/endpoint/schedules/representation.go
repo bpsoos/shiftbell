@@ -45,6 +45,10 @@ func newRepresentation(schedule *models.Schedule) representation {
 		actions = append(
 			actions,
 			api.Relation{Rel: "edit", Href: resourceHref(schedule.Id)},
+			api.Relation{
+				Rel:  "deactivate",
+				Href: resourceHref(schedule.Id) + "/deactivation",
+			},
 		)
 	}
 	return representation{response: newResponse(schedule), Actions: actions}

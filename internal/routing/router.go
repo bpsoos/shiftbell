@@ -10,6 +10,7 @@ type ScheduleHandler interface {
 	Browse(*echo.Context) error
 	Get(*echo.Context) error
 	Edit(*echo.Context) error
+	Deactivate(*echo.Context) error
 }
 
 type ChoreTemplateHandler interface {

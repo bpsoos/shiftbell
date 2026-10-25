@@ -60,7 +60,7 @@ var _ = Describe("Get", func() {
 			"interval_days":7,"deactivated_at":null,"active_chore_id":11,"active_chore_deadline":"2020-04-02T00:00:00Z",
 			"_links":[{"rel":"self","href":"/schedules/42"},{"rel":"collection","href":"/schedules"},
 				{"rel":"chore_template","href":"/chore-templates/7"},{"rel":"active_chore","href":"/chores/11"}],
-			"_actions":[{"rel":"edit","href":"/schedules/42"}]
+			"_actions":[{"rel":"edit","href":"/schedules/42"},{"rel":"deactivate","href":"/schedules/42/deactivation"}]
 		}`))
 		},
 	)
