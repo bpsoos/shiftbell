@@ -137,6 +137,59 @@ var _ = Describe("Complete chore", func() {
 	})
 
 	It(
+		"returns the completed scheduled chore while keeping recurrence links internal",
+		func(ctx SpecContext) {
+			scheduleID, predecessorID := 7, 42
+			completedOn := time.Date(2020, 3, 26, 0, 0, 0, 0, time.UTC)
+			service := NewMockService(GinkgoT())
+			service.EXPECT().
+				Complete(ctx, &choremodels.CompleteChoreParams{Id: 42, CompletedOn: completedOn}).
+				Return(&choremodels.CompleteChoreResult{
+					Chore: &choremodels.Chore{
+						Id:          42,
+						ScheduleId:  &scheduleID,
+						Name:        "Kitchen",
+						Description: "Clean counters",
+						Status:      choremodels.ChoreStatusCompleted,
+						CompletedOn: completedOn,
+						Deadline:    time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+					},
+					Successor: &choremodels.Chore{
+						Id:            43,
+						ScheduleId:    &scheduleID,
+						PredecessorId: &predecessorID,
+						Name:          "Kitchen",
+						Status:        choremodels.ChoreStatusActive,
+						Deadline:      time.Date(2020, 4, 2, 0, 0, 0, 0, time.UTC),
+					},
+				}, nil).
+				Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			app := echo.New()
+			app.PUT("/chores/:id/completion", handler.Complete)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPut,
+				"/chores/42/completion",
+				strings.NewReader(`{"completed_on":"2020-03-26"}`),
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			request.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"id":42,"schedule_id":7,"status":"completed","name":"Kitchen","description":"Clean counters",
+			"deadline":"2020-02-03","completed_on":"2020-03-26",
+			"_links":[{"rel":"self","href":"/chores/42"},{"rel":"collection","href":"/chores"}],
+			"_actions":[{"rel":"correct_completion","href":"/chores/42/completion"},{"rel":"delete","href":"/chores/42"}]
+		}`))
+		},
+	)
+
+	It(
 		"rerenders the dialog with the submitted date when validation fails",
 		func(ctx SpecContext) {
 			completedOn := time.Date(2030, time.February, 3, 0, 0, 0, 0, time.UTC)

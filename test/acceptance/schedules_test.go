@@ -117,6 +117,131 @@ var _ = Describe("Schedule API", func() {
 	)
 
 	It(
+		"completes a scheduled chore exactly once and creates its successor from the current template",
+		func(ctx SpecContext) {
+			baseURL := os.Getenv("SHIFTBELL_BASE_URL")
+			Expect(baseURL).NotTo(BeEmpty())
+			client := shiftbellapi.NewAPIClient(baseURL)
+			scope := uniqueChoreName("Scheduled completion")
+			template := createChoreTemplate(
+				ctx,
+				client,
+				discoverChoreTemplateCollection(
+					ctx,
+					client,
+				),
+				scope+" original",
+				"Original template steps.",
+			)
+			form := getTemplateOneOffChoreForm(ctx, client,
+				discoverChoreCollection(ctx, client), template.ChoreTemplate)
+			interval := 7
+			result, err := client.CreateChore(
+				ctx,
+				form.Actions.Href(shiftbellapi.RelationCreate),
+				shiftbellapi.CreateChoreParams{
+					ChoreTemplateId: &template.ChoreTemplate.Id,
+					ScheduleName:    scope + " weekly",
+					IntervalDays:    &interval,
+					Deadline:        "2020-02-03",
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.StatusCode).To(Equal(http.StatusCreated))
+			Expect(result.SuccessResponse).NotTo(BeNil())
+			created := result.SuccessResponse
+			Expect(created.Chore.ScheduleId).NotTo(BeNil())
+			completionHref := created.Actions.Href(shiftbellapi.RelationComplete)
+			Expect(completionHref).NotTo(BeEmpty())
+
+			By("editing the shared template before completing the original snapshot")
+			edited, err := client.EditChoreTemplate(
+				ctx,
+				template.Actions.Href(shiftbellapi.RelationEdit),
+				shiftbellapi.EditChoreTemplateParams{
+					Name: scope + " updated", Description: "Updated template steps.",
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(edited.StatusCode).To(Equal(http.StatusOK))
+
+			By("completing on a date different from the initial deadline")
+			completed, err := client.CompleteChore(
+				ctx,
+				completionHref,
+				shiftbellapi.CompleteChoreParams{CompletedOn: "2020-03-26"},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completed.StatusCode).To(Equal(http.StatusOK))
+			Expect(completed.ErrorResponse).To(BeNil())
+			Expect(completed.SuccessResponse).NotTo(BeNil())
+			expected := created.Chore
+			expected.Status = "completed"
+			completedOn := "2020-03-26"
+			expected.CompletedOn = &completedOn
+			Expect(completed.SuccessResponse.Chore).To(Equal(expected))
+
+			By("finding exactly one active successor with a completion-based deadline")
+			active, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+				Href: "/chores", Search: scope, Status: "active", Limit: 20,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(active.Collection.Items).To(HaveLen(1))
+			successor := active.Collection.Items[0]
+			Expect(successor.Id).NotTo(Equal(created.Chore.Id))
+			Expect(successor.ScheduleId).To(Equal(created.Chore.ScheduleId))
+			Expect(successor.Name).To(Equal(scope + " updated"))
+			Expect(successor.Description).To(Equal("Updated template steps."))
+			Expect(successor.Status).To(Equal("active"))
+			Expect(successor.CompletedOn).To(BeNil())
+			Expect(successor.Deadline).To(Equal("2020-04-02"))
+			retrievedSuccessor, err := client.GetChore(
+				ctx,
+				successor.Links.Href(shiftbellapi.RelationSelf),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(retrievedSuccessor.StatusCode).To(Equal(http.StatusOK))
+			Expect(retrievedSuccessor.SuccessResponse).NotTo(BeNil())
+			Expect(retrievedSuccessor.SuccessResponse.Chore).To(Equal(successor))
+			deadline := "2020-04-02T00:00:00Z"
+			schedule := shiftbellapi.Schedule{
+				Id:                  *created.Chore.ScheduleId,
+				Name:                scope + " weekly",
+				ChoreTemplateId:     template.ChoreTemplate.Id,
+				ChoreTemplateName:   scope + " updated",
+				IntervalDays:        interval,
+				ActiveChoreId:       &successor.Id,
+				ActiveChoreDeadline: &deadline,
+			}
+			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
+
+			By(
+				"repeating completion with a different date without creating another successor",
+			)
+			repeated, err := client.CompleteChore(
+				ctx,
+				completionHref,
+				shiftbellapi.CompleteChoreParams{CompletedOn: "2020-03-27"},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(repeated.StatusCode).To(Equal(http.StatusOK))
+			Expect(repeated.ErrorResponse).To(BeNil())
+			Expect(repeated.SuccessResponse).To(Equal(completed.SuccessResponse))
+			active, err = client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+				Href: "/chores", Search: scope, Status: "active", Limit: 20,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(active.Collection.Items).To(ConsistOf(successor))
+			history, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+				Href: "/chores", Search: scope, Status: "completed", Limit: 20,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(history.Collection.Items).To(ConsistOf(expected))
+			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
+		},
+	)
+
+	It(
 		"rejects a duplicate active schedule name without creating another schedule or chore",
 		func(ctx SpecContext) {
 			baseURL := os.Getenv("SHIFTBELL_BASE_URL")

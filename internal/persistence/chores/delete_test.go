@@ -129,5 +129,23 @@ var _ = Describe("Delete chore", func() {
 				Expect(scheduleCount).To(Equal(1))
 			},
 		)
+
+		It(
+			"keeps the successor when its completed predecessor is deleted",
+			func(ctx SpecContext) {
+				_, err := db.ExecContext(
+					ctx,
+					`update chores set predecessor_id = 41 where id = 42`,
+				)
+				Expect(err).NotTo(HaveOccurred())
+				err = persister.Delete(ctx, 41)
+				Expect(err).NotTo(HaveOccurred())
+				successor, err := persister.Get(ctx, 42)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(successor.PredecessorId).To(BeNil())
+				Expect(successor.Status).To(Equal(choremodels.ChoreStatusActive))
+				Expect(*successor.ScheduleId).To(Equal(1))
+			},
+		)
 	})
 })

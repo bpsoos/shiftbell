@@ -15,7 +15,7 @@ func (p *Persister) Browse(
 	params *choremodels.BrowseChoresParams,
 ) (_ *choremodels.ChorePage, returnErr error) {
 	query := `
-		select id, name, description, is_complete, completed_on, deadline, schedule_id
+		select id, name, description, is_complete, completed_on, deadline, schedule_id, predecessor_id
 		from chores
 		where is_complete = ?
 			and (
@@ -66,6 +66,7 @@ func (p *Persister) Browse(
 			&completedOn,
 			&deadline,
 			&chore.ScheduleId,
+			&chore.PredecessorId,
 		); err != nil {
 			return nil, fmt.Errorf("scan chore: %w", err)
 		}

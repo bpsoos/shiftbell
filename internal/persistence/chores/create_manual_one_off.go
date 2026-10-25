@@ -3,7 +3,6 @@ package chores
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/bpsoos/shiftbell/internal/database"
@@ -117,18 +116,4 @@ func resolveChoreTemplateInsertError(
 
 func nullableText(value string) sql.NullString {
 	return sql.NullString{String: value, Valid: value != ""}
-}
-
-func combineTransactionRollbackError(
-	operationErr error,
-	rollbackErr error,
-	transactionName string,
-) error {
-	if rollbackErr == nil || errors.Is(rollbackErr, sql.ErrTxDone) {
-		return operationErr
-	}
-	return errors.Join(
-		operationErr,
-		fmt.Errorf("rollback %s transaction: %w", transactionName, rollbackErr),
-	)
 }
