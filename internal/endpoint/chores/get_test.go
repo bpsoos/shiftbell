@@ -246,16 +246,14 @@ var _ = Describe("Get chore", func() {
 			Deadline:    deadline,
 		}, nil).Once()
 		chore := choreapimodels.Representation{
-			Response: choreapimodels.Response{
-				Id:          42,
-				Status:      choremodels.ChoreStatusActive,
-				Name:        "Kitchen",
-				Description: "Wash and fold",
-				Deadline:    "2026-08-15",
-				Links: api.Relations{
-					{Rel: "self", Href: "/chores/42"},
-					{Rel: "collection", Href: "/chores"},
-				},
+			Id:          42,
+			Status:      choremodels.ChoreStatusActive,
+			Name:        "Kitchen",
+			Description: "Wash and fold",
+			Deadline:    "2026-08-15",
+			Links: api.Relations{
+				{Rel: "self", Href: "/chores/42"},
+				{Rel: "collection", Href: "/chores"},
 			},
 			Actions: api.Relations{
 				{Rel: "edit", Href: "/chores/42"},

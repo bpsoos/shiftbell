@@ -25,7 +25,8 @@ var _ = Describe("Get", func() {
 
 	It("returns chore template details", func(ctx SpecContext) {
 		details := &models.ChoreTemplateDetails{
-			ChoreTemplate:            models.ChoreTemplate{Id: 42, Name: "Laundry"},
+			Id:                       42,
+			Name:                     "Laundry",
 			ActiveScheduleCount:      2,
 			DeactivatedScheduleCount: 1,
 		}

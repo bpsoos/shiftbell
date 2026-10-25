@@ -39,10 +39,8 @@ var _ = Describe("Confirm chore template deactivation", func() {
 	It("loads an active template and renders its dialog", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-			ChoreTemplate: choretemplatemodels.ChoreTemplate{
-				Id:   8,
-				Name: "Laundry",
-			},
+			Id:   8,
+			Name: "Laundry",
 		}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{
@@ -84,11 +82,9 @@ var _ = Describe("Confirm chore template deactivation", func() {
 		deactivatedAt := time.Date(2026, time.August, 13, 12, 0, 0, 0, time.UTC)
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-			ChoreTemplate: choretemplatemodels.ChoreTemplate{
-				Id:            8,
-				Name:          "Laundry",
-				DeactivatedAt: &deactivatedAt,
-			},
+			Id:            8,
+			Name:          "Laundry",
+			DeactivatedAt: &deactivatedAt,
 		}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{

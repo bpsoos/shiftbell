@@ -40,11 +40,9 @@ var _ = Describe("Edit chore template form", func() {
 	It("renders an active template edit form", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-			ChoreTemplate: choretemplatemodels.ChoreTemplate{
-				Id:          8,
-				Name:        "Laundry",
-				Description: "Wash and fold",
-			},
+			Id:          8,
+			Name:        "Laundry",
+			Description: "Wash and fold",
 		}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().EditForm(viewmodels.EditForm{
@@ -82,11 +80,9 @@ var _ = Describe("Edit chore template form", func() {
 		deactivatedAt := time.Date(2026, time.August, 8, 12, 0, 0, 0, time.UTC)
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-			ChoreTemplate: choretemplatemodels.ChoreTemplate{
-				Id:            8,
-				Name:          "Laundry",
-				DeactivatedAt: &deactivatedAt,
-			},
+			Id:            8,
+			Name:          "Laundry",
+			DeactivatedAt: &deactivatedAt,
 		}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Error(viewmodels.Error{

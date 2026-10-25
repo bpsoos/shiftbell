@@ -1,11 +1,11 @@
 dev_image := "shiftbell-dev"
 prod_image := "shiftbell"
-golangci_lint_image := "golangci/golangci-lint:v2.12.2"
+golangci_lint_image := "golangci/golangci-lint:v2.15.0"
 bootstrap_version := "5.3.8"
 bootstrap_css_sha256 := "05b86c3a7fef0df5874fd856c683ec09cb17dceeab36da061ebd1667796fea79"
 bootstrap_js_sha256 := "e4fd49181388c48ec5040bd3fe66f57c29c8e67fcd8502b3354b96ec7ab47cc7"
-htmx_version := "2.0.8"
-htmx_js_sha256 := "22283ef68cb7545914f0a88a1bdedc7256a703d1d580c1d255217d0a50d31313"
+htmx_version := "2.0.11"
+htmx_js_sha256 := "d6fdc75f204e6bdefa99b69bf1e6d4ac69b8a364f77929f45c13476b4000f717"
 export DEV_IMAGE := dev_image
 
 default:
@@ -98,7 +98,6 @@ fetch-htmx: build
         -v "{{justfile_directory()}}:/app" \
         -v "shiftbell-golangci-cache:/cache" \
         -w /app \
-        -e GOEXPERIMENT=jsonv2 \
         -e GOLANGCI_LINT_CACHE=/cache/golangci-lint \
         -e GOCACHE=/cache/go-build \
         -e GOMODCACHE=/cache/go-mod \
@@ -109,7 +108,7 @@ mockery *args:
     docker run --rm \
         -v {{justfile_dir()}}:/src \
         --workdir /src \
-        vektra/mockery:v3.7.2 {{args}}
+        vektra/mockery:v3.8.1 {{args}}
 
 @regenerate-mocks:
     docker run --rm -v {{justfile_dir()}}:/src \

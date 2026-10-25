@@ -134,16 +134,14 @@ var _ = Describe("Edit chore", func() {
 			Deadline:    deadline,
 		}, nil).Once()
 		chore := choreapimodels.Representation{
-			Response: choreapimodels.Response{
-				Id:          42,
-				Status:      choremodels.ChoreStatusActive,
-				Name:        "Kitchen edited",
-				Description: "Clean all counters.",
-				Deadline:    "2026-08-16",
-				Links: api.Relations{
-					{Rel: "self", Href: "/chores/42"},
-					{Rel: "collection", Href: "/chores"},
-				},
+			Id:          42,
+			Status:      choremodels.ChoreStatusActive,
+			Name:        "Kitchen edited",
+			Description: "Clean all counters.",
+			Deadline:    "2026-08-16",
+			Links: api.Relations{
+				{Rel: "self", Href: "/chores/42"},
+				{Rel: "collection", Href: "/chores"},
 			},
 			Actions: api.Relations{
 				{Rel: "edit", Href: "/chores/42"},
@@ -215,17 +213,15 @@ var _ = Describe("Edit chore", func() {
 			view := NewMockView(GinkgoT())
 			view.EXPECT().Detail(choreviewmodels.Detail{
 				Chore: choreapimodels.Representation{
-					Response: choreapimodels.Response{
-						Id:          42,
-						ScheduleId:  &scheduleId,
-						Status:      choremodels.ChoreStatusActive,
-						Name:        "Kitchen edited",
-						Description: "Clean all counters.",
-						Deadline:    "2026-08-15",
-						Links: api.Relations{
-							{Rel: "self", Href: "/chores/42"},
-							{Rel: "collection", Href: "/chores"},
-						},
+					Id:          42,
+					ScheduleId:  &scheduleId,
+					Status:      choremodels.ChoreStatusActive,
+					Name:        "Kitchen edited",
+					Description: "Clean all counters.",
+					Deadline:    "2026-08-15",
+					Links: api.Relations{
+						{Rel: "self", Href: "/chores/42"},
+						{Rel: "collection", Href: "/chores"},
 					},
 					Actions: api.Relations{
 						{Rel: "edit", Href: "/chores/42"},

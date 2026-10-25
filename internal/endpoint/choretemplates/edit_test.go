@@ -79,14 +79,12 @@ var _ = Describe("Edit chore template", func() {
 			Description: "Wash, dry, and fold",
 		}, nil).Once()
 		representation := choretemplateapimodels.Representation{
-			Response: choretemplateapimodels.Response{
-				Id:          8,
-				Name:        "Laundry edited",
-				Description: "Wash, dry, and fold",
-				Links: api.Relations{
-					{Rel: "self", Href: "/chore-templates/8"},
-					{Rel: "collection", Href: "/chore-templates"},
-				},
+			Id:          8,
+			Name:        "Laundry edited",
+			Description: "Wash, dry, and fold",
+			Links: api.Relations{
+				{Rel: "self", Href: "/chore-templates/8"},
+				{Rel: "collection", Href: "/chore-templates"},
 			},
 			Actions: api.Relations{
 				{Rel: "edit", Href: "/chore-templates/8"},

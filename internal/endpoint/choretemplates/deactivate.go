@@ -59,8 +59,9 @@ func (h *Handler) renderVendorJSONDeactivationError(
 	id int,
 	err error,
 ) error {
-	var referencesError *models.ActiveScheduleReferencesError
-	if errors.As(err, &referencesError) {
+	if referencesError, ok := errors.AsType[*models.ActiveScheduleReferencesError](
+		err,
+	); ok {
 		return hypermedia.JSON(
 			ctx,
 			http.StatusConflict,
@@ -94,8 +95,7 @@ func (h *Handler) renderHTMXDeactivationError(
 	id int,
 	err error,
 ) error {
-	var referencesError *models.ActiveScheduleReferencesError
-	if errors.As(err, &referencesError) {
+	if _, ok := errors.AsType[*models.ActiveScheduleReferencesError](err); ok {
 		return h.renderDeactivationDialogError(
 			ctx,
 			http.StatusConflict,

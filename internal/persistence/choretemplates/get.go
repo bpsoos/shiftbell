@@ -42,11 +42,9 @@ func (p *Persister) Get(
 	}
 
 	return &models.ChoreTemplateDetails{
-		ChoreTemplate: models.ChoreTemplate{
-			Id:            id,
-			Name:          name,
-			Description:   description.String,
-			DeactivatedAt: deactivatedAtValue,
-		},
+		Id:            id,
+		Name:          name,
+		Description:   description.String,
+		DeactivatedAt: deactivatedAtValue,
 	}, nil
 }

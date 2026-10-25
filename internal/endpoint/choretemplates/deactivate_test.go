@@ -83,10 +83,8 @@ var _ = Describe("Deactivate chore template", func() {
 				blocked,
 			)).Once()
 			service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-				ChoreTemplate: choretemplatemodels.ChoreTemplate{
-					Id:   8,
-					Name: "Laundry",
-				},
+				Id:   8,
+				Name: "Laundry",
 			}, nil).Once()
 			view := NewMockView(GinkgoT())
 			view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{
@@ -175,10 +173,8 @@ var _ = Describe("Deactivate chore template", func() {
 				choretemplatemodels.ErrInactive,
 			)).Once()
 			service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-				ChoreTemplate: choretemplatemodels.ChoreTemplate{
-					Id:   8,
-					Name: "Laundry",
-				},
+				Id:   8,
+				Name: "Laundry",
 			}, nil).Once()
 			view := NewMockView(GinkgoT())
 			view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{

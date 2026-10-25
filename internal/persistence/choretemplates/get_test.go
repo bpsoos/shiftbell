@@ -48,7 +48,7 @@ var _ = Describe("Get", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(
 				result,
-			).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}}))
+			).To(Equal(&models.ChoreTemplateDetails{Id: 1, Name: "Laundry", Description: "Wash and fold clothes"}))
 		})
 	})
 
@@ -69,7 +69,7 @@ var _ = Describe("Get", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(
 				result,
-			).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 1, Name: "Laundry"}}))
+			).To(Equal(&models.ChoreTemplateDetails{Id: 1, Name: "Laundry"}))
 		})
 	})
 
@@ -91,7 +91,7 @@ var _ = Describe("Get", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(
 				result,
-			).To(Equal(&models.ChoreTemplateDetails{ChoreTemplate: models.ChoreTemplate{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}}))
+			).To(Equal(&models.ChoreTemplateDetails{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}))
 		})
 	})
 })

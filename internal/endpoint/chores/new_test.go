@@ -182,11 +182,9 @@ var _ = Describe("Start chore creation", func() {
 		choreTemplateService.EXPECT().
 			Get(ctx, 42).
 			Return(&choretemplatemodels.ChoreTemplateDetails{
-				ChoreTemplate: choretemplatemodels.ChoreTemplate{
-					Id:          42,
-					Name:        "Kitchen",
-					Description: "Reusable template steps.",
-				},
+				Id:          42,
+				Name:        "Kitchen",
+				Description: "Reusable template steps.",
 			}, nil).
 			Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
@@ -234,11 +232,9 @@ var _ = Describe("Start chore creation", func() {
 			choreTemplateService.EXPECT().
 				Get(ctx, 42).
 				Return(&choretemplatemodels.ChoreTemplateDetails{
-					ChoreTemplate: choretemplatemodels.ChoreTemplate{
-						Id:          42,
-						Name:        "Kitchen",
-						Description: "Reusable template steps.",
-					},
+					Id:          42,
+					Name:        "Kitchen",
+					Description: "Reusable template steps.",
 				}, nil).
 				Once()
 			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
@@ -272,11 +268,9 @@ var _ = Describe("Start chore creation", func() {
 		choreTemplateService.EXPECT().
 			Get(ctx, 42).
 			Return(&choretemplatemodels.ChoreTemplateDetails{
-				ChoreTemplate: choretemplatemodels.ChoreTemplate{
-					Id:          42,
-					Name:        "Kitchen",
-					Description: "Reusable template steps.",
-				},
+				Id:          42,
+				Name:        "Kitchen",
+				Description: "Reusable template steps.",
 			}, nil).
 			Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{

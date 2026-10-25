@@ -20,23 +20,19 @@ var _ = Describe("Get chore template", func() {
 	It("maps an active template to a read-only HTML detail", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-			ChoreTemplate: choretemplatemodels.ChoreTemplate{
-				Id:          8,
-				Name:        "Laundry",
-				Description: "Wash and fold",
-			},
+			Id:          8,
+			Name:        "Laundry",
+			Description: "Wash and fold",
 		}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Detail(viewmodels.Detail{
 			ChoreTemplate: choretemplateapimodels.Representation{
-				Response: choretemplateapimodels.Response{
-					Id:          8,
-					Name:        "Laundry",
-					Description: "Wash and fold",
-					Links: api.Relations{
-						{Rel: "self", Href: "/chore-templates/8"},
-						{Rel: "collection", Href: "/chore-templates"},
-					},
+				Id:          8,
+				Name:        "Laundry",
+				Description: "Wash and fold",
+				Links: api.Relations{
+					{Rel: "self", Href: "/chore-templates/8"},
+					{Rel: "collection", Href: "/chore-templates"},
 				},
 				Actions: api.Relations{
 					{Rel: "edit", Href: "/chore-templates/8"},
@@ -74,23 +70,19 @@ var _ = Describe("Get chore template", func() {
 			deactivatedAt := time.Date(2026, time.August, 8, 12, 0, 0, 0, time.UTC)
 			service := NewMockService(GinkgoT())
 			service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-				ChoreTemplate: choretemplatemodels.ChoreTemplate{
-					Id:            8,
-					Name:          "Laundry",
-					DeactivatedAt: &deactivatedAt,
-				},
+				Id:            8,
+				Name:          "Laundry",
+				DeactivatedAt: &deactivatedAt,
 			}, nil).Once()
 			view := NewMockView(GinkgoT())
 			view.EXPECT().Detail(viewmodels.Detail{
 				ChoreTemplate: choretemplateapimodels.Representation{
-					Response: choretemplateapimodels.Response{
-						Id:            8,
-						Name:          "Laundry",
-						DeactivatedAt: &deactivatedAt,
-						Links: api.Relations{
-							{Rel: "self", Href: "/chore-templates/8"},
-							{Rel: "collection", Href: "/chore-templates"},
-						},
+					Id:            8,
+					Name:          "Laundry",
+					DeactivatedAt: &deactivatedAt,
+					Links: api.Relations{
+						{Rel: "self", Href: "/chore-templates/8"},
+						{Rel: "collection", Href: "/chore-templates"},
 					},
 					Actions: api.Relations{},
 				},
