@@ -341,6 +341,197 @@ var _ = Describe("Schedule API", func() {
 		},
 	)
 
+	When("correcting scheduled completion dates", func() {
+		var (
+			client    *shiftbellapi.APIClient
+			completed *shiftbellapi.CompleteChoreResponse
+			successor shiftbellapi.Chore
+			schedule  shiftbellapi.Schedule
+			scope     string
+		)
+
+		BeforeEach(func(ctx SpecContext) {
+			baseURL := os.Getenv("SHIFTBELL_BASE_URL")
+			Expect(baseURL).NotTo(BeEmpty())
+			client = shiftbellapi.NewAPIClient(baseURL)
+			scope = uniqueChoreName("Scheduled correction")
+			template := createChoreTemplate(
+				ctx,
+				client,
+				discoverChoreTemplateCollection(
+					ctx,
+					client,
+				),
+				scope,
+				"Preserve these snapshots.",
+			)
+			form := getTemplateOneOffChoreForm(ctx, client,
+				discoverChoreCollection(ctx, client), template.ChoreTemplate)
+			interval := 7
+			created, err := client.CreateChore(
+				ctx,
+				form.Actions.Href(shiftbellapi.RelationCreate),
+				shiftbellapi.CreateChoreParams{
+					ChoreTemplateId: &template.ChoreTemplate.Id,
+					ScheduleName:    scope + " weekly",
+					IntervalDays:    &interval,
+					Deadline:        "2020-02-03",
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(created.StatusCode).To(Equal(http.StatusCreated))
+			Expect(created.SuccessResponse).NotTo(BeNil())
+			completion, err := client.CompleteChore(ctx,
+				created.SuccessResponse.Actions.Href(shiftbellapi.RelationComplete),
+				shiftbellapi.CompleteChoreParams{CompletedOn: "2020-03-26"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completion.StatusCode).To(Equal(http.StatusOK))
+			Expect(completion.SuccessResponse).NotTo(BeNil())
+			completed = completion.SuccessResponse
+			Expect(completed.Chore.ScheduleId).NotTo(BeNil())
+			active, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+				Href: "/chores", Search: scope, Status: "active", Limit: 20,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(active.Collection.Items).To(HaveLen(1))
+			successor = active.Collection.Items[0]
+			Expect(successor.Deadline).To(Equal("2020-04-02"))
+			deadline := "2020-04-02T00:00:00Z"
+			schedule = shiftbellapi.Schedule{
+				Id:                  *completed.Chore.ScheduleId,
+				Name:                scope + " weekly",
+				ChoreTemplateId:     template.ChoreTemplate.Id,
+				ChoreTemplateName:   template.ChoreTemplate.Name,
+				IntervalDays:        interval,
+				ActiveChoreId:       &successor.Id,
+				ActiveChoreDeadline: &deadline,
+			}
+			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
+		})
+
+		It(
+			"recalculates the active successor deadline without replacing it",
+			func(ctx SpecContext) {
+				By("correcting the predecessor through its advertised action")
+				correctedDate := "2020-03-28"
+				correctionHref := completed.Actions.Href(
+					shiftbellapi.RelationCorrectCompletion,
+				)
+				Expect(correctionHref).NotTo(BeEmpty())
+				corrected, err := client.CorrectChoreCompletion(ctx, correctionHref,
+					shiftbellapi.CorrectChoreCompletionParams{CompletedOn: correctedDate})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(corrected.StatusCode).To(Equal(http.StatusOK))
+				Expect(corrected.ErrorResponse).To(BeNil())
+				Expect(corrected.SuccessResponse).NotTo(BeNil())
+				expectedOriginal := completed.Chore
+				expectedOriginal.CompletedOn = &correctedDate
+				Expect(corrected.SuccessResponse.Chore).To(Equal(expectedOriginal))
+				Expect(corrected.SuccessResponse.Actions).To(ConsistOf(completed.Actions))
+
+				By("verifying only the existing successor's deadline changed")
+				expectedSuccessor := successor
+				expectedSuccessor.Deadline = "2020-04-04"
+				retrieved, err := client.GetChore(
+					ctx,
+					successor.Links.Href(shiftbellapi.RelationSelf),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrieved.StatusCode).To(Equal(http.StatusOK))
+				Expect(retrieved.SuccessResponse).NotTo(BeNil())
+				Expect(retrieved.SuccessResponse.Chore).To(Equal(expectedSuccessor))
+				active, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href: "/chores", Search: scope, Status: "active", Limit: 20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(active.Collection.Items).To(ConsistOf(expectedSuccessor))
+				deadline := "2020-04-04T00:00:00Z"
+				schedule.ActiveChoreDeadline = &deadline
+				Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
+
+				By("repeating the correction without creating or replacing any chore")
+				repeated, err := client.CorrectChoreCompletion(ctx, correctionHref,
+					shiftbellapi.CorrectChoreCompletionParams{CompletedOn: correctedDate})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repeated.StatusCode).To(Equal(http.StatusOK))
+				Expect(repeated.SuccessResponse).To(Equal(corrected.SuccessResponse))
+				active, err = client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href: "/chores", Search: scope, Status: "active", Limit: 20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(active.Collection.Items).To(ConsistOf(expectedSuccessor))
+				history, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href: "/chores", Search: scope, Status: "completed", Limit: 20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(history.Collection.Items).To(ConsistOf(expectedOriginal))
+			},
+		)
+
+		It(
+			"does not cascade a correction after the immediate successor has completed",
+			func(ctx SpecContext) {
+				By("completing the immediate successor and creating a later active chore")
+				details, err := client.GetChore(
+					ctx,
+					successor.Links.Href(shiftbellapi.RelationSelf),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(details.SuccessResponse).NotTo(BeNil())
+				secondCompletion, err := client.CompleteChore(ctx,
+					details.SuccessResponse.Actions.Href(shiftbellapi.RelationComplete),
+					shiftbellapi.CompleteChoreParams{CompletedOn: "2020-04-03"})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(secondCompletion.StatusCode).To(Equal(http.StatusOK))
+				Expect(secondCompletion.SuccessResponse).NotTo(BeNil())
+				active, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href: "/chores", Search: scope, Status: "active", Limit: 20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(active.Collection.Items).To(HaveLen(1))
+				laterChore := active.Collection.Items[0]
+				Expect(laterChore.Deadline).To(Equal("2020-04-10"))
+
+				By("correcting the older predecessor without changing subsequent chores")
+				correctedDate := "2020-03-28"
+				corrected, err := client.CorrectChoreCompletion(ctx,
+					completed.Actions.Href(shiftbellapi.RelationCorrectCompletion),
+					shiftbellapi.CorrectChoreCompletionParams{CompletedOn: correctedDate})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(corrected.StatusCode).To(Equal(http.StatusOK))
+				Expect(corrected.SuccessResponse).NotTo(BeNil())
+				expectedOriginal := completed.Chore
+				expectedOriginal.CompletedOn = &correctedDate
+				Expect(corrected.SuccessResponse.Chore).To(Equal(expectedOriginal))
+				retrieved, err := client.GetChore(
+					ctx,
+					successor.Links.Href(shiftbellapi.RelationSelf),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrieved.SuccessResponse).NotTo(BeNil())
+				Expect(
+					retrieved.SuccessResponse.Chore,
+				).To(Equal(secondCompletion.SuccessResponse.Chore))
+				active, err = client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href: "/chores", Search: scope, Status: "active", Limit: 20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(active.Collection.Items).To(ConsistOf(laterChore))
+				history, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+					Href: "/chores", Search: scope, Status: "completed", Limit: 20,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(
+					history.Collection.Items,
+				).To(ConsistOf(expectedOriginal, secondCompletion.SuccessResponse.Chore))
+				deadline := "2020-04-10T00:00:00Z"
+				schedule.ActiveChoreId = &laterChore.Id
+				schedule.ActiveChoreDeadline = &deadline
+				Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
+			},
+		)
+	})
+
 	It(
 		"rejects a deactivated template without leaving a schedule or chore",
 		func(ctx SpecContext) {

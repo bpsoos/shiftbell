@@ -59,3 +59,23 @@ func getChore(
 	}
 	return chore, nil
 }
+
+func getSuccessor(
+	ctx context.Context,
+	tx *sqlx.Tx,
+	predecessorID int,
+) (*models.Chore, error) {
+	var id int
+	err := tx.QueryRowContext(
+		ctx,
+		`select id from chores where predecessor_id = ?`,
+		predecessorID,
+	).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("select successor: %w", err)
+	}
+	return getChore(ctx, tx, id)
+}
