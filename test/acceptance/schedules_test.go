@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/bpsoos/shiftbell/internal/testsupport/shiftbellapi"
 	. "github.com/onsi/ginkgo/v2"
@@ -112,6 +113,106 @@ var _ = Describe("Schedule API", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(chores.Collection.Items).To(ConsistOf(created.Chore))
+		},
+	)
+
+	It(
+		"rejects a duplicate active schedule name without creating another schedule or chore",
+		func(ctx SpecContext) {
+			baseURL := os.Getenv("SHIFTBELL_BASE_URL")
+			Expect(baseURL).NotTo(BeEmpty())
+			client := shiftbellapi.NewAPIClient(baseURL)
+			scope := uniqueChoreName("Schedule name conflict")
+			collection := discoverChoreTemplateCollection(ctx, client)
+			template := createChoreTemplate(
+				ctx,
+				client,
+				collection,
+				scope+" original",
+				"Original chore.",
+			)
+			otherTemplate := createChoreTemplate(
+				ctx,
+				client,
+				collection,
+				scope+" rejected",
+				"No chore should be created.",
+			)
+			form := getTemplateOneOffChoreForm(ctx, client,
+				discoverChoreCollection(ctx, client), template.ChoreTemplate)
+			interval := 7
+			name := scope + " weekly"
+			createdResult, err := client.CreateChore(
+				ctx,
+				form.Actions.Href(shiftbellapi.RelationCreate),
+				shiftbellapi.CreateChoreParams{
+					ChoreTemplateId: &template.ChoreTemplate.Id,
+					ScheduleName:    name,
+					IntervalDays:    &interval,
+					Deadline:        "2020-02-03",
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(createdResult.StatusCode).To(Equal(http.StatusCreated))
+			Expect(createdResult.SuccessResponse).NotTo(BeNil())
+			created := createdResult.SuccessResponse
+			Expect(created.Chore.ScheduleId).NotTo(BeNil())
+			deadline := "2020-02-03T00:00:00Z"
+			schedule := shiftbellapi.Schedule{
+				Id:                  *created.Chore.ScheduleId,
+				Name:                name,
+				ChoreTemplateId:     template.ChoreTemplate.Id,
+				ChoreTemplateName:   template.ChoreTemplate.Name,
+				IntervalDays:        interval,
+				ActiveChoreId:       &created.Chore.Id,
+				ActiveChoreDeadline: &deadline,
+			}
+			Expect(browseAllSchedules(ctx, client)).To(ContainElement(schedule))
+
+			By(
+				"requesting the same active schedule name with different case and surrounding whitespace",
+			)
+			conflict, err := client.CreateChore(
+				ctx,
+				form.Actions.Href(shiftbellapi.RelationCreate),
+				shiftbellapi.CreateChoreParams{
+					ChoreTemplateId: &otherTemplate.ChoreTemplate.Id,
+					ScheduleName:    "  " + strings.ToUpper(name) + "  ",
+					IntervalDays:    &interval,
+					Deadline:        "2020-03-03",
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conflict.StatusCode).To(Equal(http.StatusConflict))
+			Expect(conflict.SuccessResponse).To(BeNil())
+			Expect(conflict.ErrorResponse).NotTo(BeNil())
+			Expect(
+				conflict.ErrorResponse.Error,
+			).To(Equal("schedule name conflicts with an active schedule"))
+			Expect(conflict.ErrorResponse.Actions).To(ConsistOf(shiftbellapi.Relation{
+				Rel:  shiftbellapi.RelationCreate,
+				Href: form.Actions.Href(shiftbellapi.RelationCreate),
+			}))
+
+			By("verifying no additional schedule or chore was created")
+			schedules := browseAllSchedules(ctx, client)
+			Expect(schedules).To(ContainElement(schedule))
+			Expect(
+				schedules,
+			).NotTo(ContainElement(HaveField("ChoreTemplateId", otherTemplate.ChoreTemplate.Id)))
+			chores, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
+				Href: "/chores", Search: scope, Status: "active", Limit: 20,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chores.Collection.Items).To(ConsistOf(created.Chore))
+			retrieved, err := client.GetChore(
+				ctx,
+				created.Chore.Links.Href(shiftbellapi.RelationSelf),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(retrieved.StatusCode).To(Equal(http.StatusOK))
+			Expect(retrieved.SuccessResponse).NotTo(BeNil())
+			Expect(retrieved.SuccessResponse.Chore).To(Equal(created.Chore))
 		},
 	)
 

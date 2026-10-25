@@ -7,6 +7,7 @@ import (
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	. "github.com/onsi/ginkgo/v2"
@@ -128,6 +129,34 @@ var _ = Describe("Create", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(BeIdenticalTo(persisted))
 	})
+
+	It(
+		"preserves schedule name conflicts from template-based creation",
+		func(ctx SpecContext) {
+			templateID, interval := 42, 7
+			deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
+			normalizer.EXPECT().NormalizeName("  Weekly  ").Return("Weekly", nil).Once()
+			persister.EXPECT().
+				CreateTemplateScheduled(ctx, &models.CreateTemplateScheduledParams{
+					ChoreTemplateId: templateID,
+					ScheduleName:    "Weekly",
+					IntervalDays:    interval,
+					Deadline:        deadline,
+				}).
+				Return(nil, schedulemodels.ErrNameConflict).
+				Once()
+
+			result, err := service.Create(ctx, &models.CreateChoreParams{
+				ChoreTemplateId: &templateID,
+				ScheduleName:    "  Weekly  ",
+				IntervalDays:    &interval,
+				Deadline:        deadline,
+			})
+
+			Expect(result).To(BeNil())
+			Expect(errors.Is(err, schedulemodels.ErrNameConflict)).To(BeTrue())
+		},
+	)
 
 	It("rejects an invalid name without persisting", func() {
 		normalizer.EXPECT().

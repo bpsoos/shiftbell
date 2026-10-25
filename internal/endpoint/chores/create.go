@@ -13,6 +13,7 @@ import (
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	"github.com/labstack/echo/v5"
 )
@@ -129,6 +130,9 @@ func (h *Handler) renderCreateError(
 	request createChoreRequest,
 	err error,
 ) error {
+	if errors.Is(err, schedulemodels.ErrNameConflict) {
+		return h.renderScheduleNameConflict(ctx, request)
+	}
 	if errors.Is(err, choretemplatemodels.ErrNotFound) {
 		return h.renderError(
 			ctx,
@@ -179,6 +183,27 @@ func (h *Handler) renderCreateNameConflict(
 		formFeedback{
 			Values:      createFormValues(request),
 			FieldErrors: map[string]string{"name": response.Error},
+			Error:       response,
+		},
+	)
+}
+
+func (h *Handler) renderScheduleNameConflict(
+	ctx *echo.Context,
+	request createChoreRequest,
+) error {
+	response := apiErrorResponse{
+		Error:   schedulemodels.ErrNameConflict.Error(),
+		Links:   api.Relations{},
+		Actions: api.Relations{createChoreSubmissionAction()},
+	}
+	return h.renderCreateFormError(
+		ctx,
+		http.StatusConflict,
+		request,
+		formFeedback{
+			Values:      createFormValues(request),
+			FieldErrors: map[string]string{"schedule_name": response.Error},
 			Error:       response,
 		},
 	)

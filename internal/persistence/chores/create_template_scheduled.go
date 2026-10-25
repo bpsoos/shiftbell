@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bpsoos/shiftbell/internal/database"
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
+	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -52,13 +54,20 @@ func insertTemplateSchedule(
 		values (?, ?, ?)
 	`, params.ScheduleName, params.ChoreTemplateId, params.IntervalDays)
 	if err != nil {
-		return 0, fmt.Errorf("insert schedule: %w", err)
+		return 0, resolveScheduleInsertError(err)
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
 		return 0, fmt.Errorf("read inserted schedule id: %w", err)
 	}
 	return int(id), nil
+}
+
+func resolveScheduleInsertError(insertErr error) error {
+	if database.IsUniqueConstraintError(insertErr) {
+		return schedulemodels.ErrNameConflict
+	}
+	return fmt.Errorf("insert schedule: %w", insertErr)
 }
 
 func insertTemplateScheduledChore(

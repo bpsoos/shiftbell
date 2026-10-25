@@ -12,6 +12,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/labstack/echo/v5"
@@ -20,6 +21,49 @@ import (
 )
 
 var _ = Describe("Create chore", func() {
+	It(
+		"returns a conflict and a retry action when an active schedule name is taken",
+		func(ctx SpecContext) {
+			templateID, interval := 7, 14
+			deadline := time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC)
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				ChoreTemplateId: &templateID,
+				ScheduleName:    "Fortnightly",
+				IntervalDays:    &interval,
+				Deadline:        deadline,
+			}).Return(nil, fmt.Errorf("create template scheduled chore: %w", schedulemodels.ErrNameConflict)).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(`{
+			"chore_template_id":7,"schedule_name":"Fortnightly","interval_days":14,"deadline":"2020-02-03"
+		}`),
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			request.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusConflict))
+			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+			Expect(response.Header().Get("Location")).To(BeEmpty())
+			Expect(response.Header().Get("Set-Cookie")).To(BeEmpty())
+			Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"error":"schedule name conflicts with an active schedule",
+			"_links":[],
+			"_actions":[{"rel":"create","href":"/chores"}]
+		}`))
+		},
+	)
+
 	It(
 		"creates a template-based scheduled chore through the JSON API",
 		func(ctx SpecContext) {

@@ -1,19 +1,9 @@
 package schedules
 
-import (
-	"errors"
-	"fmt"
-)
+import "errors"
 
 var (
-	ErrNotFound = errors.New("schedule not found")
-	ErrInactive = errors.New("schedule inactive")
+	ErrNotFound     = errors.New("schedule not found")
+	ErrInactive     = errors.New("schedule inactive")
+	ErrNameConflict = errors.New("schedule name conflicts with an active schedule")
 )
-
-type NameConflictError struct {
-	ExistingId int
-}
-
-func (e *NameConflictError) Error() string {
-	return fmt.Sprintf("schedule name conflicts with active schedule %d", e.ExistingId)
-}
