@@ -89,4 +89,34 @@ var _ = Describe("Get", func() {
 			}))
 		})
 	})
+
+	It("returns the schedule association of a scheduled chore", func(ctx SpecContext) {
+		_, err := db.ExecContext(
+			ctx,
+			`insert into chore_templates (id, name) values (1, 'Laundry')`,
+		)
+		Expect(err).NotTo(HaveOccurred())
+		_, err = db.ExecContext(
+			ctx,
+			`insert into schedules (id, name, chore_template_id, interval_days) values (1, 'Weekly laundry', 1, 7)`,
+		)
+		Expect(err).NotTo(HaveOccurred())
+		deadline := time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC)
+		_, err = db.ExecContext(
+			ctx,
+			`insert into chores (id, name, is_complete, deadline, schedule_id) values (1, 'Laundry', false, ?, 1)`,
+			deadline,
+		)
+		Expect(err).NotTo(HaveOccurred())
+		chore, err := persister.Get(ctx, 1)
+		Expect(err).NotTo(HaveOccurred())
+		scheduleID := 1
+		Expect(chore).To(Equal(&models.Chore{
+			Id:         1,
+			ScheduleId: &scheduleID,
+			Name:       "Laundry",
+			Status:     models.ChoreStatusActive,
+			Deadline:   deadline,
+		}))
+	})
 })

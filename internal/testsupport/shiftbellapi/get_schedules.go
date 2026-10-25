@@ -8,9 +8,20 @@ import (
 )
 
 type ScheduleCollection struct {
-	Items []json.RawMessage `json:"items"`
-	More  bool              `json:"more"`
-	Links Relations         `json:"_links"`
+	Items []Schedule `json:"items"`
+	More  bool       `json:"more"`
+	Links Relations  `json:"_links"`
+}
+
+type Schedule struct {
+	Id                  int     `json:"id"`
+	Name                string  `json:"name"`
+	ChoreTemplateId     int     `json:"chore_template_id"`
+	ChoreTemplateName   string  `json:"chore_template_name"`
+	IntervalDays        int     `json:"interval_days"`
+	DeactivatedAt       *string `json:"deactivated_at"`
+	ActiveChoreId       *int    `json:"active_chore_id"`
+	ActiveChoreDeadline *string `json:"active_chore_deadline"`
 }
 
 func (c *APIClient) GetSchedules(

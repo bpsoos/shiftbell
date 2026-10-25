@@ -33,7 +33,9 @@ func (h *Handler) create(ctx *echo.Context) error {
 		return h.renderCreateBindingError(ctx, request, err)
 	}
 	request.SaveAsChoreTemplate = saveAsTemplateRequested(ctx, request)
-	if request.IntervalDays != nil {
+	if request.IntervalDays != nil &&
+		(request.ChoreTemplateId == nil ||
+			hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationJSON) {
 		return h.scheduledRecurrenceNotImplemented(ctx)
 	}
 	deadline, err := time.Parse(time.DateOnly, request.Deadline)
@@ -127,6 +129,13 @@ func (h *Handler) renderCreateError(
 	request createChoreRequest,
 	err error,
 ) error {
+	if errors.Is(err, choretemplatemodels.ErrNotFound) {
+		return h.renderError(
+			ctx,
+			http.StatusNotFound,
+			apiErrorResponse{Error: choretemplatemodels.ErrNotFound.Error()},
+		)
+	}
 	if errors.Is(err, choretemplatemodels.ErrNameConflict) {
 		return h.renderCreateNameConflict(ctx, request)
 	}

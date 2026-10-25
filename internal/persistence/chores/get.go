@@ -17,12 +17,13 @@ func (p *Persister) Get(ctx context.Context, id int) (*models.Chore, error) {
 		isComplete  bool
 		completedOn sql.NullTime
 		deadline    time.Time
+		scheduleId  *int
 	)
 	err := p.db.QueryRowContext(ctx, `
-		select name, description, is_complete, completed_on, deadline
+		select name, description, is_complete, completed_on, deadline, schedule_id
 		from chores
 		where id = ?
-	`, id).Scan(&name, &description, &isComplete, &completedOn, &deadline)
+	`, id).Scan(&name, &description, &isComplete, &completedOn, &deadline, &scheduleId)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrNotFound
 	}
@@ -36,6 +37,7 @@ func (p *Persister) Get(ctx context.Context, id int) (*models.Chore, error) {
 	}
 	chore := &models.Chore{
 		Id:          id,
+		ScheduleId:  scheduleId,
 		Status:      status,
 		Name:        name,
 		Description: description.String,

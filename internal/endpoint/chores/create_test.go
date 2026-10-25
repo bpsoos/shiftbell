@@ -12,6 +12,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
@@ -19,6 +20,134 @@ import (
 )
 
 var _ = Describe("Create chore", func() {
+	It(
+		"creates a template-based scheduled chore through the JSON API",
+		func(ctx SpecContext) {
+			deadline := time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC)
+			templateID, interval, scheduleID := 7, 14, 3
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				ChoreTemplateId: &templateID,
+				ScheduleName:    "  Fortnightly  ",
+				IntervalDays:    &interval,
+				Deadline:        deadline,
+			}).Return(&choremodels.CreateChoreResult{Chore: &choremodels.Chore{
+				Id:          42,
+				ScheduleId:  &scheduleID,
+				Name:        "Kitchen",
+				Description: "Reusable steps.",
+				Status:      choremodels.ChoreStatusActive,
+				Deadline:    deadline,
+			}}, nil).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(`{
+			"chore_template_id":7,"schedule_name":"  Fortnightly  ","interval_days":14,"deadline":"2020-02-03"
+		}`),
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			request.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusCreated))
+			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+			Expect(response.Header().Get("Location")).To(Equal("/chores/42"))
+			Expect(response.Body.Bytes()).To(MatchJSON(`{
+			"id":42,"schedule_id":3,"status":"active","name":"Kitchen","description":"Reusable steps.",
+			"deadline":"2020-02-03","completed_on":null,
+			"_links":[{"rel":"self","href":"/chores/42"},{"rel":"collection","href":"/chores"}],
+			"_actions":[{"rel":"edit","href":"/chores/42"},{"rel":"complete","href":"/chores/42/completion"}]
+		}`))
+		},
+	)
+
+	DescribeTable(
+		"rejects invalid template-based scheduled creation",
+		func(ctx SpecContext, createErr error, status int) {
+			deadline := time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC)
+			templateID, interval := 7, 14
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				ChoreTemplateId: &templateID,
+				ScheduleName:    "Fortnightly",
+				IntervalDays:    &interval,
+				Deadline:        deadline,
+			}).Return(nil, fmt.Errorf("create template scheduled chore: %w", createErr)).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(`{
+			"chore_template_id":7,"schedule_name":"Fortnightly","interval_days":14,"deadline":"2020-02-03"
+		}`),
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			request.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(status))
+			Expect(response.Header().Get("Location")).To(BeEmpty())
+			Expect(response.Body.String()).To(ContainSubstring(createErr.Error()))
+		},
+		Entry(
+			"inactive template",
+			choretemplatemodels.ErrInactive,
+			http.StatusUnprocessableEntity,
+		),
+		Entry("missing template", choretemplatemodels.ErrNotFound, http.StatusNotFound),
+		Entry(
+			"invalid schedule name",
+			validationerrors.ErrInvalidName,
+			http.StatusUnprocessableEntity,
+		),
+		Entry(
+			"invalid interval",
+			validationerrors.ErrInvalidInterval,
+			http.StatusUnprocessableEntity,
+		),
+	)
+
+	It(
+		"keeps template-based scheduled HTML submissions unsupported",
+		func(ctx SpecContext) {
+			service := NewMockService(GinkgoT())
+			view := NewMockView(GinkgoT())
+			view.EXPECT().Error(choreviewmodels.Error{
+				Message: "scheduled recurrence is not implemented",
+			}, true).Return(templ.Raw("not implemented")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service, View: view},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(
+					"chore_template_id=7&schedule_name=Weekly&interval_days=7&deadline=2020-02-03",
+				),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusNotImplemented))
+		},
+	)
+
 	It(
 		"creates a manual one-off through the advertised form action",
 		func(ctx SpecContext) {

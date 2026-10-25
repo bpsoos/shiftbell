@@ -28,13 +28,6 @@ func (p *Persister) CreateManualScheduled(
 	return nil, nil
 }
 
-func (p *Persister) CreateTemplateScheduled(
-	_ context.Context,
-	_ *models.CreateTemplateScheduledParams,
-) (*models.CreateChoreResult, error) {
-	return nil, nil
-}
-
 func (p *Persister) EditScheduled(
 	_ context.Context,
 	_ *models.EditScheduledChoreParams,
