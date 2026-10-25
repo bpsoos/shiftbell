@@ -21,13 +21,6 @@ func NewPersister(deps *PersisterDeps) *Persister {
 	}
 }
 
-func (p *Persister) CreateManualScheduled(
-	_ context.Context,
-	_ *models.CreateManualScheduledParams,
-) (*models.CreateChoreResult, error) {
-	return nil, nil
-}
-
 func (p *Persister) EditScheduled(
 	_ context.Context,
 	_ *models.EditScheduledChoreParams,

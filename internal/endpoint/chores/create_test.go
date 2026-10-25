@@ -163,9 +163,9 @@ var _ = Describe("Create chore", func() {
 		),
 	)
 
-	It(
-		"keeps template-based scheduled HTML submissions unsupported",
-		func(ctx SpecContext) {
+	DescribeTable(
+		"keeps scheduled HTML submissions unsupported",
+		func(ctx SpecContext, source string) {
 			service := NewMockService(GinkgoT())
 			view := NewMockView(GinkgoT())
 			view.EXPECT().Error(choreviewmodels.Error{
@@ -181,7 +181,7 @@ var _ = Describe("Create chore", func() {
 				http.MethodPost,
 				"/chores",
 				strings.NewReader(
-					"chore_template_id=7&schedule_name=Weekly&interval_days=7&deadline=2020-02-03",
+					source+"&schedule_name=Weekly&interval_days=7&deadline=2020-02-03",
 				),
 			)
 			request.Header.Set("Accept", "text/html")
@@ -190,6 +190,8 @@ var _ = Describe("Create chore", func() {
 			app.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusNotImplemented))
 		},
+		Entry("from a template", "chore_template_id=7"),
+		Entry("manual", "name=Kitchen"),
 	)
 
 	It(
@@ -346,9 +348,25 @@ var _ = Describe("Create chore", func() {
 	)
 
 	It(
-		"rejects direct scheduled creation without calling the service",
+		"creates a manual scheduled chore and returns only the chore",
 		func(ctx SpecContext) {
+			deadline := time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC)
+			interval, scheduleID := 7, 3
 			service := NewMockService(GinkgoT())
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				Name: "  Kitchen  ", Description: "  Reusable steps.  ",
+				Deadline: deadline, ScheduleName: "  Weekly  ", IntervalDays: &interval,
+			}).Return(&choremodels.CreateChoreResult{
+				Chore: &choremodels.Chore{
+					Id:          42,
+					ScheduleId:  &scheduleID,
+					Status:      choremodels.ChoreStatusActive,
+					Name:        "Kitchen",
+					Description: "Reusable steps.",
+					Deadline:    deadline,
+				},
+				ChoreTemplate: &choretemplatemodels.ChoreTemplate{Id: 7, Name: "Kitchen"},
+			}, nil).Once()
 			handler := choresendpoint.NewHandler(
 				&choresendpoint.HandlerDeps{Service: service},
 			)
@@ -359,9 +377,10 @@ var _ = Describe("Create chore", func() {
 				http.MethodPost,
 				"/chores",
 				strings.NewReader(`{
-				"name": "Kitchen",
+				"name": "  Kitchen  ",
+				"description": "  Reusable steps.  ",
 				"deadline": "2020-02-03",
-				"schedule_name": "Weekly",
+				"schedule_name": "  Weekly  ",
 				"interval_days": 7
 			}`),
 			)
@@ -371,14 +390,78 @@ var _ = Describe("Create chore", func() {
 
 			e.ServeHTTP(response, request)
 
-			Expect(response.Code).To(Equal(http.StatusNotImplemented))
+			Expect(response.Code).To(Equal(http.StatusCreated))
 			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
+			Expect(response.Header().Get("Location")).To(Equal("/chores/42"))
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
-			"error": "scheduled recurrence is not implemented",
-			"_links": [],
-			"_actions": []
+			"id":42,"schedule_id":3,"status":"active","name":"Kitchen","description":"Reusable steps.",
+			"deadline":"2020-02-03","completed_on":null,
+			"_links":[{"rel":"self","href":"/chores/42"},{"rel":"collection","href":"/chores"}],
+			"_actions":[{"rel":"edit","href":"/chores/42"},{"rel":"complete","href":"/chores/42/completion"}]
 		}`))
 		},
+	)
+
+	DescribeTable(
+		"returns manual scheduled creation feedback",
+		func(ctx SpecContext, createErr error, status int) {
+			deadline := time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC)
+			interval := 7
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				Name:         "Kitchen",
+				Deadline:     deadline,
+				ScheduleName: "Weekly",
+				IntervalDays: &interval,
+			}).Return(nil, fmt.Errorf("create manual scheduled chore: %w", createErr)).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(`{
+			"name":"Kitchen","deadline":"2020-02-03","schedule_name":"Weekly","interval_days":7
+		}`),
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			request.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(status))
+			Expect(response.Header().Get("Location")).To(BeEmpty())
+			Expect(response.Body.String()).To(ContainSubstring(createErr.Error()))
+		},
+		Entry(
+			"template name conflict",
+			choretemplatemodels.ErrNameConflict,
+			http.StatusConflict,
+		),
+		Entry(
+			"schedule name conflict",
+			schedulemodels.ErrNameConflict,
+			http.StatusConflict,
+		),
+		Entry(
+			"invalid name",
+			validationerrors.ErrInvalidName,
+			http.StatusUnprocessableEntity,
+		),
+		Entry(
+			"invalid description",
+			validationerrors.ErrInvalidDescription,
+			http.StatusUnprocessableEntity,
+		),
+		Entry(
+			"invalid interval",
+			validationerrors.ErrInvalidInterval,
+			http.StatusUnprocessableEntity,
+		),
 	)
 
 	It(

@@ -464,44 +464,54 @@ var _ = Describe("Create", func() {
 		},
 	)
 
-	It("preserves manual scheduled persistence errors", func(ctx SpecContext) {
-		deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
-		intervalDays := 14
-		persistErr := errors.New("persistence failed")
-		normalizer.EXPECT().NormalizeName("chore name").Return("Chore name", nil).Once()
-		normalizer.EXPECT().
-			NormalizeDescription("description").
-			Return("Description", nil).
-			Once()
-		normalizer.EXPECT().
-			NormalizeName("schedule name").
-			Return("Schedule name", nil).
-			Once()
-		persister.EXPECT().
-			CreateManualScheduled(ctx, &models.CreateManualScheduledParams{
-				Name:         "Chore name",
-				Description:  "Description",
-				Deadline:     deadline,
-				ScheduleName: "Schedule name",
-				IntervalDays: intervalDays,
-			}).
-			Return(nil, persistErr).
-			Once()
+	DescribeTable(
+		"preserves manual scheduled persistence errors",
+		func(ctx SpecContext, persistErr error) {
+			deadline := time.Date(2026, time.July, 27, 0, 0, 0, 0, time.UTC)
+			intervalDays := 14
+			normalizer.EXPECT().
+				NormalizeName("chore name").
+				Return("Chore name", nil).
+				Once()
+			normalizer.EXPECT().
+				NormalizeDescription("description").
+				Return("Description", nil).
+				Once()
+			normalizer.EXPECT().
+				NormalizeName("schedule name").
+				Return("Schedule name", nil).
+				Once()
+			persister.EXPECT().
+				CreateManualScheduled(ctx, &models.CreateManualScheduledParams{
+					Name:         "Chore name",
+					Description:  "Description",
+					Deadline:     deadline,
+					ScheduleName: "Schedule name",
+					IntervalDays: intervalDays,
+				}).
+				Return(nil, persistErr).
+				Once()
 
-		result, err := service.Create(ctx, &models.CreateChoreParams{
-			Name:                "chore name",
-			Description:         "description",
-			Deadline:            deadline,
-			ChoreTemplateId:     nil,
-			ScheduleName:        "schedule name",
-			IntervalDays:        &intervalDays,
-			SaveAsChoreTemplate: false,
-		})
+			result, err := service.Create(ctx, &models.CreateChoreParams{
+				Name:                "chore name",
+				Description:         "description",
+				Deadline:            deadline,
+				ChoreTemplateId:     nil,
+				ScheduleName:        "schedule name",
+				IntervalDays:        &intervalDays,
+				SaveAsChoreTemplate: false,
+			})
 
-		Expect(result).To(BeNil())
-		Expect(err).To(MatchError("create manual scheduled chore: persistence failed"))
-		Expect(errors.Is(err, persistErr)).To(BeTrue())
-	})
+			Expect(result).To(BeNil())
+			Expect(
+				err,
+			).To(MatchError("create manual scheduled chore: " + persistErr.Error()))
+			Expect(errors.Is(err, persistErr)).To(BeTrue())
+		},
+		Entry("storage error", errors.New("persistence failed")),
+		Entry("template name conflict", choretemplatemodels.ErrNameConflict),
+		Entry("schedule name conflict", schedulemodels.ErrNameConflict),
+	)
 
 	It("preserves template-based scheduled persistence errors", func(ctx SpecContext) {
 		choreTemplateId := 42

@@ -368,6 +368,98 @@ var _ = Describe("Schedule API", func() {
 	)
 
 	It(
+		"creates a manual scheduled chore with its automatic template and schedule",
+		func(ctx SpecContext) {
+			baseURL := os.Getenv("SHIFTBELL_BASE_URL")
+			Expect(baseURL).NotTo(BeEmpty())
+			client := shiftbellapi.NewAPIClient(baseURL)
+			scope := uniqueChoreName("Manual schedule")
+			form := getManualOneOffChoreForm(
+				ctx,
+				client,
+				discoverChoreCollection(ctx, client),
+			)
+			interval := 14
+
+			result, err := client.CreateChore(
+				ctx,
+				form.Actions.Href(shiftbellapi.RelationCreate),
+				shiftbellapi.CreateChoreParams{
+					Name:         scope,
+					Description:  "Reusable manual steps.",
+					Deadline:     "2020-02-03",
+					ScheduleName: scope + " fortnightly",
+					IntervalDays: &interval,
+				},
+			)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.StatusCode).To(Equal(http.StatusCreated))
+			Expect(result.SuccessResponse).NotTo(BeNil())
+			created := result.SuccessResponse
+			Expect(created.Chore.ScheduleId).NotTo(BeNil())
+			Expect(created.Chore.Name).To(Equal(scope))
+			Expect(created.Chore.Description).To(Equal("Reusable manual steps."))
+			Expect(created.Chore.Status).To(Equal("active"))
+			Expect(created.Chore.Deadline).To(Equal("2020-02-03"))
+
+			By("finding the schedule through the collection discovered from home")
+			home, err := client.GetHome(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			collection, err := client.BrowseSchedules(
+				ctx,
+				shiftbellapi.BrowseSchedulesParams{
+					Href: home.Home.Links.Href(
+						shiftbellapi.RelationSchedules,
+					),
+					Search: scope,
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(collection.Items).To(HaveLen(1))
+			schedule, err := client.GetSchedule(
+				ctx,
+				collection.Items[0].Links.Href(shiftbellapi.RelationSelf),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(schedule.StatusCode).To(Equal(http.StatusOK))
+			Expect(schedule.SuccessResponse).NotTo(BeNil())
+			storedSchedule := schedule.SuccessResponse
+			Expect(storedSchedule.Id).To(Equal(*created.Chore.ScheduleId))
+			Expect(storedSchedule.Name).To(Equal(scope + " fortnightly"))
+			Expect(storedSchedule.IntervalDays).To(Equal(interval))
+			Expect(
+				storedSchedule.ActiveChoreId,
+			).To(gstruct.PointTo(Equal(created.Chore.Id)))
+			Expect(storedSchedule.DeactivatedAt).To(BeNil())
+
+			By("following the schedule's template and active chore links")
+			template, err := client.GetChoreTemplate(
+				ctx,
+				storedSchedule.Links.Href(shiftbellapi.RelationChoreTemplate),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(template.StatusCode).To(Equal(http.StatusOK))
+			Expect(template.SuccessResponse).NotTo(BeNil())
+			Expect(
+				template.SuccessResponse.ChoreTemplate.Id,
+			).To(Equal(storedSchedule.ChoreTemplateId))
+			Expect(template.SuccessResponse.ChoreTemplate.Name).To(Equal(scope))
+			Expect(
+				template.SuccessResponse.ChoreTemplate.Description,
+			).To(Equal(created.Chore.Description))
+			chore, err := client.GetChore(
+				ctx,
+				storedSchedule.Links.Href(shiftbellapi.RelationActiveChore),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chore.StatusCode).To(Equal(http.StatusOK))
+			Expect(chore.SuccessResponse).NotTo(BeNil())
+			Expect(chore.SuccessResponse.Chore).To(Equal(created.Chore))
+		},
+	)
+
+	It(
 		"creates a scheduled chore from a template and lists its schedule",
 		func(ctx SpecContext) {
 			baseURL := os.Getenv("SHIFTBELL_BASE_URL")

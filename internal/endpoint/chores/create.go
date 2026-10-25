@@ -35,8 +35,7 @@ func (h *Handler) create(ctx *echo.Context) error {
 	}
 	request.SaveAsChoreTemplate = saveAsTemplateRequested(ctx, request)
 	if request.IntervalDays != nil &&
-		(request.ChoreTemplateId == nil ||
-			hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationJSON) {
+		hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationJSON {
 		return h.scheduledRecurrenceNotImplemented(ctx)
 	}
 	deadline, err := time.Parse(time.DateOnly, request.Deadline)

@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bpsoos/shiftbell/internal/database"
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
-	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
-	"github.com/jmoiron/sqlx"
 )
 
 func (p *Persister) CreateTemplateScheduled(
@@ -30,11 +27,17 @@ func (p *Persister) CreateTemplateScheduled(
 	if err != nil {
 		return nil, err
 	}
-	scheduleId, err := insertTemplateSchedule(ctx, tx, params)
+	scheduleId, err := insertSchedule(
+		ctx,
+		tx,
+		params.ScheduleName,
+		params.ChoreTemplateId,
+		params.IntervalDays,
+	)
 	if err != nil {
 		return nil, err
 	}
-	chore, err := insertTemplateScheduledChore(ctx, tx, params, snapshot, scheduleId)
+	chore, err := insertScheduledChore(ctx, tx, snapshot, params.Deadline, scheduleId)
 	if err != nil {
 		return nil, err
 	}
@@ -42,58 +45,4 @@ func (p *Persister) CreateTemplateScheduled(
 		return nil, fmt.Errorf("commit template scheduled chore transaction: %w", err)
 	}
 	return &models.CreateChoreResult{Chore: chore}, nil
-}
-
-func insertTemplateSchedule(
-	ctx context.Context,
-	tx *sqlx.Tx,
-	params *models.CreateTemplateScheduledParams,
-) (int, error) {
-	result, err := tx.ExecContext(ctx, `
-		insert into schedules (name, chore_template_id, interval_days)
-		values (?, ?, ?)
-	`, params.ScheduleName, params.ChoreTemplateId, params.IntervalDays)
-	if err != nil {
-		return 0, resolveScheduleInsertError(err)
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("read inserted schedule id: %w", err)
-	}
-	return int(id), nil
-}
-
-func resolveScheduleInsertError(insertErr error) error {
-	if database.IsUniqueConstraintError(insertErr) {
-		return schedulemodels.ErrNameConflict
-	}
-	return fmt.Errorf("insert schedule: %w", insertErr)
-}
-
-func insertTemplateScheduledChore(
-	ctx context.Context,
-	tx *sqlx.Tx,
-	params *models.CreateTemplateScheduledParams,
-	snapshot *choreTemplateSnapshot,
-	scheduleId int,
-) (*models.Chore, error) {
-	result, err := tx.ExecContext(ctx, `
-		insert into chores (name, description, is_complete, deadline, schedule_id)
-		values (?, ?, ?, ?, ?)
-	`, snapshot.Name, nullableText(snapshot.Description), false, params.Deadline, scheduleId)
-	if err != nil {
-		return nil, fmt.Errorf("insert scheduled chore: %w", err)
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return nil, fmt.Errorf("read inserted chore id: %w", err)
-	}
-	return &models.Chore{
-		Id:          int(id),
-		ScheduleId:  &scheduleId,
-		Name:        snapshot.Name,
-		Description: snapshot.Description,
-		Status:      models.ChoreStatusActive,
-		Deadline:    params.Deadline,
-	}, nil
 }
