@@ -65,10 +65,37 @@ INSERT INTO chores (id, name, description, is_complete, completed_on, deadline) 
     (36, 'Change bed linen', 'Replace sheets, pillowcases, and duvet cover.', 1, datetime('now', 'localtime', '-25 days'), date('now', 'localtime', '-25 days'));
 
 INSERT INTO schedules (id, name, chore_template_id, interval_days) VALUES
-    (1, 'Weekly plant care', 3, 7);
+    (1, 'Weekly plant care', 3, 7),
+    (2, 'Daily kitchen reset', 1, 1),
+    (3, 'Rubbish collection', 2, 3),
+    (4, 'Weekly vacuuming', 4, 7),
+    (5, 'Weekly floor cleaning', 5, 7),
+    (6, 'Bathroom cleaning', 6, 7),
+    (7, 'Fresh bed linen', 7, 14),
+    (8, 'Shelf dusting', 8, 14),
+    (9, 'Fridge check', 9, 7),
+    (10, 'Oven cleaning', 10, 90),
+    (11, 'Window cleaning', 11, 90),
+    (12, 'Kettle descaling', 12, 30),
+    (13, 'Mattress rotation', 13, 90),
+    (14, 'Smoke alarm check', 14, 30),
+    (15, 'Gutter maintenance', 15, 180),
+    (16, 'Pantry tidy', 16, 30),
+    (17, 'Towel laundry', 17, 7),
+    (18, 'Coffee machine cleaning', 18, 7),
+    (19, 'Cabinet cleaning', 19, 14),
+    (20, 'Recycling collection', 20, 7),
+    (21, 'Entryway reset', 21, 7);
 
 INSERT INTO chores (id, name, description, is_complete, deadline, schedule_id)
 SELECT 37, name, description, 0, date('now', 'localtime', '+1 day'), 1
 FROM chore_templates WHERE id = 3;
+
+INSERT INTO chores (id, name, description, is_complete, deadline, schedule_id)
+SELECT 36 + s.id, t.name, t.description, 0,
+    date('now', 'localtime', printf('+%d days', s.id - 2)), s.id
+FROM schedules s
+JOIN chore_templates t ON t.id = s.chore_template_id
+WHERE s.id BETWEEN 2 AND 21;
 
 COMMIT;

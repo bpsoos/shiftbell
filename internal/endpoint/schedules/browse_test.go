@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
@@ -36,6 +37,75 @@ var _ = Describe("Browse", func() {
 		app = echo.New()
 		app.GET("/schedules", handler.Browse)
 	})
+
+	DescribeTable(
+		"renders active schedule rows and pagination as HTML",
+		func(ctx SpecContext, hxRequest string, fullPage bool) {
+			choreId := 11
+			deadline := time.Date(2020, 4, 2, 0, 0, 0, 0, time.UTC)
+			service.EXPECT().
+				Browse(ctx, &models.BrowseSchedulesParams{Offset: 20, Limit: 20}).
+				Return(&models.SchedulePage{Schedules: []models.Schedule{
+					{
+						Id:                  42,
+						Name:                "Weekly kitchen",
+						ChoreTemplateId:     7,
+						ChoreTemplateName:   "Kitchen",
+						IntervalDays:        7,
+						ActiveChoreId:       &choreId,
+						ActiveChoreDeadline: &deadline,
+					},
+				}, More: true}, nil).
+				Once()
+			view.EXPECT().Collection(viewmodels.Collection{
+				Collection: apimodels.CollectionResponse{
+					Items: []apimodels.Response{
+						{
+							Id:                  42,
+							Name:                "Weekly kitchen",
+							ChoreTemplateId:     7,
+							ChoreTemplateName:   "Kitchen",
+							IntervalDays:        7,
+							ActiveChoreId:       &choreId,
+							ActiveChoreDeadline: &deadline,
+							Links: api.Relations{
+								{Rel: "self", Href: "/schedules/42"},
+								{Rel: "collection", Href: "/schedules"},
+								{Rel: "chore_template", Href: "/chore-templates/7"},
+								{Rel: "active_chore", Href: "/chores/11"},
+							},
+						},
+					}, More: true,
+					Links: api.Relations{
+						{Rel: "self", Href: "/schedules?offset=20"},
+						{Rel: "active", Href: "/schedules?state=active"},
+						{Rel: "deactivated", Href: "/schedules?state=deactivated"},
+						{Rel: "next", Href: "/schedules?offset=40"},
+						{Rel: "previous", Href: "/schedules?offset=0"},
+					},
+				}, Filter: models.ScheduleFilterActive,
+			}, fullPage).Return(templ.Raw("active schedule page")).Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/schedules?offset=20",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", hxRequest)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(
+				response.Header().Get("Content-Type"),
+			).To(Equal(echo.MIMETextHTMLCharsetUTF8))
+			Expect(response.Body.String()).To(Equal("active schedule page"))
+		},
+		Entry("full page", "", true),
+		Entry("HTMX fragment", "true", false),
+	)
 
 	DescribeTable(
 		"renders the HTML collection with state and search",
