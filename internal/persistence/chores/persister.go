@@ -1,11 +1,6 @@
 package chores
 
-import (
-	"context"
-
-	models "github.com/bpsoos/shiftbell/internal/models/chores"
-	"github.com/jmoiron/sqlx"
-)
+import "github.com/jmoiron/sqlx"
 
 type Persister struct {
 	db *sqlx.DB
@@ -19,11 +14,4 @@ func NewPersister(deps *PersisterDeps) *Persister {
 	return &Persister{
 		db: deps.Db,
 	}
-}
-
-func (p *Persister) EditScheduled(
-	_ context.Context,
-	_ *models.EditScheduledChoreParams,
-) (*models.EditChoreResult, error) {
-	return nil, nil
 }

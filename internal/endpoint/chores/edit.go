@@ -12,6 +12,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
+	templatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	"github.com/labstack/echo/v5"
 )
@@ -40,7 +41,11 @@ func (h *Handler) editVendorJSON(ctx *echo.Context) error {
 			apiErrorResponse{Error: "invalid JSON"},
 		)
 	}
-	deadline, err := time.Parse(time.DateOnly, request.Deadline)
+	existing, err := h.service.Get(ctx.Request().Context(), id)
+	if err != nil {
+		return h.renderVendorJSONEditError(ctx, id, err)
+	}
+	deadline, err := editDeadline(existing, &request)
 	if err != nil {
 		return hypermedia.JSON(
 			ctx,
@@ -48,16 +53,12 @@ func (h *Handler) editVendorJSON(ctx *echo.Context) error {
 			apiErrorResponse{Error: validationerrors.ErrInvalidDeadline.Error()},
 		)
 	}
-	existing, err := h.service.Get(ctx.Request().Context(), id)
-	if err != nil {
-		return h.renderVendorJSONEditError(ctx, err)
-	}
 	edited, err := h.service.Edit(
 		ctx.Request().Context(),
 		request.params(id, existing.ScheduleId, deadline),
 	)
 	if err != nil {
-		return h.renderVendorJSONEditError(ctx, err)
+		return h.renderVendorJSONEditError(ctx, id, err)
 	}
 	return hypermedia.JSON(ctx, http.StatusOK, newChoreRepresentation(edited))
 }
@@ -224,15 +225,21 @@ func (h *Handler) renderEditValidationError(
 		Action:      api.Relation{Rel: "edit", Href: selfHref},
 		CancelHref:  selfHref,
 	}
+	status := http.StatusUnprocessableEntity
+	if errors.Is(err, templatemodels.ErrNameConflict) {
+		status = http.StatusConflict
+	}
 	return h.renderEditForm(
 		ctx,
-		http.StatusUnprocessableEntity,
+		status,
 		editFormErrorViewModel(chore, feedback),
 	)
 }
 
 func editFieldErrors(err error) map[string]string {
 	switch {
+	case errors.Is(err, templatemodels.ErrNameConflict):
+		return map[string]string{"name": templatemodels.ErrNameConflict.Error()}
 	case errors.Is(err, validationerrors.ErrInvalidName):
 		return map[string]string{"name": validationerrors.ErrInvalidName.Error()}
 	case errors.Is(err, validationerrors.ErrInvalidDescription):
@@ -259,8 +266,20 @@ func (h *Handler) renderNonEditableChoreError(
 
 func (h *Handler) renderVendorJSONEditError(
 	ctx *echo.Context,
+	id int,
 	err error,
 ) error {
+	if errors.Is(err, templatemodels.ErrNameConflict) {
+		return hypermedia.JSON(ctx, http.StatusConflict, apiErrorResponse{
+			Error:   templatemodels.ErrNameConflict.Error(),
+			Actions: api.Relations{{Rel: "edit", Href: choreHref(id)}},
+		})
+	}
+	if errors.Is(err, templatemodels.ErrInactive) {
+		return hypermedia.JSON(ctx, http.StatusUnprocessableEntity, apiErrorResponse{
+			Error: templatemodels.ErrInactive.Error(),
+		})
+	}
 	if isEditChoreValidationError(err) {
 		return hypermedia.JSON(
 			ctx,
@@ -275,6 +294,13 @@ func (h *Handler) renderVendorJSONEditError(
 			apiErrorResponse{Error: choremodels.ErrNotFound.Error()},
 		)
 	}
+	if errors.Is(err, templatemodels.ErrNotFound) {
+		return hypermedia.JSON(
+			ctx,
+			http.StatusNotFound,
+			apiErrorResponse{Error: templatemodels.ErrNotFound.Error()},
+		)
+	}
 	logging.Default().Error("edit chore", "err", err)
 	return hypermedia.JSON(
 		ctx,
@@ -284,7 +310,8 @@ func (h *Handler) renderVendorJSONEditError(
 }
 
 func isEditChoreValidationError(err error) bool {
-	return errors.Is(err, validationerrors.ErrInvalidName) ||
+	return errors.Is(err, templatemodels.ErrNameConflict) ||
+		errors.Is(err, validationerrors.ErrInvalidName) ||
 		errors.Is(err, validationerrors.ErrInvalidDescription) ||
 		errors.Is(err, validationerrors.ErrInvalidDeadline)
 }

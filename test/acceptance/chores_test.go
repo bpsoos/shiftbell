@@ -724,6 +724,87 @@ var _ = Describe("Chore API", func() {
 		)
 	})
 
+	When("editing an active scheduled chore", func() {
+		DescribeTable(
+			"edits through the advertised action with template updates opt-in",
+			func(ctx SpecContext, updateTemplate bool, expectedTemplateSuffix, expectedTemplateDescription string) {
+				scope := uniqueChoreName("Scheduled chore edit")
+				template := createChoreTemplate(
+					ctx,
+					client,
+					discoverChoreTemplateCollection(ctx, client),
+					scope+" original",
+					"Reusable steps.",
+				)
+				created := createTemplateScheduledChore(
+					ctx,
+					client,
+					template.ChoreTemplate,
+					scope+" weekly",
+					7,
+				)
+				editHref := created.Actions.Href(shiftbellapi.RelationEdit)
+				Expect(editHref).NotTo(BeEmpty())
+
+				By("editing the active chore without supplying a deadline")
+				edited, err := client.EditChore(
+					ctx,
+					editHref,
+					shiftbellapi.EditChoreParams{
+						Name:                    scope + " edited",
+						Description:             "Edited steps.",
+						AlsoUpdateChoreTemplate: updateTemplate,
+					},
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(edited.StatusCode).To(Equal(http.StatusOK))
+				Expect(edited.ErrorResponse).To(BeNil())
+				Expect(edited.SuccessResponse).NotTo(BeNil())
+				expected := created.Chore
+				expected.Name = scope + " edited"
+				expected.Description = "Edited steps."
+				Expect(edited.SuccessResponse.Chore).To(Equal(expected))
+
+				By(
+					"retrieving the persisted snapshot with its original deadline and schedule association",
+				)
+				stored, err := client.GetChore(
+					ctx,
+					edited.SuccessResponse.Chore.Links.Href(shiftbellapi.RelationSelf),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(stored.StatusCode).To(Equal(http.StatusOK))
+				Expect(stored.SuccessResponse).NotTo(BeNil())
+				Expect(stored.SuccessResponse.Chore).To(Equal(expected))
+
+				By("checking whether the linked template was changed")
+				storedTemplate, err := client.GetChoreTemplate(
+					ctx,
+					template.ChoreTemplate.Links.Href(shiftbellapi.RelationSelf),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(storedTemplate.StatusCode).To(Equal(http.StatusOK))
+				Expect(storedTemplate.SuccessResponse).NotTo(BeNil())
+				Expect(
+					storedTemplate.SuccessResponse.ChoreTemplate.Id,
+				).To(Equal(template.ChoreTemplate.Id))
+				Expect(
+					storedTemplate.SuccessResponse.ChoreTemplate.Name,
+				).To(Equal(scope + expectedTemplateSuffix))
+				Expect(
+					storedTemplate.SuccessResponse.ChoreTemplate.Description,
+				).To(Equal(expectedTemplateDescription))
+			},
+			Entry("chore only by default", false, " original", "Reusable steps."),
+			Entry(
+				"chore and linked template when requested",
+				true,
+				" edited",
+				"Edited steps.",
+			),
+		)
+	})
+
 	When("completing an active one-off chore", func() {
 		It(
 			"moves the chore from the active collection to completed history",

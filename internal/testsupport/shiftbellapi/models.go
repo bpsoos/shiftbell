@@ -111,9 +111,10 @@ type GetChoreResult struct {
 }
 
 type EditChoreParams struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Deadline    string `json:"deadline"`
+	Name                    string `json:"name"`
+	Description             string `json:"description"`
+	Deadline                string `json:"deadline,omitempty"`
+	AlsoUpdateChoreTemplate bool   `json:"also_update_chore_template,omitempty"`
 }
 
 type EditChoreResponse struct {

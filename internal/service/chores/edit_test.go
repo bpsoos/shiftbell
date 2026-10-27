@@ -6,6 +6,7 @@ import (
 	"time"
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
+	templatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	. "github.com/onsi/ginkgo/v2"
@@ -76,9 +77,9 @@ var _ = Describe("Edit", func() {
 		}))
 	})
 
-	It(
+	DescribeTable(
 		"normalizes and persists an active scheduled chore without changing its deadline",
-		func(ctx SpecContext) {
+		func(ctx SpecContext, updateTemplate bool) {
 			scheduleId := 7
 			deadline := time.Date(2026, time.August, 3, 0, 0, 0, 0, time.UTC)
 			input := &models.EditChoreParams{
@@ -87,7 +88,7 @@ var _ = Describe("Edit", func() {
 				Description:             " raw description ",
 				Deadline:                deadline,
 				ScheduleId:              &scheduleId,
-				AlsoUpdateChoreTemplate: true,
+				AlsoUpdateChoreTemplate: updateTemplate,
 			}
 			persisted := &models.ChoreDetails{
 				Id:          42,
@@ -109,7 +110,7 @@ var _ = Describe("Edit", func() {
 					Id:                      42,
 					Name:                    "Normalized name",
 					Description:             "Normalized description",
-					AlsoUpdateChoreTemplate: true,
+					AlsoUpdateChoreTemplate: updateTemplate,
 				}).
 				Return(persisted, nil).
 				Once()
@@ -124,9 +125,11 @@ var _ = Describe("Edit", func() {
 				Description:             " raw description ",
 				Deadline:                deadline,
 				ScheduleId:              &scheduleId,
-				AlsoUpdateChoreTemplate: true,
+				AlsoUpdateChoreTemplate: updateTemplate,
 			}))
 		},
+		Entry("chore only", false),
+		Entry("chore and template", true),
 	)
 
 	It("rejects an invalid name without persisting", func() {
@@ -209,32 +212,40 @@ var _ = Describe("Edit", func() {
 		Expect(errors.Is(err, persistErr)).To(BeTrue())
 	})
 
-	It("preserves scheduled persistence errors", func(ctx SpecContext) {
-		scheduleId := 7
-		persistErr := errors.New("persistence failed")
-		normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
-		normalizer.EXPECT().
-			NormalizeDescription("description").
-			Return("Description", nil).
-			Once()
-		persister.EXPECT().
-			EditScheduled(ctx, &models.EditScheduledChoreParams{
-				Id:          42,
-				Name:        "Name",
-				Description: "Description",
-			}).
-			Return(nil, persistErr).
-			Once()
+	DescribeTable(
+		"preserves scheduled persistence errors",
+		func(ctx SpecContext, persistErr error) {
+			scheduleId := 7
+			normalizer.EXPECT().NormalizeName("name").Return("Name", nil).Once()
+			normalizer.EXPECT().
+				NormalizeDescription("description").
+				Return("Description", nil).
+				Once()
+			persister.EXPECT().
+				EditScheduled(ctx, &models.EditScheduledChoreParams{
+					Id:                      42,
+					Name:                    "Name",
+					Description:             "Description",
+					AlsoUpdateChoreTemplate: true,
+				}).
+				Return(nil, persistErr).
+				Once()
 
-		result, err := service.Edit(ctx, &models.EditChoreParams{
-			Id:          42,
-			ScheduleId:  &scheduleId,
-			Name:        "name",
-			Description: "description",
-		})
+			result, err := service.Edit(ctx, &models.EditChoreParams{
+				Id:                      42,
+				ScheduleId:              &scheduleId,
+				Name:                    "name",
+				Description:             "description",
+				AlsoUpdateChoreTemplate: true,
+			})
 
-		Expect(result).To(BeNil())
-		Expect(err).To(MatchError("edit scheduled chore: persistence failed"))
-		Expect(errors.Is(err, persistErr)).To(BeTrue())
-	})
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError("edit scheduled chore: " + persistErr.Error()))
+			Expect(errors.Is(err, persistErr)).To(BeTrue())
+		},
+		Entry("storage failure", errors.New("persistence failed")),
+		Entry("template name conflict", templatemodels.ErrNameConflict),
+		Entry("inactive template", templatemodels.ErrInactive),
+		Entry("missing or completed chore", models.ErrNotFound),
+	)
 })
