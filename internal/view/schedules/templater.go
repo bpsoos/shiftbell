@@ -16,8 +16,8 @@ func (t *Templater) Collection(_ viewmodels.Collection, fullPage bool) templ.Com
 	return layouts.Frame("schedules", fullPage, templ.Raw(""))
 }
 
-func (t *Templater) Detail(_ viewmodels.Detail, fullPage bool) templ.Component {
-	return layouts.Frame("schedules", fullPage, templ.Raw(""))
+func (t *Templater) Detail(model viewmodels.Detail, fullPage bool) templ.Component {
+	return layouts.Frame("schedules", fullPage, detail(model))
 }
 
 func (t *Templater) Error(_ viewmodels.Error, fullPage bool) templ.Component {

@@ -64,4 +64,11 @@ INSERT INTO chores (id, name, description, is_complete, completed_on, deadline) 
     (35, 'Clean coffee machine', 'Wash removable parts and run a cleaning cycle.', 1, datetime('now', 'localtime', '-18 days'), date('now', 'localtime', '-18 days')),
     (36, 'Change bed linen', 'Replace sheets, pillowcases, and duvet cover.', 1, datetime('now', 'localtime', '-25 days'), date('now', 'localtime', '-25 days'));
 
+INSERT INTO schedules (id, name, chore_template_id, interval_days) VALUES
+    (1, 'Weekly plant care', 3, 7);
+
+INSERT INTO chores (id, name, description, is_complete, deadline, schedule_id)
+SELECT 37, name, description, 0, date('now', 'localtime', '+1 day'), 1
+FROM chore_templates WHERE id = 3;
+
 COMMIT;

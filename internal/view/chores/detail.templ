@@ -93,30 +93,34 @@ templ choreDetailActions(editHref string, deleteHref string) {
 				me > [data-edit-action], me > [data-delete-action] { padding-inline: 0.625rem; }
 			}
 		</style>
-		<a
-			class="btn btn-outline-secondary"
-			data-edit-action
-			href={ editHref }
-			hx-get={ editHref }
-			hx-target="#main"
-			hx-swap="outerHTML"
-			hx-push-url="true"
-		>
-			@viewicons.PencilSimple()
-			<span>Edit</span>
-		</a>
-		<button
-			class="btn btn-outline-secondary"
-			type="button"
-			data-delete-action
-			hx-get={ deleteHref }
-			hx-target="#dialog-root"
-			hx-swap="innerHTML"
-			aria-haspopup="dialog"
-		>
-			@viewicons.Trash()
-			<span>Delete</span>
-		</button>
+		if editHref != "" {
+			<a
+				class="btn btn-outline-secondary"
+				data-edit-action
+				href={ editHref }
+				hx-get={ editHref }
+				hx-target="#main"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+			>
+				@viewicons.PencilSimple()
+				<span>Edit</span>
+			</a>
+		}
+		if deleteHref != "" {
+			<button
+				class="btn btn-outline-secondary"
+				type="button"
+				data-delete-action
+				hx-get={ deleteHref }
+				hx-target="#dialog-root"
+				hx-swap="innerHTML"
+				aria-haspopup="dialog"
+			>
+				@viewicons.Trash()
+				<span>Delete</span>
+			</button>
+		}
 	</div>
 }
 

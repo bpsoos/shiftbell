@@ -38,24 +38,31 @@ var _ = Describe("Get", func() {
 	DescribeTable(
 		"renders HTML schedule details",
 		func(ctx SpecContext, hxRequest string, fullPage bool) {
+			choreID := 11
+			deadline := time.Date(2020, 4, 2, 0, 0, 0, 0, time.UTC)
 			service.EXPECT().Get(ctx, 42).Return(&models.ScheduleDetails{
-				Id:                42,
-				Name:              "Weekly kitchen",
-				ChoreTemplateId:   7,
-				ChoreTemplateName: "Kitchen",
-				IntervalDays:      7,
+				Id:                  42,
+				Name:                "Weekly kitchen",
+				ChoreTemplateId:     7,
+				ChoreTemplateName:   "Kitchen",
+				IntervalDays:        7,
+				ActiveChoreId:       &choreID,
+				ActiveChoreDeadline: &deadline,
 			}, nil).Once()
 			view.EXPECT().Detail(viewmodels.Detail{Schedule: apimodels.Representation{
 				Response: apimodels.Response{
-					Id:                42,
-					Name:              "Weekly kitchen",
-					ChoreTemplateId:   7,
-					ChoreTemplateName: "Kitchen",
-					IntervalDays:      7,
+					Id:                  42,
+					Name:                "Weekly kitchen",
+					ChoreTemplateId:     7,
+					ChoreTemplateName:   "Kitchen",
+					IntervalDays:        7,
+					ActiveChoreId:       &choreID,
+					ActiveChoreDeadline: &deadline,
 					Links: api.Relations{
 						{Rel: "self", Href: "/schedules/42"},
 						{Rel: "collection", Href: "/schedules"},
 						{Rel: "chore_template", Href: "/chore-templates/7"},
+						{Rel: "active_chore", Href: "/chores/11"},
 					},
 				},
 				Actions: api.Relations{
