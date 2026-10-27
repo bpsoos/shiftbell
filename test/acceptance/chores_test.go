@@ -419,105 +419,78 @@ var _ = Describe("Chore API", func() {
 
 	When("scheduled recurrence is requested", func() {
 		It(
-			"returns Not Implemented without persisting a manual scheduled chore",
+			"creates a manual scheduled chore through the advertised creation flow",
 			func(ctx SpecContext) {
-				collection := discoverChoreCollection(ctx, client)
-				templateCollection := discoverChoreTemplateCollection(ctx, client)
 				scope := uniqueChoreName("Manual scheduled recurrence")
-				recurrence := getManualChoreRecurrence(ctx, client, collection)
-
-				By("choosing scheduled recurrence")
-				result, err := client.GetChoreCreationStep(
+				form := getManualScheduledChoreForm(
 					ctx,
-					recurrence.Choices[1].Href,
+					client,
+					discoverChoreCollection(ctx, client),
 				)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result.StatusCode).To(Equal(http.StatusNotImplemented))
-				Expect(result.SuccessResponse).To(BeNil())
-				Expect(result.ErrorResponse).NotTo(BeNil())
-				Expect(result.ErrorResponse.Error).NotTo(BeEmpty())
+				interval := 7
 
-				By("proving no chore was created")
-				chores, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
-					Href:   collection.Links.Href(shiftbellapi.RelationSelf),
-					Search: scope,
-					Status: "active",
-					Limit:  20,
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(chores.Collection.Items).To(BeEmpty())
-
-				By("proving no chore template was created")
-				templates, err := client.BrowseChoreTemplates(
+				By("submitting the manual scheduled form")
+				result, err := client.CreateChore(
 					ctx,
-					shiftbellapi.BrowseChoreTemplatesParams{
-						Href:   templateCollection.Links.Href(shiftbellapi.RelationSelf),
-						Search: scope,
-						State:  "active",
-						Limit:  20,
+					form.Actions.Href(shiftbellapi.RelationCreate),
+					shiftbellapi.CreateChoreParams{
+						Name:         scope,
+						Description:  "Reusable manual steps.",
+						Deadline:     "2020-02-03",
+						ScheduleName: scope + " weekly",
+						IntervalDays: &interval,
 					},
 				)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(templates.Collection.Items).To(BeEmpty())
+				Expect(result.StatusCode).To(Equal(http.StatusCreated))
+				Expect(result.ErrorResponse).To(BeNil())
+				Expect(result.SuccessResponse).NotTo(BeNil())
+				Expect(
+					result.SuccessResponse.Chore.ScheduleId,
+				).To(gstruct.PointTo(BeNumerically(">", 0)))
+				Expect(result.SuccessResponse.Chore.Name).To(Equal(scope))
 			},
 		)
 
 		It(
-			"returns Not Implemented without changing a template-based scheduled chore source",
+			"creates a template-based scheduled chore through the advertised creation flow",
 			func(ctx SpecContext) {
-				templateCollection := discoverChoreTemplateCollection(ctx, client)
 				scope := uniqueChoreName("Template scheduled recurrence")
 				template := createChoreTemplate(
 					ctx,
 					client,
-					templateCollection,
+					discoverChoreTemplateCollection(ctx, client),
 					scope,
 					"Reusable scheduled steps.",
 				).ChoreTemplate
-				collection := discoverChoreCollection(ctx, client)
-				recurrence := getTemplateChoreRecurrence(
+				form := getTemplateScheduledChoreForm(
 					ctx,
 					client,
-					collection,
+					discoverChoreCollection(ctx, client),
 					template,
 				)
+				interval := 7
 
-				By("choosing scheduled recurrence")
-				result, err := client.GetChoreCreationStep(
+				By("submitting the selected template through the scheduled form")
+				result, err := client.CreateChore(
 					ctx,
-					recurrence.Choices[1].Href,
-				)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result.StatusCode).To(Equal(http.StatusNotImplemented))
-				Expect(result.SuccessResponse).To(BeNil())
-				Expect(result.ErrorResponse).NotTo(BeNil())
-				Expect(result.ErrorResponse.Error).NotTo(BeEmpty())
-
-				By("proving no chore was created")
-				chores, err := client.BrowseChores(ctx, shiftbellapi.BrowseChoresParams{
-					Href:   collection.Links.Href(shiftbellapi.RelationSelf),
-					Search: scope,
-					Status: "active",
-					Limit:  20,
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(chores.Collection.Items).To(BeEmpty())
-
-				By("proving the selected chore template is unchanged")
-				templates, err := client.BrowseChoreTemplates(
-					ctx,
-					shiftbellapi.BrowseChoreTemplatesParams{
-						Href:   templateCollection.Links.Href(shiftbellapi.RelationSelf),
-						Search: scope,
-						State:  "active",
-						Limit:  20,
+					form.Actions.Href(shiftbellapi.RelationCreate),
+					shiftbellapi.CreateChoreParams{
+						ChoreTemplateId: &form.Template.Id, Deadline: "2020-02-03",
+						ScheduleName: scope + " weekly", IntervalDays: &interval,
 					},
 				)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(templates.Collection.Items).To(gstruct.MatchAllElementsWithIndex(
-					gstruct.IndexIdentity,
-					gstruct.Elements{"0": matchChoreTemplate(template)},
-				))
+				Expect(result.StatusCode).To(Equal(http.StatusCreated))
+				Expect(result.ErrorResponse).To(BeNil())
+				Expect(result.SuccessResponse).NotTo(BeNil())
+				Expect(
+					result.SuccessResponse.Chore.ScheduleId,
+				).To(gstruct.PointTo(BeNumerically(">", 0)))
+				Expect(result.SuccessResponse.Chore.Name).To(Equal(template.Name))
+				Expect(
+					result.SuccessResponse.Chore.Description,
+				).To(Equal(template.Description))
 			},
 		)
 	})

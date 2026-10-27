@@ -410,7 +410,7 @@ var _ = Describe("Chore template API", func() {
 				scope,
 				"Keep this template active.",
 			)
-			form := getTemplateOneOffChoreForm(ctx, client,
+			form := getTemplateScheduledChoreForm(ctx, client,
 				discoverChoreCollection(ctx, client), template.ChoreTemplate)
 			interval := 7
 			result, err := client.CreateChore(

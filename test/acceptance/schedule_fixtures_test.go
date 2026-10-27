@@ -40,7 +40,7 @@ func createTemplateScheduledChore(
 	interval int,
 ) *shiftbellapi.CreateChoreResponse {
 	GinkgoHelper()
-	form := getTemplateOneOffChoreForm(
+	form := getTemplateScheduledChoreForm(
 		ctx,
 		client,
 		discoverChoreCollection(ctx, client),

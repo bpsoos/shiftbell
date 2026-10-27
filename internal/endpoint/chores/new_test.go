@@ -3,6 +3,7 @@ package chores_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"github.com/a-h/templ"
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
@@ -131,7 +132,7 @@ var _ = Describe("Start chore creation", func() {
 		},
 	)
 
-	It("returns Not Implemented for manual scheduled recurrence", func(ctx SpecContext) {
+	It("returns the manual scheduled form through the JSON API", func(ctx SpecContext) {
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{})
 		e := echo.New()
 		e.GET("/chores/new", handler.New)
@@ -146,12 +147,11 @@ var _ = Describe("Start chore creation", func() {
 
 		e.ServeHTTP(response, request)
 
-		Expect(response.Code).To(Equal(http.StatusNotImplemented))
+		Expect(response.Code).To(Equal(http.StatusOK))
 		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 		Expect(response.Body.Bytes()).To(MatchJSON(`{
-			"error": "scheduled recurrence is not implemented",
-			"_links": [],
-			"_actions": []
+			"step": "form",
+			"_actions": [{"rel": "create", "href": "/chores"}]
 		}`))
 	})
 
@@ -226,7 +226,7 @@ var _ = Describe("Start chore creation", func() {
 	})
 
 	It(
-		"returns Not Implemented for template-based scheduled recurrence",
+		"returns the selected template and scheduled form action through the JSON API",
 		func(ctx SpecContext) {
 			choreTemplateService := NewMockChoreTemplateService(GinkgoT())
 			choreTemplateService.EXPECT().
@@ -253,12 +253,16 @@ var _ = Describe("Start chore creation", func() {
 
 			e.ServeHTTP(response, request)
 
-			Expect(response.Code).To(Equal(http.StatusNotImplemented))
+			Expect(response.Code).To(Equal(http.StatusOK))
 			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
-				"error": "scheduled recurrence is not implemented",
-				"_links": [],
-				"_actions": []
+				"step": "form",
+				"template": {
+					"id": 42,
+					"name": "Kitchen",
+					"description": "Reusable template steps."
+				},
+				"_actions": [{"rel": "create", "href": "/chores"}]
 			}`))
 		},
 	)
@@ -300,4 +304,134 @@ var _ = Describe("Start chore creation", func() {
 			"_actions": [{"rel": "create", "href": "/chores"}]
 		}`))
 	})
+
+	It("keeps the manual scheduled HTML form unsupported", func(ctx SpecContext) {
+		view := NewMockView(GinkgoT())
+		view.EXPECT().Error(choreviewmodels.Error{
+			Message: "scheduled recurrence is not implemented",
+		}, true).Return(templ.Raw("not implemented")).Once()
+		service := NewMockService(GinkgoT())
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{View: view, Service: service},
+		)
+		app := echo.New()
+		app.GET("/chores/new", handler.New)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores/new?source=manual&recurrence=scheduled",
+			nil,
+		)
+		request.Header.Set("Accept", "text/html")
+		response := httptest.NewRecorder()
+
+		app.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusNotImplemented))
+		Expect(response.Body.String()).To(Equal("not implemented"))
+	})
+
+	It("keeps the template-based scheduled HTML form unsupported", func(ctx SpecContext) {
+		templateService := NewMockChoreTemplateService(GinkgoT())
+		templateService.EXPECT().
+			Get(ctx, 42).
+			Return(&choretemplatemodels.ChoreTemplateDetails{
+				Id: 42, Name: "Kitchen", Description: "Reusable template steps.",
+			}, nil).
+			Once()
+		view := NewMockView(GinkgoT())
+		view.EXPECT().Error(choreviewmodels.Error{
+			Message: "scheduled recurrence is not implemented",
+		}, true).Return(templ.Raw("not implemented")).Once()
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{
+				View:                 view,
+				ChoreTemplateService: templateService,
+			},
+		)
+		app := echo.New()
+		app.GET("/chores/new", handler.New)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores/new?template_id=42&recurrence=scheduled",
+			nil,
+		)
+		request.Header.Set("Accept", "text/html")
+		response := httptest.NewRecorder()
+
+		app.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusNotImplemented))
+		Expect(response.Body.String()).To(Equal("not implemented"))
+	})
+
+	DescribeTable(
+		"rejects a missing source template",
+		func(ctx SpecContext, recurrence string) {
+			templateService := NewMockChoreTemplateService(GinkgoT())
+			templateService.EXPECT().
+				Get(ctx, 42).
+				Return(nil, choretemplatemodels.ErrNotFound).
+				Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{ChoreTemplateService: templateService},
+			)
+			app := echo.New()
+			app.GET("/chores/new", handler.New)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores/new?template_id=42&recurrence="+recurrence,
+				nil,
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusNotFound))
+			Expect(
+				response.Body.Bytes(),
+			).To(MatchJSON(`{"error":"chore template not found","_links":[],"_actions":[]}`))
+		},
+		Entry("one-off", "one-off"),
+		Entry("scheduled", "scheduled"),
+	)
+
+	DescribeTable(
+		"rejects a deactivated source template",
+		func(ctx SpecContext, recurrence string) {
+			deactivatedAt := time.Date(2020, time.February, 3, 0, 0, 0, 0, time.UTC)
+			templateService := NewMockChoreTemplateService(GinkgoT())
+			templateService.EXPECT().
+				Get(ctx, 42).
+				Return(&choretemplatemodels.ChoreTemplateDetails{
+					Id: 42, Name: "Kitchen", DeactivatedAt: &deactivatedAt,
+				}, nil).
+				Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{ChoreTemplateService: templateService},
+			)
+			app := echo.New()
+			app.GET("/chores/new", handler.New)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores/new?template_id=42&recurrence="+recurrence,
+				nil,
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+			Expect(
+				response.Body.Bytes(),
+			).To(MatchJSON(`{"error":"chore template inactive","_links":[],"_actions":[]}`))
+		},
+		Entry("one-off", "one-off"),
+		Entry("scheduled", "scheduled"),
+	)
 })

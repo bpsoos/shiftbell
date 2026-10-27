@@ -96,7 +96,7 @@ var _ = Describe("Schedule API", func() {
 			scope := uniqueChoreName("Schedule navigation")
 			template := createChoreTemplate(ctx, client,
 				discoverChoreTemplateCollection(ctx, client), scope, "Reusable steps.")
-			form := getTemplateOneOffChoreForm(ctx, client,
+			form := getTemplateScheduledChoreForm(ctx, client,
 				discoverChoreCollection(ctx, client), template.ChoreTemplate)
 			interval := 7
 			created, err := client.CreateChore(
@@ -374,7 +374,7 @@ var _ = Describe("Schedule API", func() {
 			Expect(baseURL).NotTo(BeEmpty())
 			client := shiftbellapi.NewAPIClient(baseURL)
 			scope := uniqueChoreName("Manual schedule")
-			form := getManualOneOffChoreForm(
+			form := getManualScheduledChoreForm(
 				ctx,
 				client,
 				discoverChoreCollection(ctx, client),
@@ -476,7 +476,7 @@ var _ = Describe("Schedule API", func() {
 				scope,
 				"Reusable scheduled steps.",
 			)
-			form := getTemplateOneOffChoreForm(ctx, client,
+			form := getTemplateScheduledChoreForm(ctx, client,
 				discoverChoreCollection(ctx, client), template.ChoreTemplate)
 			interval := 7
 
@@ -576,7 +576,7 @@ var _ = Describe("Schedule API", func() {
 				scope+" original",
 				"Original template steps.",
 			)
-			form := getTemplateOneOffChoreForm(ctx, client,
+			form := getTemplateScheduledChoreForm(ctx, client,
 				discoverChoreCollection(ctx, client), template.ChoreTemplate)
 			interval := 7
 			result, err := client.CreateChore(
@@ -723,7 +723,7 @@ var _ = Describe("Schedule API", func() {
 				scope+" rejected",
 				"No chore should be created.",
 			)
-			form := getTemplateOneOffChoreForm(ctx, client,
+			form := getTemplateScheduledChoreForm(ctx, client,
 				discoverChoreCollection(ctx, client), template.ChoreTemplate)
 			interval := 7
 			name := scope + " weekly"
@@ -842,7 +842,7 @@ var _ = Describe("Schedule API", func() {
 				scope,
 				"Preserve these snapshots.",
 			)
-			form := getTemplateOneOffChoreForm(ctx, client,
+			form := getTemplateScheduledChoreForm(ctx, client,
 				discoverChoreCollection(ctx, client), template.ChoreTemplate)
 			interval := 7
 			created, err := client.CreateChore(
@@ -1061,7 +1061,7 @@ var _ = Describe("Schedule API", func() {
 				scope,
 				"Inactive scheduled steps.",
 			)
-			form := getTemplateOneOffChoreForm(ctx, client,
+			form := getTemplateScheduledChoreForm(ctx, client,
 				discoverChoreCollection(ctx, client), template.ChoreTemplate)
 
 			By("deactivating the selected template before submission")
