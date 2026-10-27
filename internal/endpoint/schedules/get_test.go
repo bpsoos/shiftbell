@@ -7,9 +7,13 @@ import (
 	"net/http/httptest"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/endpoint/schedules"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
+	apimodels "github.com/bpsoos/shiftbell/internal/models/api/schedules"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,14 +22,104 @@ import (
 var _ = Describe("Get", func() {
 	var (
 		service *MockService
+		view    *MockView
 		app     *echo.Echo
 	)
 	BeforeEach(func() {
 		service = NewMockService(GinkgoT())
-		handler := schedules.NewHandler(&schedules.HandlerDeps{Service: service})
+		view = NewMockView(GinkgoT())
+		handler := schedules.NewHandler(
+			&schedules.HandlerDeps{Service: service, View: view},
+		)
 		app = echo.New()
 		app.GET("/schedules/:id", handler.Get)
 	})
+
+	DescribeTable(
+		"renders HTML schedule details",
+		func(ctx SpecContext, hxRequest string, fullPage bool) {
+			service.EXPECT().Get(ctx, 42).Return(&models.ScheduleDetails{
+				Id:                42,
+				Name:              "Weekly kitchen",
+				ChoreTemplateId:   7,
+				ChoreTemplateName: "Kitchen",
+				IntervalDays:      7,
+			}, nil).Once()
+			view.EXPECT().Detail(viewmodels.Detail{Schedule: apimodels.Representation{
+				Response: apimodels.Response{
+					Id:                42,
+					Name:              "Weekly kitchen",
+					ChoreTemplateId:   7,
+					ChoreTemplateName: "Kitchen",
+					IntervalDays:      7,
+					Links: api.Relations{
+						{Rel: "self", Href: "/schedules/42"},
+						{Rel: "collection", Href: "/schedules"},
+						{Rel: "chore_template", Href: "/chore-templates/7"},
+					},
+				},
+				Actions: api.Relations{
+					{Rel: "edit", Href: "/schedules/42"},
+					{Rel: "deactivate", Href: "/schedules/42/deactivation"},
+				},
+			}}, fullPage).Return(templ.Raw("schedule detail")).Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/schedules/42",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", hxRequest)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(
+				response.Header().Get("Content-Type"),
+			).To(Equal(echo.MIMETextHTMLCharsetUTF8))
+			Expect(response.Body.String()).To(Equal("schedule detail"))
+		},
+		Entry("full page", "", true),
+		Entry("HTMX fragment", "true", false),
+	)
+
+	DescribeTable(
+		"renders HTML detail errors",
+		func(ctx SpecContext, getErr error, status int, message string) {
+			service.EXPECT().Get(ctx, 42).Return(nil, getErr).Once()
+			view.EXPECT().
+				Error(viewmodels.Error{Message: message, Links: api.Relations{{Rel: "collection", Href: "/schedules"}}}, true).
+				Return(templ.Raw("detail error")).
+				Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/schedules/42",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(status))
+			Expect(response.Body.String()).To(Equal("detail error"))
+		},
+		Entry(
+			"missing schedule",
+			models.ErrNotFound,
+			http.StatusNotFound,
+			"schedule not found",
+		),
+		Entry(
+			"storage failure",
+			errors.New("storage failed"),
+			http.StatusInternalServerError,
+			"something went wrong",
+		),
+	)
 
 	It(
 		"returns the schedule with navigable template and active chore links",
@@ -159,19 +253,4 @@ var _ = Describe("Get", func() {
 		Entry("non-numeric", "invalid"),
 		Entry("overflow", "999999999999999999999999999999"),
 	)
-
-	It("rejects unsupported representations", func(ctx SpecContext) {
-		request := httptest.NewRequestWithContext(
-			ctx,
-			http.MethodGet,
-			"/schedules/42",
-			nil,
-		)
-		request.Header.Set("Accept", "text/html")
-		response := httptest.NewRecorder()
-
-		app.ServeHTTP(response, request)
-
-		Expect(response.Code).To(Equal(http.StatusNotAcceptable))
-	})
 })

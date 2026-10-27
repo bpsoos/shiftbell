@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
@@ -14,12 +13,9 @@ import (
 )
 
 func (h *Handler) CorrectCompletion(ctx *echo.Context) error {
-	if !hypermedia.Accepts(ctx.Request()) {
-		return hypermedia.NotAcceptable(ctx)
-	}
 	id, err := parseChoreID(ctx)
 	if err != nil {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			apiErrorResponse{Error: err.Error()},
@@ -27,7 +23,7 @@ func (h *Handler) CorrectCompletion(ctx *echo.Context) error {
 	}
 	var request completeChoreRequest
 	if err := json.NewDecoder(ctx.Request().Body).Decode(&request); err != nil {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusBadRequest,
 			apiErrorResponse{Error: "invalid JSON"},
@@ -35,7 +31,7 @@ func (h *Handler) CorrectCompletion(ctx *echo.Context) error {
 	}
 	completedOn, err := time.Parse(time.DateOnly, request.CompletedOn)
 	if err != nil {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			apiErrorResponse{Error: validationerrors.ErrInvalidCompletionDate.Error()},
@@ -46,36 +42,41 @@ func (h *Handler) CorrectCompletion(ctx *echo.Context) error {
 		&choremodels.CorrectCompletionParams{Id: id, CompletedOn: completedOn},
 	)
 	if err != nil {
-		return renderCorrectionError(ctx, err)
+		return h.renderCorrectionError(ctx, err)
 	}
 	if corrected == nil {
 		logging.Default().Error("correct chore completion returned no chore")
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusInternalServerError,
 			apiErrorResponse{Error: "something went wrong"},
 		)
 	}
-	return hypermedia.JSON(ctx, http.StatusOK, newChoreRepresentation(corrected))
+	return h.renderDetail(
+		ctx,
+		http.StatusOK,
+		newChoreRepresentation(corrected),
+		"Completion date corrected.",
+	)
 }
 
-func renderCorrectionError(ctx *echo.Context, err error) error {
+func (h *Handler) renderCorrectionError(ctx *echo.Context, err error) error {
 	if errors.Is(err, validationerrors.ErrInvalidCompletionDate) {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			apiErrorResponse{Error: validationerrors.ErrInvalidCompletionDate.Error()},
 		)
 	}
 	if errors.Is(err, choremodels.ErrNotFound) {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusNotFound,
 			apiErrorResponse{Error: choremodels.ErrNotFound.Error()},
 		)
 	}
 	logging.Default().Error("correct chore completion", "err", err)
-	return hypermedia.JSON(
+	return h.renderError(
 		ctx,
 		http.StatusInternalServerError,
 		apiErrorResponse{Error: "something went wrong"},

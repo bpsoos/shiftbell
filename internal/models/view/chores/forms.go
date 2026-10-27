@@ -1,5 +1,20 @@
 package chores
 
+import apimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
+
+type ScheduledForm struct {
+	ActionHref   string
+	CancelHref   string
+	SummaryError string
+	Submitted    bool
+	Template     *apimodels.CreationTemplate
+	Name         Field
+	Description  Field
+	ScheduleName Field
+	Deadline     Field
+	IntervalDays Field
+}
+
 type Field struct {
 	Value string
 	Error string

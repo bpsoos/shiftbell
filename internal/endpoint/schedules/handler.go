@@ -3,7 +3,9 @@ package schedules
 import (
 	"context"
 
+	"github.com/a-h/templ"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
 )
 
 type Service interface {
@@ -15,12 +17,20 @@ type Service interface {
 
 type HandlerDeps struct {
 	Service Service
+	View    View
 }
 
 type Handler struct {
 	service Service
+	view    View
+}
+
+type View interface {
+	Collection(viewmodels.Collection, bool) templ.Component
+	Detail(viewmodels.Detail, bool) templ.Component
+	Error(viewmodels.Error, bool) templ.Component
 }
 
 func NewHandler(deps *HandlerDeps) *Handler {
-	return &Handler{service: deps.Service}
+	return &Handler{service: deps.Service, view: deps.View}
 }

@@ -58,6 +58,7 @@ type View interface {
 	Creation(choreviewmodels.Creation, bool) templ.Component
 	ManualOneOffForm(choreviewmodels.ManualOneOffForm, bool) templ.Component
 	TemplateOneOffForm(choreviewmodels.TemplateOneOffForm, bool) templ.Component
+	ScheduledForm(choreviewmodels.ScheduledForm, bool) templ.Component
 	EditForm(choreviewmodels.EditForm, bool) templ.Component
 	Error(choreviewmodels.Error, bool) templ.Component
 }

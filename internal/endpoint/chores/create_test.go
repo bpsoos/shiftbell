@@ -10,6 +10,7 @@ import (
 	"github.com/a-h/templ"
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
@@ -21,6 +22,157 @@ import (
 )
 
 var _ = Describe("Create chore", func() {
+	It(
+		"renders scheduled HTML validation feedback with the submitted fields",
+		func(ctx SpecContext) {
+			deadline := time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC)
+			interval := 0
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				Name:         "Kitchen",
+				Description:  "Steps.",
+				Deadline:     deadline,
+				ScheduleName: "Weekly",
+				IntervalDays: &interval,
+			}).Return(nil, validationerrors.ErrInvalidInterval).Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ScheduledForm(choreviewmodels.ScheduledForm{
+				ActionHref:   "/chores",
+				CancelHref:   "/chores",
+				Submitted:    true,
+				SummaryError: "invalid interval",
+				Name: choreviewmodels.Field{
+					Value: "Kitchen",
+				},
+				Description: choreviewmodels.Field{Value: "Steps."},
+				ScheduleName: choreviewmodels.Field{
+					Value: "Weekly",
+				},
+				Deadline: choreviewmodels.Field{Value: "2020-02-03"},
+				IntervalDays: choreviewmodels.Field{
+					Value: "0",
+					Error: "invalid interval",
+				},
+			}, false).Return(templ.Raw("scheduled validation")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service, View: view},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(
+					"name=Kitchen&description=Steps.&schedule_name=Weekly&deadline=2020-02-03&interval_days=0",
+				),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+			Expect(response.Body.String()).To(Equal("scheduled validation"))
+		},
+	)
+
+	It(
+		"renders a scheduled HTML name conflict while preserving the template selection",
+		func(ctx SpecContext) {
+			deadline := time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC)
+			templateId, interval := 7, 7
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				ChoreTemplateId: &templateId,
+				Deadline:        deadline,
+				ScheduleName:    "Weekly",
+				IntervalDays:    &interval,
+			}).Return(nil, schedulemodels.ErrNameConflict).Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ScheduledForm(choreviewmodels.ScheduledForm{
+				ActionHref:   "/chores",
+				CancelHref:   "/chores",
+				Submitted:    true,
+				SummaryError: schedulemodels.ErrNameConflict.Error(),
+				Template:     &choreapimodels.CreationTemplate{Id: 7},
+				ScheduleName: choreviewmodels.Field{
+					Value: "Weekly",
+					Error: schedulemodels.ErrNameConflict.Error(),
+				},
+				Deadline: choreviewmodels.Field{
+					Value: "2020-02-03",
+				},
+				IntervalDays: choreviewmodels.Field{Value: "7"},
+			}, true).Return(templ.Raw("scheduled conflict")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service, View: view},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(
+					"chore_template_id=7&schedule_name=Weekly&deadline=2020-02-03&interval_days=7",
+				),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusConflict))
+			Expect(response.Body.String()).To(Equal("scheduled conflict"))
+		},
+	)
+
+	It(
+		"redirects a successful scheduled HTML submission to chores",
+		func(ctx SpecContext) {
+			deadline := time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC)
+			interval, scheduleId := 7, 3
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				Name:         "Kitchen",
+				Deadline:     deadline,
+				ScheduleName: "Weekly",
+				IntervalDays: &interval,
+			}).Return(&choremodels.CreateChoreResult{Chore: &choremodels.Chore{
+				Id:         42,
+				ScheduleId: &scheduleId,
+				Status:     choremodels.ChoreStatusActive,
+				Name:       "Kitchen",
+				Deadline:   deadline,
+			}}, nil).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(
+					"name=Kitchen&schedule_name=Weekly&deadline=2020-02-03&interval_days=7",
+				),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusSeeOther))
+			Expect(response.Header().Get("Location")).To(Equal("/chores"))
+		},
+	)
+
 	It(
 		"returns a conflict and a retry action when an active schedule name is taken",
 		func(ctx SpecContext) {
@@ -161,37 +313,6 @@ var _ = Describe("Create chore", func() {
 			validationerrors.ErrInvalidInterval,
 			http.StatusUnprocessableEntity,
 		),
-	)
-
-	DescribeTable(
-		"keeps scheduled HTML submissions unsupported",
-		func(ctx SpecContext, source string) {
-			service := NewMockService(GinkgoT())
-			view := NewMockView(GinkgoT())
-			view.EXPECT().Error(choreviewmodels.Error{
-				Message: "scheduled recurrence is not implemented",
-			}, true).Return(templ.Raw("not implemented")).Once()
-			handler := choresendpoint.NewHandler(
-				&choresendpoint.HandlerDeps{Service: service, View: view},
-			)
-			app := echo.New()
-			app.POST("/chores", handler.Create)
-			request := httptest.NewRequestWithContext(
-				ctx,
-				http.MethodPost,
-				"/chores",
-				strings.NewReader(
-					source+"&schedule_name=Weekly&interval_days=7&deadline=2020-02-03",
-				),
-			)
-			request.Header.Set("Accept", "text/html")
-			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
-			response := httptest.NewRecorder()
-			app.ServeHTTP(response, request)
-			Expect(response.Code).To(Equal(http.StatusNotImplemented))
-		},
-		Entry("from a template", "chore_template_id=7"),
-		Entry("manual", "name=Kitchen"),
 	)
 
 	It(

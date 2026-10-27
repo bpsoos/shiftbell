@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
@@ -19,12 +18,9 @@ type editRequest struct {
 }
 
 func (h *Handler) Edit(ctx *echo.Context) error {
-	if hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationJSON {
-		return hypermedia.NotAcceptable(ctx)
-	}
 	id, err := parseScheduleID(ctx)
 	if err != nil {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			errorResponse{Error: err.Error(), Links: collectionLink()},
@@ -32,7 +28,7 @@ func (h *Handler) Edit(ctx *echo.Context) error {
 	}
 	var request editRequest
 	if err := json.NewDecoder(ctx.Request().Body).Decode(&request); err != nil {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusBadRequest,
 			editErrorResponse(id, "invalid request body"),
@@ -44,44 +40,49 @@ func (h *Handler) Edit(ctx *echo.Context) error {
 	if err != nil {
 		return h.renderEditError(ctx, id, err)
 	}
-	return hypermedia.JSON(ctx, http.StatusOK, newRepresentation(schedule))
+	return h.renderDetail(
+		ctx,
+		http.StatusOK,
+		newRepresentation(schedule),
+		"Schedule updated.",
+	)
 }
 
 func (h *Handler) renderEditError(ctx *echo.Context, id int, err error) error {
 	switch {
 	case errors.Is(err, models.ErrNameConflict):
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusConflict,
 			editErrorResponse(id, models.ErrNameConflict.Error()),
 		)
 	case errors.Is(err, validationerrors.ErrInvalidName):
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			editErrorResponse(id, validationerrors.ErrInvalidName.Error()),
 		)
 	case errors.Is(err, validationerrors.ErrInvalidInterval):
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			editErrorResponse(id, validationerrors.ErrInvalidInterval.Error()),
 		)
 	case errors.Is(err, models.ErrInactive):
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			errorResponse{Error: models.ErrInactive.Error(), Links: collectionLink()},
 		)
 	case errors.Is(err, models.ErrNotFound):
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusNotFound,
 			errorResponse{Error: models.ErrNotFound.Error(), Links: collectionLink()},
 		)
 	default:
 		logging.Default().Error("edit schedule", "err", err)
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusInternalServerError,
 			errorResponse{Error: "something went wrong", Links: collectionLink()},

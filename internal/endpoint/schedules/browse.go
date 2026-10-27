@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
@@ -14,23 +13,13 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-type collectionResponse struct {
-	Items []response    `json:"items"`
-	More  bool          `json:"more"`
-	Links api.Relations `json:"_links"`
-}
-
 func (h *Handler) Browse(ctx *echo.Context) error {
-	if hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationJSON {
-		return hypermedia.NotAcceptable(ctx)
-	}
-
 	params, err := parseBrowseRequest(ctx)
 	if err != nil {
-		return hypermedia.JSON(
+		return h.renderBrowseFeedback(
 			ctx,
 			http.StatusUnprocessableEntity,
-			map[string]string{"error": err.Error()},
+			err.Error(),
 		)
 	}
 
@@ -39,10 +28,11 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 		return h.renderBrowseError(ctx, err)
 	}
 
-	return hypermedia.JSON(
+	return h.renderCollection(
 		ctx,
 		http.StatusOK,
 		browseResponse(page, browseLinks(ctx.Request().URL, params, page.More)),
+		params,
 	)
 }
 
@@ -63,16 +53,25 @@ func parseBrowseRequest(ctx *echo.Context) (models.BrowseSchedulesParams, error)
 
 func (h *Handler) renderBrowseError(ctx *echo.Context, err error) error {
 	if errors.Is(err, validationerrors.ErrInvalidFilter) {
-		return hypermedia.JSON(ctx, http.StatusUnprocessableEntity,
-			map[string]string{"error": validationerrors.ErrInvalidFilter.Error()})
+		return h.renderBrowseFeedback(
+			ctx,
+			http.StatusUnprocessableEntity,
+			validationerrors.ErrInvalidFilter.Error(),
+		)
 	}
 	if errors.Is(err, validationerrors.ErrInvalidSearch) {
-		return hypermedia.JSON(ctx, http.StatusUnprocessableEntity,
-			map[string]string{"error": validationerrors.ErrInvalidSearch.Error()})
+		return h.renderBrowseFeedback(
+			ctx,
+			http.StatusUnprocessableEntity,
+			validationerrors.ErrInvalidSearch.Error(),
+		)
 	}
 	logging.Default().Error("browse schedules", "err", err)
-	return hypermedia.JSON(ctx, http.StatusInternalServerError,
-		map[string]string{"error": "something went wrong"})
+	return h.renderBrowseFeedback(
+		ctx,
+		http.StatusInternalServerError,
+		"something went wrong",
+	)
 }
 
 func browseResponse(page *models.SchedulePage, links api.Relations) collectionResponse {

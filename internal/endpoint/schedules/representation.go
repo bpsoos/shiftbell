@@ -2,28 +2,17 @@ package schedules
 
 import (
 	"strconv"
-	"time"
 
 	api "github.com/bpsoos/shiftbell/internal/models/api"
+	apimodels "github.com/bpsoos/shiftbell/internal/models/api/schedules"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
 )
 
-type response struct {
-	Id                  int           `json:"id"`
-	Name                string        `json:"name"`
-	ChoreTemplateId     int           `json:"chore_template_id"`
-	ChoreTemplateName   string        `json:"chore_template_name"`
-	IntervalDays        int           `json:"interval_days"`
-	DeactivatedAt       *time.Time    `json:"deactivated_at"`
-	ActiveChoreId       *int          `json:"active_chore_id"`
-	ActiveChoreDeadline *time.Time    `json:"active_chore_deadline"`
-	Links               api.Relations `json:"_links"`
-}
-
-type representation struct {
-	response
-	Actions api.Relations `json:"_actions"`
-}
+type (
+	response           = apimodels.Response
+	representation     = apimodels.Representation
+	collectionResponse = apimodels.CollectionResponse
+)
 
 type errorResponse struct {
 	Error   string        `json:"error"`
@@ -51,7 +40,7 @@ func newRepresentation(schedule *models.Schedule) representation {
 			},
 		)
 	}
-	return representation{response: newResponse(schedule), Actions: actions}
+	return representation{Response: newResponse(schedule), Actions: actions}
 }
 
 func newResponse(schedule *models.Schedule) response {

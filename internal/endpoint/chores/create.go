@@ -34,10 +34,6 @@ func (h *Handler) create(ctx *echo.Context) error {
 		return h.renderCreateBindingError(ctx, request, err)
 	}
 	request.SaveAsChoreTemplate = saveAsTemplateRequested(ctx, request)
-	if request.IntervalDays != nil &&
-		hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationJSON {
-		return h.scheduledRecurrenceNotImplemented(ctx)
-	}
 	deadline, err := time.Parse(time.DateOnly, request.Deadline)
 	if err != nil {
 		return h.renderInvalidCreateDeadline(ctx, request)
@@ -254,6 +250,9 @@ func createFormValues(request createChoreRequest) map[string]string {
 	if request.ChoreTemplateId != nil {
 		values["chore_template_id"] = strconv.Itoa(*request.ChoreTemplateId)
 	}
+	if request.IntervalDays != nil {
+		values["interval_days"] = strconv.Itoa(*request.IntervalDays)
+	}
 	return values
 }
 
@@ -266,6 +265,8 @@ func createFieldErrors(err error) map[string]string {
 		field = "description"
 	case errors.Is(err, validationerrors.ErrInvalidDeadline):
 		field = "deadline"
+	case errors.Is(err, validationerrors.ErrInvalidInterval):
+		field = "interval_days"
 	}
 	if field == "" {
 		return nil

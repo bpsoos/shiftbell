@@ -99,6 +99,13 @@ func (t *Templater) TemplateOneOffForm(
 	return layouts.Frame("chores", fullPage, templateOneOffFormContent(form))
 }
 
+func (t *Templater) ScheduledForm(
+	_ choreviewmodels.ScheduledForm,
+	fullPage bool,
+) templ.Component {
+	return layouts.Frame("chores", fullPage, templ.Raw(""))
+}
+
 func (t *Templater) EditForm(
 	form choreviewmodels.EditForm,
 	fullPage bool,

@@ -7,10 +7,14 @@ import (
 	"net/http/httptest"
 	"net/url"
 
+	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/endpoint/schedules"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
+	apimodels "github.com/bpsoos/shiftbell/internal/models/api/schedules"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,14 +24,111 @@ import (
 var _ = Describe("Browse", func() {
 	var (
 		service *MockService
+		view    *MockView
 		app     *echo.Echo
 	)
 	BeforeEach(func() {
 		service = NewMockService(GinkgoT())
-		handler := schedules.NewHandler(&schedules.HandlerDeps{Service: service})
+		view = NewMockView(GinkgoT())
+		handler := schedules.NewHandler(
+			&schedules.HandlerDeps{Service: service, View: view},
+		)
 		app = echo.New()
 		app.GET("/schedules", handler.Browse)
 	})
+
+	DescribeTable(
+		"renders the HTML collection with state and search",
+		func(ctx SpecContext, hxRequest string, fullPage bool) {
+			service.EXPECT().
+				Browse(ctx, &models.BrowseSchedulesParams{Filter: models.ScheduleFilterDeactivated, Search: "kitchen", Limit: 20}).
+				Return(&models.SchedulePage{}, nil).
+				Once()
+			view.EXPECT().Collection(viewmodels.Collection{
+				Collection: apimodels.CollectionResponse{
+					Items: []apimodels.Response{},
+					Links: api.Relations{
+						{
+							Rel:  "self",
+							Href: "/schedules?state=deactivated&search=kitchen",
+						},
+						{Rel: "active", Href: "/schedules?search=kitchen&state=active"},
+						{
+							Rel:  "deactivated",
+							Href: "/schedules?search=kitchen&state=deactivated",
+						},
+					},
+				},
+				Filter: models.ScheduleFilterDeactivated,
+				Search: "kitchen",
+			}, fullPage).Return(templ.Raw("schedule collection")).Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/schedules?state=deactivated&search=kitchen",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", hxRequest)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(
+				response.Header().Get("Content-Type"),
+			).To(Equal(echo.MIMETextHTMLCharsetUTF8))
+			Expect(response.Header().Get("Vary")).To(Equal("Accept, HX-Request"))
+			Expect(response.Body.String()).To(Equal("schedule collection"))
+		},
+		Entry("full page", "", true),
+		Entry("HTMX fragment", "true", false),
+	)
+
+	DescribeTable(
+		"renders HTML collection errors",
+		func(ctx SpecContext, browseErr error, status int, message string) {
+			service.EXPECT().
+				Browse(ctx, &models.BrowseSchedulesParams{Limit: 20}).
+				Return(nil, browseErr).
+				Once()
+			view.EXPECT().
+				Error(viewmodels.Error{Message: message, Links: api.Relations{{Rel: "collection", Href: "/schedules"}}}, true).
+				Return(templ.Raw("collection error")).
+				Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/schedules",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(status))
+			Expect(response.Body.String()).To(Equal("collection error"))
+		},
+		Entry(
+			"invalid filter",
+			validationerrors.ErrInvalidFilter,
+			http.StatusUnprocessableEntity,
+			"invalid filter",
+		),
+		Entry(
+			"invalid search",
+			validationerrors.ErrInvalidSearch,
+			http.StatusUnprocessableEntity,
+			"invalid search",
+		),
+		Entry(
+			"storage failure",
+			errors.New("storage failed"),
+			http.StatusInternalServerError,
+			"something went wrong",
+		),
+	)
 
 	It("returns an empty JSON array with state navigation links", func(ctx SpecContext) {
 		service.EXPECT().Browse(ctx, &models.BrowseSchedulesParams{Limit: 20}).
@@ -229,13 +330,4 @@ var _ = Describe("Browse", func() {
 		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
 		service.AssertNotCalled(GinkgoT(), "Browse", mock.Anything, mock.Anything)
 	}, Entry("negative", "-1"), Entry("non-numeric", "invalid"))
-
-	It("rejects unsupported representations", func(ctx SpecContext) {
-		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/schedules", nil)
-		request.Header.Set("Accept", "text/html")
-		response := httptest.NewRecorder()
-		app.ServeHTTP(response, request)
-		Expect(response.Code).To(Equal(http.StatusNotAcceptable))
-		service.AssertNotCalled(GinkgoT(), "Browse", mock.Anything, mock.Anything)
-	})
 })

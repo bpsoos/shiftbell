@@ -8,10 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/endpoint/schedules"
+	api "github.com/bpsoos/shiftbell/internal/models/api"
+	apimodels "github.com/bpsoos/shiftbell/internal/models/api/schedules"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,13 +24,92 @@ import (
 var _ = Describe("Edit", func() {
 	var (
 		service *MockService
+		view    *MockView
 		app     *echo.Echo
 	)
 	BeforeEach(func() {
 		service = NewMockService(GinkgoT())
-		handler := schedules.NewHandler(&schedules.HandlerDeps{Service: service})
+		view = NewMockView(GinkgoT())
+		handler := schedules.NewHandler(
+			&schedules.HandlerDeps{Service: service, View: view},
+		)
 		app = echo.New()
 		app.PATCH("/schedules/:id", handler.Edit)
+	})
+
+	DescribeTable(
+		"renders edited schedule details as HTML",
+		func(ctx SpecContext, hxRequest string, fullPage bool) {
+			service.EXPECT().
+				Edit(ctx, &models.EditScheduleParams{Id: 42, Name: "Fortnightly kitchen", IntervalDays: 14}).
+				Return(&models.Schedule{Id: 42, Name: "Fortnightly kitchen", ChoreTemplateId: 7, ChoreTemplateName: "Kitchen", IntervalDays: 14}, nil).
+				Once()
+			view.EXPECT().Detail(viewmodels.Detail{Schedule: apimodels.Representation{
+				Response: apimodels.Response{
+					Id:                42,
+					Name:              "Fortnightly kitchen",
+					ChoreTemplateId:   7,
+					ChoreTemplateName: "Kitchen",
+					IntervalDays:      14,
+					Links: api.Relations{
+						{Rel: "self", Href: "/schedules/42"},
+						{Rel: "collection", Href: "/schedules"},
+						{Rel: "chore_template", Href: "/chore-templates/7"},
+					},
+				},
+				Actions: api.Relations{
+					{Rel: "edit", Href: "/schedules/42"},
+					{Rel: "deactivate", Href: "/schedules/42/deactivation"},
+				},
+			}, Notice: "Schedule updated."}, fullPage).Return(templ.Raw("edited schedule")).Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPatch,
+				"/schedules/42",
+				strings.NewReader(`{"name":"Fortnightly kitchen","interval_days":14}`),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", hxRequest)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(
+				response.Header().Get("Content-Type"),
+			).To(Equal(echo.MIMETextHTMLCharsetUTF8))
+			Expect(response.Body.String()).To(Equal("edited schedule"))
+		},
+		Entry("full page", "", true),
+		Entry("HTMX fragment", "true", false),
+	)
+
+	It("renders a name conflict with its retry action as HTML", func(ctx SpecContext) {
+		service.EXPECT().
+			Edit(ctx, &models.EditScheduleParams{Id: 42, Name: "Taken", IntervalDays: 7}).
+			Return(nil, models.ErrNameConflict).
+			Once()
+		view.EXPECT().Error(viewmodels.Error{
+			Message: models.ErrNameConflict.Error(),
+			Links: api.Relations{
+				{Rel: "collection", Href: "/schedules"},
+			},
+			Actions: api.Relations{{Rel: "edit", Href: "/schedules/42"}},
+		}, false).Return(templ.Raw("edit conflict")).Once()
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodPatch,
+			"/schedules/42",
+			strings.NewReader(`{"name":"Taken","interval_days":7}`),
+		)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("HX-Request", "true")
+		response := httptest.NewRecorder()
+
+		app.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusConflict))
+		Expect(response.Body.String()).To(Equal("edit conflict"))
 	})
 
 	It(
@@ -196,15 +279,4 @@ var _ = Describe("Edit", func() {
 			response.Body.Bytes(),
 		).To(MatchJSON(`{"error":"invalid schedule id","_links":[{"rel":"collection","href":"/schedules"}]}`))
 	}, Entry("zero", "0"), Entry("negative", "-1"), Entry("non-numeric", "invalid"))
-
-	It("rejects unsupported representations", func(ctx SpecContext) {
-		request := httptest.NewRequestWithContext(ctx, http.MethodPatch, "/schedules/42",
-			strings.NewReader(`{"name":"Laundry","interval_days":14}`))
-		request.Header.Set("Accept", "text/html")
-		response := httptest.NewRecorder()
-
-		app.ServeHTTP(response, request)
-
-		Expect(response.Code).To(Equal(http.StatusNotAcceptable))
-	})
 })

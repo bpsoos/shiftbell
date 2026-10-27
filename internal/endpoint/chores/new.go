@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/endpoint/routes"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
@@ -57,18 +56,17 @@ func parseNewChoreQuery(ctx *echo.Context) (newChoreQuery, error) {
 }
 
 func (h *Handler) newManualChore(ctx *echo.Context, query newChoreQuery) error {
-	if query.Source == "manual" && query.Recurrence == "scheduled" &&
-		hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationJSON {
-		return h.scheduledRecurrenceNotImplemented(ctx)
-	}
-
 	if query.Source == "manual" &&
 		(query.Recurrence == "one-off" || query.Recurrence == "scheduled") {
 		action := createChoreSubmissionAction()
-		return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
+		creation := choreCreationResponse{
 			Step:    "form",
 			Actions: api.Relations{action},
-		})
+		}
+		if query.Recurrence == "scheduled" {
+			return h.renderScheduledCreation(ctx, http.StatusOK, creation)
+		}
+		return h.renderCreation(ctx, http.StatusOK, creation)
 	}
 
 	if query.Source == "manual" && query.Recurrence == "" {
@@ -107,14 +105,6 @@ func (h *Handler) newManualChore(ctx *echo.Context, query newChoreQuery) error {
 	})
 }
 
-func (h *Handler) scheduledRecurrenceNotImplemented(ctx *echo.Context) error {
-	return h.renderError(
-		ctx,
-		http.StatusNotImplemented,
-		apiErrorResponse{Error: "scheduled recurrence is not implemented"},
-	)
-}
-
 func (h *Handler) newTemplateBasedChore(
 	ctx *echo.Context,
 	query newChoreQuery,
@@ -134,15 +124,18 @@ func (h *Handler) newTemplateBasedChore(
 			apiErrorResponse{Error: choretemplatemodels.ErrInactive.Error()},
 		)
 	}
-	if query.Recurrence == "scheduled" &&
-		hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationJSON {
-		return h.scheduledRecurrenceNotImplemented(ctx)
+	if query.Recurrence == "scheduled" {
+		return h.renderScheduledCreation(
+			ctx,
+			http.StatusOK,
+			templateCreationForm(&template),
+		)
 	}
 	if query.Recurrence == "" {
 		return h.templateRecurrenceChoices(ctx, &template)
 	}
-	if query.Recurrence == "one-off" || query.Recurrence == "scheduled" {
-		return h.templateForm(ctx, &template)
+	if query.Recurrence == "one-off" {
+		return h.renderCreation(ctx, http.StatusOK, templateCreationForm(&template))
 	}
 	return h.templateRecurrenceChoices(ctx, &template)
 }
@@ -196,12 +189,11 @@ func (h *Handler) templateRecurrenceChoices(
 	})
 }
 
-func (h *Handler) templateForm(
-	ctx *echo.Context,
+func templateCreationForm(
 	template *choretemplatemodels.ChoreTemplate,
-) error {
+) choreCreationResponse {
 	action := createChoreSubmissionAction()
-	return h.renderCreation(ctx, http.StatusOK, choreCreationResponse{
+	return choreCreationResponse{
 		Step: "form",
 		Template: &choreCreationTemplate{
 			Id:          template.Id,
@@ -209,5 +201,5 @@ func (h *Handler) templateForm(
 			Description: template.Description,
 		},
 		Actions: api.Relations{action},
-	})
+	}
 }

@@ -17,6 +17,89 @@ import (
 )
 
 var _ = Describe("Start chore creation", func() {
+	DescribeTable(
+		"renders the manual scheduled HTML form",
+		func(ctx SpecContext, hxRequest string, fullPage bool) {
+			view := NewMockView(GinkgoT())
+			view.EXPECT().
+				ScheduledForm(choreviewmodels.ScheduledForm{ActionHref: "/chores", CancelHref: "/chores"}, fullPage).
+				Return(templ.Raw("manual scheduled form")).
+				Once()
+			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{View: view})
+			app := echo.New()
+			app.GET("/chores/new", handler.New)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores/new?source=manual&recurrence=scheduled",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", hxRequest)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(
+				response.Header().Get("Content-Type"),
+			).To(Equal(echo.MIMETextHTMLCharsetUTF8))
+			Expect(response.Body.String()).To(Equal("manual scheduled form"))
+		},
+		Entry("full page", "", true),
+		Entry("HTMX fragment", "true", false),
+	)
+
+	DescribeTable(
+		"renders the selected template in the scheduled HTML form",
+		func(ctx SpecContext, hxRequest string, fullPage bool) {
+			templateService := NewMockChoreTemplateService(GinkgoT())
+			templateService.EXPECT().
+				Get(ctx, 42).
+				Return(&choretemplatemodels.ChoreTemplateDetails{
+					Id: 42, Name: "Kitchen", Description: "Reusable steps.",
+				}, nil).
+				Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ScheduledForm(choreviewmodels.ScheduledForm{
+				ActionHref: "/chores",
+				CancelHref: "/chores",
+				Template: &choreapimodels.CreationTemplate{
+					Id:          42,
+					Name:        "Kitchen",
+					Description: "Reusable steps.",
+				},
+			}, fullPage).Return(templ.Raw("template scheduled form")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{
+					View:                 view,
+					ChoreTemplateService: templateService,
+				},
+			)
+			app := echo.New()
+			app.GET("/chores/new", handler.New)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores/new?template_id=42&recurrence=scheduled",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", hxRequest)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(
+				response.Header().Get("Content-Type"),
+			).To(Equal(echo.MIMETextHTMLCharsetUTF8))
+			Expect(response.Body.String()).To(Equal("template scheduled form"))
+		},
+		Entry("full page", "", true),
+		Entry("HTMX fragment", "true", false),
+	)
+
 	It("rejects a non-numeric template id", func(ctx SpecContext) {
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{})
 		e := echo.New()
@@ -303,67 +386,6 @@ var _ = Describe("Start chore creation", func() {
 			},
 			"_actions": [{"rel": "create", "href": "/chores"}]
 		}`))
-	})
-
-	It("keeps the manual scheduled HTML form unsupported", func(ctx SpecContext) {
-		view := NewMockView(GinkgoT())
-		view.EXPECT().Error(choreviewmodels.Error{
-			Message: "scheduled recurrence is not implemented",
-		}, true).Return(templ.Raw("not implemented")).Once()
-		service := NewMockService(GinkgoT())
-		handler := choresendpoint.NewHandler(
-			&choresendpoint.HandlerDeps{View: view, Service: service},
-		)
-		app := echo.New()
-		app.GET("/chores/new", handler.New)
-		request := httptest.NewRequestWithContext(
-			ctx,
-			http.MethodGet,
-			"/chores/new?source=manual&recurrence=scheduled",
-			nil,
-		)
-		request.Header.Set("Accept", "text/html")
-		response := httptest.NewRecorder()
-
-		app.ServeHTTP(response, request)
-
-		Expect(response.Code).To(Equal(http.StatusNotImplemented))
-		Expect(response.Body.String()).To(Equal("not implemented"))
-	})
-
-	It("keeps the template-based scheduled HTML form unsupported", func(ctx SpecContext) {
-		templateService := NewMockChoreTemplateService(GinkgoT())
-		templateService.EXPECT().
-			Get(ctx, 42).
-			Return(&choretemplatemodels.ChoreTemplateDetails{
-				Id: 42, Name: "Kitchen", Description: "Reusable template steps.",
-			}, nil).
-			Once()
-		view := NewMockView(GinkgoT())
-		view.EXPECT().Error(choreviewmodels.Error{
-			Message: "scheduled recurrence is not implemented",
-		}, true).Return(templ.Raw("not implemented")).Once()
-		handler := choresendpoint.NewHandler(
-			&choresendpoint.HandlerDeps{
-				View:                 view,
-				ChoreTemplateService: templateService,
-			},
-		)
-		app := echo.New()
-		app.GET("/chores/new", handler.New)
-		request := httptest.NewRequestWithContext(
-			ctx,
-			http.MethodGet,
-			"/chores/new?template_id=42&recurrence=scheduled",
-			nil,
-		)
-		request.Header.Set("Accept", "text/html")
-		response := httptest.NewRecorder()
-
-		app.ServeHTTP(response, request)
-
-		Expect(response.Code).To(Equal(http.StatusNotImplemented))
-		Expect(response.Body.String()).To(Equal("not implemented"))
 	})
 
 	DescribeTable(

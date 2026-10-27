@@ -93,6 +93,25 @@ func (h *Handler) renderConfirmationDialog(
 	return hypermedia.HTML(ctx, status, h.view.ConfirmationDialog(model))
 }
 
+func (h *Handler) renderScheduledCreation(
+	ctx *echo.Context,
+	status int,
+	creation choreCreationResponse,
+) error {
+	switch hypermedia.Negotiate(ctx.Request()) {
+	case hypermedia.RepresentationJSON:
+		return hypermedia.JSON(ctx, status, creation)
+	case hypermedia.RepresentationHTML:
+		return hypermedia.HTML(
+			ctx,
+			status,
+			h.view.ScheduledForm(scheduledFormViewModel(creation), fullPage(ctx)),
+		)
+	default:
+		return hypermedia.NotAcceptable(ctx)
+	}
+}
+
 func (h *Handler) renderCreation(
 	ctx *echo.Context,
 	status int,
@@ -181,10 +200,36 @@ func (h *Handler) renderCreateFormError(
 ) error {
 	feedback.Action = createChoreSubmissionAction()
 	feedback.CancelHref = choreCollectionHref
+	if request.IntervalDays != nil {
+		return h.renderScheduledFormError(ctx, status, request, feedback)
+	}
 	if request.ChoreTemplateId != nil {
 		return h.renderTemplateOneOffFormError(ctx, status, feedback)
 	}
 	return h.renderManualOneOffFormError(ctx, status, feedback)
+}
+
+func (h *Handler) renderScheduledFormError(
+	ctx *echo.Context,
+	status int,
+	request createChoreRequest,
+	feedback formFeedback,
+) error {
+	switch hypermedia.Negotiate(ctx.Request()) {
+	case hypermedia.RepresentationJSON:
+		return hypermedia.JSON(ctx, status, feedback.Error)
+	case hypermedia.RepresentationHTML:
+		return hypermedia.HTML(
+			ctx,
+			status,
+			h.view.ScheduledForm(
+				scheduledFormErrorViewModel(request, feedback),
+				fullPage(ctx),
+			),
+		)
+	default:
+		return hypermedia.NotAcceptable(ctx)
+	}
 }
 
 func (h *Handler) renderTemplateOneOffFormError(

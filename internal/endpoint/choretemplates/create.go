@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
@@ -19,13 +18,9 @@ type createRequest struct {
 }
 
 func (h *Handler) Create(ctx *echo.Context) error {
-	if !hypermedia.Accepts(ctx.Request()) {
-		return hypermedia.NotAcceptable(ctx)
-	}
-
 	var request createRequest
 	if err := json.NewDecoder(ctx.Request().Body).Decode(&request); err != nil {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusBadRequest,
 			createErrorResponse("invalid request body", collectionLink()),
@@ -45,26 +40,31 @@ func (h *Handler) Create(ctx *echo.Context) error {
 
 	representation := newRepresentation(choreTemplate)
 	ctx.Response().Header().Set(echo.HeaderLocation, representation.Links.Href("self"))
-	return hypermedia.JSON(ctx, http.StatusCreated, representation)
+	return h.renderDetail(
+		ctx,
+		http.StatusCreated,
+		representation,
+		"Chore template created.",
+	)
 }
 
 func (h *Handler) renderCreateError(ctx *echo.Context, err error) error {
 	if errors.Is(err, models.ErrNameConflict) {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusConflict,
 			createErrorResponse(err.Error(), api.Relations{}),
 		)
 	}
 	if isInvalidCreateRequestError(err) {
-		return hypermedia.JSON(
+		return h.renderError(
 			ctx,
 			http.StatusUnprocessableEntity,
 			createErrorResponse(err.Error(), collectionLink()),
 		)
 	}
 	logging.Default().Error("create chore template", "err", err)
-	return hypermedia.JSON(
+	return h.renderError(
 		ctx,
 		http.StatusInternalServerError,
 		errorResponse{Error: "something went wrong", Links: collectionLink()},

@@ -22,6 +22,7 @@ import (
 	schedulesservice "github.com/bpsoos/shiftbell/internal/service/schedules"
 	choresview "github.com/bpsoos/shiftbell/internal/view/chores"
 	choretemplatesview "github.com/bpsoos/shiftbell/internal/view/choretemplates"
+	schedulesview "github.com/bpsoos/shiftbell/internal/view/schedules"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -109,6 +110,7 @@ func execute() int {
 
 	router := routing.NewRouter(&routing.RouterDeps{
 		ScheduleHandler: schedulesendpoint.NewHandler(&schedulesendpoint.HandlerDeps{
+			View: schedulesview.NewTemplater(),
 			Service: schedulesservice.NewService(
 				&schedulesservice.Deps{
 					Persister: schedulespersistence.NewPersister(

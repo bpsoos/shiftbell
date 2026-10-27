@@ -126,6 +126,45 @@ func creationViewModel(
 	return model
 }
 
+func scheduledFormViewModel(
+	creation choreCreationResponse,
+) choreviewmodels.ScheduledForm {
+	return choreviewmodels.ScheduledForm{
+		ActionHref: creationActionHref(
+			creation,
+		),
+		CancelHref: choreCollectionHref,
+		Template:   creation.Template,
+	}
+}
+
+func scheduledFormErrorViewModel(
+	request createChoreRequest,
+	feedback formFeedback,
+) choreviewmodels.ScheduledForm {
+	model := choreviewmodels.ScheduledForm{
+		ActionHref:   feedback.Action.Href,
+		CancelHref:   feedback.CancelHref,
+		Submitted:    true,
+		SummaryError: formFeedbackMessage(feedback),
+		Name: fieldViewModel(
+			feedback,
+			"name",
+		),
+		Description: fieldViewModel(feedback, "description"),
+		ScheduleName: fieldViewModel(
+			feedback,
+			"schedule_name",
+		),
+		Deadline:     fieldViewModel(feedback, "deadline"),
+		IntervalDays: fieldViewModel(feedback, "interval_days"),
+	}
+	if request.ChoreTemplateId != nil {
+		model.Template = &choreCreationTemplate{Id: *request.ChoreTemplateId}
+	}
+	return model
+}
+
 func manualOneOffFormViewModel(
 	creation choreCreationResponse,
 ) choreviewmodels.ManualOneOffForm {
