@@ -98,4 +98,8 @@ FROM schedules s
 JOIN chore_templates t ON t.id = s.chore_template_id
 WHERE s.id BETWEEN 2 AND 21;
 
+INSERT INTO schedules (id, name, chore_template_id, interval_days, deactivated_at) VALUES
+    (22, 'Previous window cleaning', 11, 90, datetime('now', 'localtime', '-30 days')),
+    (23, 'Previous gutter maintenance', 15, 180, datetime('now', 'localtime', '-14 days'));
+
 COMMIT;

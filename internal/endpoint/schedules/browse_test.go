@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/a-h/templ"
@@ -129,8 +130,9 @@ var _ = Describe("Browse", func() {
 						},
 					},
 				},
-				Filter: models.ScheduleFilterDeactivated,
-				Search: "kitchen",
+				Filter:     models.ScheduleFilterDeactivated,
+				Search:     "kitchen",
+				SearchOpen: true,
 			}, fullPage).Return(templ.Raw("schedule collection")).Once()
 			request := httptest.NewRequestWithContext(
 				ctx,
@@ -148,12 +150,110 @@ var _ = Describe("Browse", func() {
 			Expect(
 				response.Header().Get("Content-Type"),
 			).To(Equal(echo.MIMETextHTMLCharsetUTF8))
-			Expect(response.Header().Get("Vary")).To(Equal("Accept, HX-Request"))
+			Expect(
+				strings.Split(response.Header().Get("Vary"), ", "),
+			).To(ConsistOf("Accept", "HX-Request", "HX-Current-URL"))
 			Expect(response.Body.String()).To(Equal("schedule collection"))
 		},
 		Entry("full page", "", true),
 		Entry("HTMX fragment", "true", false),
 	)
+
+	DescribeTable(
+		"focuses HTML search only when its value or visibility changed",
+		func(ctx SpecContext, currentURL string, autofocus bool) {
+			service.EXPECT().
+				Browse(ctx, &models.BrowseSchedulesParams{Search: "kitchen", Limit: 20}).
+				Return(&models.SchedulePage{}, nil).
+				Once()
+			view.EXPECT().Collection(viewmodels.Collection{
+				Collection: apimodels.CollectionResponse{
+					Items: []apimodels.Response{},
+					Links: api.Relations{
+						{Rel: "self", Href: "/schedules?search=kitchen"},
+						{Rel: "active", Href: "/schedules?search=kitchen&state=active"},
+						{
+							Rel:  "deactivated",
+							Href: "/schedules?search=kitchen&state=deactivated",
+						},
+					},
+				},
+				Filter:          models.ScheduleFilterActive,
+				Search:          "kitchen",
+				SearchOpen:      true,
+				AutofocusSearch: autofocus,
+			}, false).Return(templ.Raw("search results")).Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/schedules?search=kitchen",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			request.Header.Set("HX-Current-URL", currentURL)
+			response := httptest.NewRecorder()
+
+			app.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.String()).To(Equal("search results"))
+		},
+		Entry("no current URL", "", false),
+		Entry("opening search", "http://example.com/schedules", true),
+		Entry("typing", "http://example.com/schedules?search=kit", true),
+		Entry(
+			"pagination",
+			"http://example.com/schedules?search=kitchen&offset=20",
+			false,
+		),
+		Entry(
+			"state switching",
+			"http://example.com/schedules?state=deactivated&search=kitchen",
+			false,
+		),
+		Entry(
+			"another collection",
+			"http://example.com/chore-templates?search=kit",
+			false,
+		),
+		Entry("malformed current URL", "%zz", false),
+	)
+
+	It("opens an empty HTML search field", func(ctx SpecContext) {
+		service.EXPECT().
+			Browse(ctx, &models.BrowseSchedulesParams{Limit: 20}).
+			Return(&models.SchedulePage{}, nil).
+			Once()
+		view.EXPECT().Collection(viewmodels.Collection{
+			Collection: apimodels.CollectionResponse{
+				Items: []apimodels.Response{},
+				Links: api.Relations{
+					{Rel: "self", Href: "/schedules?search="},
+					{Rel: "active", Href: "/schedules?search=&state=active"},
+					{Rel: "deactivated", Href: "/schedules?search=&state=deactivated"},
+				},
+			},
+			Filter:          models.ScheduleFilterActive,
+			SearchOpen:      true,
+			AutofocusSearch: true,
+		}, false).Return(templ.Raw("empty search")).Once()
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/schedules?search=",
+			nil,
+		)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("HX-Request", "true")
+		request.Header.Set("HX-Current-URL", "http://example.com/schedules")
+		response := httptest.NewRecorder()
+
+		app.ServeHTTP(response, request)
+
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(Equal("empty search"))
+	})
 
 	DescribeTable(
 		"renders HTML collection errors",

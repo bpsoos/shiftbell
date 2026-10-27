@@ -17,12 +17,20 @@ func (h *Handler) renderCollection(
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, status, collection)
 	case hypermedia.RepresentationHTML:
+		ctx.Response().Header().Add(echo.HeaderVary, "HX-Current-URL")
 		filter := params.Filter
 		if filter == "" {
 			filter = models.ScheduleFilterActive
 		}
 		return hypermedia.HTML(ctx, status, h.view.Collection(viewmodels.Collection{
-			Collection: collection, Filter: filter, Search: params.Search,
+			Collection: collection,
+			Filter:     filter,
+			Search:     params.Search,
+			SearchOpen: ctx.QueryParams().Has("search"),
+			AutofocusSearch: collectionSearchChanged(
+				ctx.Request().Header.Get("HX-Current-URL"),
+				ctx.Request().URL,
+			),
 		}, fullPage(ctx)))
 	default:
 		return hypermedia.NotAcceptable(ctx)

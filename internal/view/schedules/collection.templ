@@ -5,12 +5,13 @@ import (
 
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	apimodels "github.com/bpsoos/shiftbell/internal/models/api/schedules"
+	models "github.com/bpsoos/shiftbell/internal/models/schedules"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
 	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
 )
 
 templ collection(model viewmodels.Collection) {
-	<section aria-labelledby="schedules-heading">
+	<section aria-labelledby="schedules-heading" hx-sync="this:replace">
 		<style>
 			me {
 				margin-block-start: -0.5rem;
@@ -23,9 +24,13 @@ templ collection(model viewmodels.Collection) {
 				}
 			}
 		</style>
-		@collectionHeader()
+		@collectionHeader(model.Filter)
+		@collectionUtilities(model)
+		if model.SearchOpen {
+			@scheduleSearch(model)
+		}
 		if len(model.Collection.Items) == 0 {
-			@collectionEmptyState()
+			@collectionEmptyState(model)
 		} else {
 			@scheduleList(model.Collection.Items)
 		}
@@ -33,11 +38,11 @@ templ collection(model viewmodels.Collection) {
 	</section>
 }
 
-templ collectionHeader() {
+templ collectionHeader(filter models.ScheduleFilter) {
 	<header>
 		<style>
 			me {
-				margin-bottom: 1.25rem;
+				margin-bottom: 0.75rem;
 			}
 			me > h1 {
 				font-size: 1.875rem;
@@ -59,11 +64,17 @@ templ collectionHeader() {
 				}
 			}
 		</style>
-		<h1 id="schedules-heading">Schedules</h1>
+		<h1 id="schedules-heading">
+			if filter == models.ScheduleFilterDeactivated {
+				Deactivated schedules
+			} else {
+				Schedules
+			}
+		</h1>
 	</header>
 }
 
-templ collectionEmptyState() {
+templ collectionEmptyState(model viewmodels.Collection) {
 	<div data-empty-schedules>
 		<style>
 			me {
@@ -82,8 +93,16 @@ templ collectionEmptyState() {
 				margin: 0;
 			}
 		</style>
-		<h2>No schedules yet</h2>
-		<p>Active schedules will appear here.</p>
+		if model.Search != "" {
+			<h2>No matching schedules</h2>
+			<p>Try a different search.</p>
+		} else if model.Filter == models.ScheduleFilterDeactivated {
+			<h2>No deactivated schedules</h2>
+			<p>Permanently deactivated schedules will appear here.</p>
+		} else {
+			<h2>No schedules yet</h2>
+			<p>Active schedules will appear here.</p>
+		}
 	</div>
 }
 
@@ -176,7 +195,9 @@ templ scheduleRow(schedule apimodels.Response) {
 		<div data-timing>
 			<span>{ intervalLabel(schedule.IntervalDays) }</span>
 			<span data-deadline>
-				if schedule.ActiveChoreDeadline != nil {
+				if schedule.DeactivatedAt != nil {
+					Deactivated
+				} else if schedule.ActiveChoreDeadline != nil {
 					Due <time datetime={ schedule.ActiveChoreDeadline.Format(time.DateOnly) }>{ schedule.ActiveChoreDeadline.Format("2 Jan 2006") }</time>
 				} else {
 					No active chore

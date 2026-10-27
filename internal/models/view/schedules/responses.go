@@ -7,9 +7,11 @@ import (
 )
 
 type Collection struct {
-	Collection apimodels.CollectionResponse
-	Filter     models.ScheduleFilter
-	Search     string
+	Collection      apimodels.CollectionResponse
+	Filter          models.ScheduleFilter
+	Search          string
+	SearchOpen      bool
+	AutofocusSearch bool
 }
 
 type Detail struct {

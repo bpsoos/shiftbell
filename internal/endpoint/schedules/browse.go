@@ -36,6 +36,20 @@ func (h *Handler) Browse(ctx *echo.Context) error {
 	)
 }
 
+func collectionSearchChanged(currentURLHeader string, requestURL *url.URL) bool {
+	if currentURLHeader == "" {
+		return false
+	}
+	currentURL, err := url.Parse(currentURLHeader)
+	if err != nil || currentURL.Path != "/schedules" {
+		return false
+	}
+	currentQuery := currentURL.Query()
+	requestQuery := requestURL.Query()
+	return currentQuery.Has("search") != requestQuery.Has("search") ||
+		currentQuery.Get("search") != requestQuery.Get("search")
+}
+
 func parseBrowseRequest(ctx *echo.Context) (models.BrowseSchedulesParams, error) {
 	params := models.BrowseSchedulesParams{Limit: 20}
 	var state string

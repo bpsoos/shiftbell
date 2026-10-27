@@ -37,7 +37,7 @@ templ detail(model viewmodels.Detail) {
 				padding: 0.625rem 0.75rem;
 			}
 		</style>
-		if href := model.Schedule.Links.Href("collection"); href != "" {
+		if href := detailCollectionHref(model.Schedule); href != "" {
 			<a data-back href={ href } hx-get={ href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">
 				@viewicons.ArrowLeft()
 				<span>Schedules</span>

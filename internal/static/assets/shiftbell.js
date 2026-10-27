@@ -227,7 +227,13 @@
 
 		if (event.detail.target?.id === "main") {
 			closeNavigation();
-			document.getElementById("main")?.focus({ preventScroll: true });
+			const main = document.getElementById("main");
+			const autofocus = main?.querySelector("[autofocus]");
+			if (autofocus) {
+				autofocus.focus({ preventScroll: true });
+			} else if (!main?.contains(document.activeElement)) {
+				main?.focus({ preventScroll: true });
+			}
 		}
 	});
 

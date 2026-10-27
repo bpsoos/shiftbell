@@ -1,0 +1,112 @@
+package schedules
+
+import (
+	models "github.com/bpsoos/shiftbell/internal/models/schedules"
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
+	collectioncontrols "github.com/bpsoos/shiftbell/internal/view/collectioncontrols"
+	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+)
+
+templ collectionUtilities(model viewmodels.Collection) {
+	<nav aria-label="Schedule collection">
+		<style>
+			me {
+				align-items: center;
+				display: flex;
+				gap: 0.75rem;
+				justify-content: flex-end;
+				line-height: 1;
+				margin: 0 0 0.5rem;
+				min-height: 1.5rem;
+			}
+			me > [data-state-switch] {
+				color: var(--sb-muted);
+				font-size: 0.75rem;
+				font-weight: 500;
+				text-decoration: none;
+			}
+			me > [data-state-switch]:hover,
+			me > [data-state-switch]:focus-visible {
+				color: var(--sb-text);
+				text-decoration: underline;
+				text-underline-offset: 0.15em;
+			}
+			me > [data-search-toggle] {
+				align-items: center;
+				color: var(--sb-muted);
+				display: inline-flex;
+				height: 1.5rem;
+				justify-content: center;
+				padding: 0.125rem;
+				text-decoration: none;
+				width: 1.5rem;
+			}
+			me > [data-search-toggle]:hover,
+			me > [data-search-toggle]:focus-visible {
+				color: var(--sb-text);
+			}
+		</style>
+		if model.Filter == models.ScheduleFilterDeactivated {
+			<a data-state-switch href={ model.Collection.Links.Href("active") } hx-get={ model.Collection.Links.Href("active") } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">Back to schedules</a>
+		} else {
+			<a data-state-switch href={ model.Collection.Links.Href("deactivated") } hx-get={ model.Collection.Links.Href("deactivated") } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">View deactivated</a>
+		}
+		if !model.SearchOpen {
+			<a
+				data-search-toggle
+				href={ scheduleSearchHref(model.Filter) }
+				hx-get={ scheduleSearchHref(model.Filter) }
+				hx-target="#main"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+				aria-label={ scheduleSearchPlaceholder(model.Filter) }
+				title={ scheduleSearchPlaceholder(model.Filter) }
+			>
+				@viewicons.MagnifyingGlass()
+				<span class="visually-hidden">Search</span>
+			</a>
+		}
+	</nav>
+}
+
+templ scheduleSearch(model viewmodels.Collection) {
+	<form
+		action="/schedules"
+		method="get"
+		hx-get="/schedules"
+		hx-trigger="submit, input changed delay:275ms target:input[name='search']"
+		hx-target="#main"
+		hx-swap="outerHTML"
+		hx-push-url="true"
+	>
+		<style>
+			me {
+				align-items: center;
+				display: flex;
+				gap: 0.75rem;
+				margin: 0 0 0.5rem;
+			}
+			me > a {
+				color: var(--sb-muted);
+				flex: 0 0 auto;
+				font-size: 0.8125rem;
+				font-weight: 600;
+				line-height: 1;
+			}
+			me > a:hover,
+			me > a:focus-visible {
+				color: var(--sb-text);
+			}
+		</style>
+		if model.Filter == models.ScheduleFilterDeactivated {
+			<input type="hidden" name="state" value="deactivated"/>
+		}
+		@collectioncontrols.SearchField(
+			"schedule-collection-search",
+			model.Search,
+			scheduleSearchPlaceholder(model.Filter),
+			model.AutofocusSearch,
+		)
+		<a data-search-close href={ scheduleCollectionViewHref(model.Filter) } hx-get={ scheduleCollectionViewHref(model.Filter) } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">Close</a>
+	</form>
+}
