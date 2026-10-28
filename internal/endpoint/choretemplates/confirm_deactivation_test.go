@@ -1,6 +1,7 @@
 package choretemplates_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -110,6 +111,49 @@ var _ = Describe("Confirm chore template deactivation", func() {
 		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
 		Expect(response.Body.String()).To(Equal("inactive dialog sentinel"))
 	})
+
+	DescribeTable(
+		"renders a non-actionable dialog when the template cannot be loaded",
+		func(ctx SpecContext, loadError error, status int, message string) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Get(ctx, 8).Return(nil, loadError).Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{
+				Heading: "Unable to deactivate template", Error: message,
+			}).Return(templ.Raw("unavailable dialog sentinel")).Once()
+			handler := choretemplatesendpoint.NewHandler(
+				&choretemplatesendpoint.HandlerDeps{Service: service, View: view},
+			)
+			e := echo.New()
+			e.GET("/chore-templates/:id/deactivation", handler.ConfirmDeactivation)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chore-templates/8/deactivation",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+
+			e.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(status))
+			Expect(response.Body.String()).To(Equal("unavailable dialog sentinel"))
+		},
+		Entry(
+			"missing template",
+			choretemplatemodels.ErrNotFound,
+			http.StatusNotFound,
+			"This template could not be found. Close this dialog and refresh the templates.",
+		),
+		Entry(
+			"unavailable storage",
+			errors.New("storage"),
+			http.StatusInternalServerError,
+			"The template could not be loaded. Close this dialog and try again.",
+		),
+	)
 
 	DescribeTable(
 		"reveals active references instead of opening confirmation",

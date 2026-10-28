@@ -80,9 +80,15 @@ func deactivationDialogViewModel(
 }
 
 func (h *Handler) renderDeactivationLoadError(ctx *echo.Context, err error) error {
+	status := http.StatusInternalServerError
+	message := "The template could not be loaded. Close this dialog and try again."
 	if errors.Is(err, models.ErrNotFound) {
-		return hypermedia.NoContent(ctx, http.StatusNotFound)
+		status = http.StatusNotFound
+		message = "This template could not be found. Close this dialog and refresh the templates."
+	} else {
+		logging.Default().Error("load chore template for deactivation", "err", err)
 	}
-	logging.Default().Error("load chore template for deactivation", "err", err)
-	return hypermedia.NoContent(ctx, http.StatusInternalServerError)
+	return h.renderConfirmationDialog(ctx, status, confirmationviewmodels.Dialog{
+		Heading: "Unable to deactivate template", Error: message,
+	})
 }

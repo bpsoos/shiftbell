@@ -1,6 +1,7 @@
 package chores_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 
@@ -103,4 +104,47 @@ var _ = Describe("Confirm chore deletion", func() {
 		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
 		Expect(response.Body.String()).To(BeEmpty())
 	})
+
+	DescribeTable(
+		"renders a non-actionable dialog when the chore cannot be loaded",
+		func(ctx SpecContext, loadError error, status int, message string) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Get(ctx, 42).Return(nil, loadError).Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{
+				Heading: "Unable to delete chore", Error: message,
+			}).Return(templ.Raw("unavailable dialog sentinel")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service, View: view},
+			)
+			e := echo.New()
+			e.GET("/chores/:id/deletion", handler.ConfirmDeletion)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores/42/deletion",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+
+			e.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(status))
+			Expect(response.Body.String()).To(Equal("unavailable dialog sentinel"))
+		},
+		Entry(
+			"missing chore",
+			choremodels.ErrNotFound,
+			http.StatusNotFound,
+			"This chore could not be found. Close this dialog and refresh the chores.",
+		),
+		Entry(
+			"unavailable storage",
+			errors.New("storage"),
+			http.StatusInternalServerError,
+			"The chore could not be loaded. Close this dialog and try again.",
+		),
+	)
 })

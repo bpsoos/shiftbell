@@ -80,7 +80,7 @@ func (h *Handler) renderDeleted(ctx *echo.Context) error {
 func (h *Handler) renderDeletionError(ctx *echo.Context, id int) error {
 	chore, err := h.service.Get(ctx.Request().Context(), id)
 	if err != nil {
-		return renderDeletionLoadError(ctx, err)
+		return h.renderDeletionLoadError(ctx, err)
 	}
 	return h.renderConfirmationDialog(
 		ctx,

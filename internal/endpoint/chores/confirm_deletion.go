@@ -18,7 +18,7 @@ func (h *Handler) confirmDeletion(ctx *echo.Context) error {
 	}
 	chore, err := h.service.Get(ctx.Request().Context(), id)
 	if err != nil {
-		return renderDeletionLoadError(ctx, err)
+		return h.renderDeletionLoadError(ctx, err)
 	}
 	if actionsForChore(chore).Href("delete") == "" {
 		return hypermedia.NoContent(ctx, http.StatusUnprocessableEntity)
@@ -47,10 +47,16 @@ func deletionDialogViewModel(
 	}
 }
 
-func renderDeletionLoadError(ctx *echo.Context, err error) error {
+func (h *Handler) renderDeletionLoadError(ctx *echo.Context, err error) error {
+	status := http.StatusInternalServerError
+	message := "The chore could not be loaded. Close this dialog and try again."
 	if errors.Is(err, choremodels.ErrNotFound) {
-		return hypermedia.NoContent(ctx, http.StatusNotFound)
+		status = http.StatusNotFound
+		message = "This chore could not be found. Close this dialog and refresh the chores."
+	} else {
+		logging.Default().Error("load chore for deletion", "err", err)
 	}
-	logging.Default().Error("load chore for deletion", "err", err)
-	return hypermedia.NoContent(ctx, http.StatusInternalServerError)
+	return h.renderConfirmationDialog(ctx, status, confirmationviewmodels.Dialog{
+		Heading: "Unable to delete chore", Error: message,
+	})
 }

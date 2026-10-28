@@ -71,6 +71,41 @@ var _ = Describe("Deactivate chore template", func() {
 	})
 
 	It(
+		"explains when a template disappears before confirmation is submitted",
+		func(ctx SpecContext) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().
+				Deactivate(ctx, 8).
+				Return(nil, choretemplatemodels.ErrNotFound).
+				Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{
+				Heading: "Unable to deactivate template",
+				Error:   "This template could not be found. Close this dialog and refresh the templates.",
+			}).Return(templ.Raw("missing dialog sentinel")).Once()
+			handler := choretemplatesendpoint.NewHandler(
+				&choretemplatesendpoint.HandlerDeps{Service: service, View: view},
+			)
+			e := echo.New()
+			e.PUT("/chore-templates/:id/deactivation", handler.Deactivate)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPut,
+				"/chore-templates/8/deactivation",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+
+			e.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusNotFound))
+			Expect(response.Body.String()).To(Equal("missing dialog sentinel"))
+		},
+	)
+
+	It(
 		"replaces a stale confirmation with the authoritative active inline list",
 		func(ctx SpecContext) {
 			blocked := &choretemplatemodels.ActiveScheduleReferencesError{

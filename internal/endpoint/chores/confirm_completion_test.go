@@ -1,6 +1,7 @@
 package chores_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -104,8 +106,15 @@ var _ = Describe("Confirm chore completion", func() {
 			Id:     42,
 			Status: choremodels.ChoreStatusCompleted,
 		}, nil).Once()
+		view := NewMockView(GinkgoT())
+		view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{
+			Heading: "Chore already completed",
+			Supporting: []string{
+				"This chore is already complete. Close this dialog and refresh the chores.",
+			},
+		}).Return(templ.Raw("completed dialog sentinel")).Once()
 		handler := choresendpoint.NewHandler(
-			&choresendpoint.HandlerDeps{Service: service},
+			&choresendpoint.HandlerDeps{Service: service, View: view},
 		)
 		e := echo.New()
 		e.GET("/chores/:id/completion", handler.ConfirmCompletion)
@@ -122,6 +131,49 @@ var _ = Describe("Confirm chore completion", func() {
 		e.ServeHTTP(response, request)
 
 		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
-		Expect(response.Body.String()).To(BeEmpty())
+		Expect(response.Body.String()).To(Equal("completed dialog sentinel"))
 	})
+
+	DescribeTable(
+		"renders a non-actionable dialog when the chore cannot be loaded",
+		func(ctx SpecContext, loadError error, status int, message string) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Get(ctx, 42).Return(nil, loadError).Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{
+				Heading: "Unable to complete chore", Error: message,
+			}).Return(templ.Raw("unavailable dialog sentinel")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service, View: view},
+			)
+			e := echo.New()
+			e.GET("/chores/:id/completion", handler.ConfirmCompletion)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores/42/completion",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+
+			e.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(status))
+			Expect(response.Body.String()).To(Equal("unavailable dialog sentinel"))
+		},
+		Entry(
+			"missing chore",
+			choremodels.ErrNotFound,
+			http.StatusNotFound,
+			"This chore could not be found. Close this dialog and refresh the chores.",
+		),
+		Entry(
+			"unavailable storage",
+			errors.New("storage"),
+			http.StatusInternalServerError,
+			"The chore could not be loaded. Close this dialog and try again.",
+		),
+	)
 })

@@ -11,6 +11,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/logging"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
+	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
 )
 
@@ -136,8 +137,15 @@ func (h *Handler) renderHTMXCompletionError(
 		return h.renderCompletionDateError(ctx, id, completedOn)
 	}
 	if errors.Is(err, choremodels.ErrNotFound) {
-		return hypermedia.NoContent(ctx, http.StatusNotFound)
+		return h.renderCompletionLoadError(ctx, err)
 	}
 	logging.Default().Error("complete chore", "err", err)
-	return hypermedia.NoContent(ctx, http.StatusInternalServerError)
+	return h.renderConfirmationDialog(
+		ctx,
+		http.StatusInternalServerError,
+		confirmationviewmodels.Dialog{
+			Heading: "Unable to complete chore",
+			Error:   "The chore could not be completed. Close this dialog and try again.",
+		},
+	)
 }

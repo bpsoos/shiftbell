@@ -107,7 +107,7 @@ func (h *Handler) renderHTMXDeactivationError(
 		return h.renderInactiveDeactivation(ctx, id)
 	}
 	if errors.Is(err, models.ErrNotFound) {
-		return hypermedia.NoContent(ctx, http.StatusNotFound)
+		return h.renderDeactivationLoadError(ctx, err)
 	}
 	logging.Default().Error("deactivate chore template", "err", err)
 	return h.renderDeactivationDialogError(
