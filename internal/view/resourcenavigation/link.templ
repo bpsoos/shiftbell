@@ -1,26 +1,37 @@
 package resourcenavigation
 
+import viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+
 templ Link(href string, label string) {
 	<a data-resource-link href={ href } hx-get={ href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">
 		<style>
 			me {
-				border-left: 3px solid var(--sb-accent);
-				color: var(--sb-muted-strong);
-				display: inline-block;
-				font-size: 0.6875rem;
-				font-weight: 700;
-				letter-spacing: 0.08em;
-				padding: 0.125rem 0 0.125rem 0.5rem;
+				align-items: center;
+				color: var(--sb-muted);
+				display: inline-flex;
+				font-size: 0.8125rem;
+				font-weight: 500;
+				gap: 0.25rem;
+				min-height: 2.5rem;
+				padding: 0.375rem 0.125rem;
 				text-decoration: none;
-				text-transform: uppercase;
 			}
 			me:hover,
 			me:focus-visible {
 				color: var(--sb-text);
+			}
+			me:hover > span,
+			me:focus-visible > span {
 				text-decoration: underline;
 				text-underline-offset: 0.2em;
 			}
+			me > svg {
+				flex: 0 0 auto;
+				height: 0.875rem;
+				width: 0.875rem;
+			}
 		</style>
-		{ label }
+		<span>{ label }</span>
+		@viewicons.CaretRight()
 	</a>
 }
