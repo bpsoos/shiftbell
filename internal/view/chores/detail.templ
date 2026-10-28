@@ -6,6 +6,7 @@ import (
 	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+	"github.com/bpsoos/shiftbell/internal/view/resourcenavigation"
 )
 
 templ detailContent(t *Templater, model choreviewmodels.Detail, today time.Time) {
@@ -52,7 +53,9 @@ templ detailCard(t *Templater, chore choreapimodels.Representation, editHref str
 			me { background: var(--sb-surface); border: 2px solid var(--sb-frame); overflow-wrap: anywhere; padding: 1.5rem 1.25rem 1.25rem; position: relative; }
 			me::before { background: var(--sb-accent); content: ""; height: 3px; left: 0; position: absolute; right: 0; top: 0; }
 			me > [data-description] { line-height: 1.55; margin: 1.25rem 0 0; white-space: pre-wrap; }
-			me > [data-repeating] { border-left: 3px solid var(--sb-accent); color: var(--sb-muted-strong); display: inline-block; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; margin-top: 1.25rem; padding: 0.125rem 0 0.125rem 0.5rem; text-transform: uppercase; }
+			me > [data-repeating] {
+				margin-top: 1.25rem;
+			}
 			@media sm- {
 				me { padding: 1.25rem 1rem 1rem; }
 			}
@@ -67,7 +70,9 @@ templ detailCard(t *Templater, chore choreapimodels.Representation, editHref str
 			<p data-description>{ chore.Description }</p>
 		}
 		if chore.ScheduleId != nil {
-			<a data-repeating href={ scheduleHref(*chore.ScheduleId) } hx-get={ scheduleHref(*chore.ScheduleId) } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">View schedule</a>
+			<div data-repeating>
+				@resourcenavigation.Link(scheduleHref(*chore.ScheduleId), "View schedule")
+			</div>
 		}
 	</article>
 }

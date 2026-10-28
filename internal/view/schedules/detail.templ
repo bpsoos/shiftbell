@@ -6,6 +6,7 @@ import (
 	apimodels "github.com/bpsoos/shiftbell/internal/models/api/schedules"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
 	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+	"github.com/bpsoos/shiftbell/internal/view/resourcenavigation"
 )
 
 templ detail(model viewmodels.Detail) {
@@ -126,21 +127,23 @@ templ scheduleProperties(schedule apimodels.Representation) {
 	<dl>
 		<style>
 			me {
-				margin: 1.5rem 0 0;
+				margin: 1rem 0 0;
 			}
 			me > div {
+				align-items: baseline;
 				display: grid;
 				gap: 0.375rem 1rem;
 				grid-template-columns: 6.5rem minmax(0, 1fr);
-				padding-block: 0.625rem;
+				padding-block: 0.5rem;
 			}
 			me dt {
 				color: var(--sb-muted);
-				font-size: 0.875rem;
-				font-weight: 500;
+				font-size: 0.75rem;
+				font-weight: 400;
 			}
 			me dd {
 				font-size: 0.9375rem;
+				font-weight: 500;
 				margin: 0;
 			}
 			me a {
@@ -177,13 +180,13 @@ templ currentChore(schedule apimodels.Representation) {
 		<style>
 			me {
 				border-top: 1px solid var(--sb-border);
-				margin-top: 1rem;
-				padding-top: 1.125rem;
+				margin-top: 1.5rem;
+				padding-top: 1.25rem;
 			}
 			me > h2 {
-				font-size: 0.9375rem;
-				font-weight: 650;
-				margin: 0 0 0.5rem;
+				font-size: 1.0625rem;
+				font-weight: 700;
+				margin: 0 0 0.625rem;
 			}
 			me > p {
 				color: var(--sb-muted);
@@ -194,10 +197,7 @@ templ currentChore(schedule apimodels.Representation) {
 				color: var(--sb-text);
 			}
 			me > [data-view-chore] {
-				align-items: center;
-				display: inline-flex;
-				gap: 0.375rem;
-				margin-top: 1rem;
+				margin-top: 0.75rem;
 			}
 		</style>
 		<h2>Current chore</h2>
@@ -205,10 +205,9 @@ templ currentChore(schedule apimodels.Representation) {
 			if schedule.ActiveChoreDeadline != nil {
 				<p data-deadline>Due <time datetime={ schedule.ActiveChoreDeadline.Format(time.DateOnly) }>{ schedule.ActiveChoreDeadline.Format("Monday, 2 January 2006") }</time></p>
 			}
-			<a class="btn btn-outline-secondary" data-view-chore href={ href } hx-get={ href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">
-				<span>View chore</span>
-				@viewicons.CaretRight()
-			</a>
+			<div data-view-chore>
+				@resourcenavigation.Link(href, "View chore")
+			</div>
 		} else {
 			<p>No active chore.</p>
 		}
