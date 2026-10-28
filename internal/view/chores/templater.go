@@ -244,10 +244,8 @@ func (t *Templater) relativeDeadline(value string, today time.Time) string {
 		return fmt.Sprintf("%dd", days)
 	case days < 28:
 		return fmt.Sprintf("%dw", days/7)
-	case deadline.Year() == today.Year():
-		return deadline.Format("2 Jan")
 	default:
-		return deadline.Format("2 Jan 2006")
+		return deadline.Format("2006.01.02.")
 	}
 }
 
@@ -256,15 +254,11 @@ func (t *Templater) exactDeadline(value string) string {
 	if err != nil {
 		return value
 	}
-	return deadline.Format("Monday, 2 January 2006")
+	return deadline.Format("2006.01.02.")
 }
 
 func (t *Templater) deadlineAccessibleLabel(value string) string {
-	deadline, err := time.ParseInLocation(time.DateOnly, value, t.timezone)
-	if err != nil {
-		return "Due " + value
-	}
-	return "Due " + deadline.Format("2 January 2006")
+	return "Due " + t.exactDeadline(value)
 }
 
 func calendarDayDifference(deadline time.Time, today time.Time) int {

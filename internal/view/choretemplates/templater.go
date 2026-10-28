@@ -150,7 +150,7 @@ func (t *Templater) Error(
 }
 
 func (t *Templater) formatTime(value time.Time) string {
-	return value.In(t.appTimezone).Format("2 Jan 2006, 15:04 MST")
+	return value.In(t.appTimezone).Format("2006.01.02. 15:04")
 }
 
 func formControlClass(className string, errorMessage string) string {

@@ -1,6 +1,8 @@
 package choretemplates
 
 import (
+	"time"
+
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
 )
@@ -43,7 +45,6 @@ templ detailCard(t *Templater, model viewmodels.Detail) {
 			me::before { background: var(--sb-accent); content: ""; height: 3px; left: 0; position: absolute; right: 0; top: 0; }
 			me > [data-description] { margin: 0; }
 			me > [data-description][data-empty] { color: var(--sb-muted); }
-			me > [data-deactivated] { border-top: 1px solid var(--sb-border); color: var(--sb-muted); font-size: 0.8125rem; margin: 1rem 0 0; padding-top: 0.75rem; }
 			@media sm- {
 				me { padding: 1.25rem 1rem 1rem; }
 			}
@@ -55,10 +56,46 @@ templ detailCard(t *Templater, model viewmodels.Detail) {
 			<p data-description data-empty>No description.</p>
 		}
 		if model.ChoreTemplate.DeactivatedAt != nil {
-			<p data-deactivated>Deactivated { t.formatTime(*model.ChoreTemplate.DeactivatedAt) }</p>
+			@deactivationDetails(t, *model.ChoreTemplate.DeactivatedAt)
 		}
 		@templateScheduleCounts(model)
 	</article>
+}
+
+templ deactivationDetails(t *Templater, deactivatedAt time.Time) {
+	<dl data-deactivated>
+		<style>
+			me {
+				margin: 1rem 0 0;
+			}
+			me > div {
+				align-items: baseline;
+				display: grid;
+				gap: 0.375rem 1rem;
+				grid-template-columns: 6.5rem minmax(0, 1fr);
+				padding-block: 0.5rem;
+			}
+			me dt {
+				color: var(--sb-muted);
+				font-size: 0.75rem;
+				font-weight: 400;
+			}
+			me dd {
+				font-size: 0.9375rem;
+				font-weight: 500;
+				margin: 0;
+			}
+			@media sm- {
+				me > div {
+					grid-template-columns: 1fr;
+				}
+			}
+		</style>
+		<div>
+			<dt>Deactivated</dt>
+			<dd><time datetime={ deactivatedAt.Format(time.RFC3339) }>{ t.formatTime(deactivatedAt) }</time></dd>
+		</div>
+	</dl>
 }
 
 templ detailHeader(model viewmodels.Detail) {
@@ -80,12 +117,22 @@ templ detailHeader(model viewmodels.Detail) {
 				margin: 0;
 				min-width: 0;
 			}
+			me > [data-state] {
+				border: 1px solid var(--sb-border);
+				color: var(--sb-muted-strong);
+				flex: 0 0 auto;
+				font-size: 0.75rem;
+				font-weight: 650;
+				padding: 0.1875rem 0.5rem;
+			}
 			@media sm- {
 				me > h1 { font-size: 1.625rem; }
 			}
 		</style>
 		<h1 id="chore-template-heading">{ model.ChoreTemplate.Name }</h1>
-		if model.EditHref != "" || model.DeactivateHref != "" {
+		if model.ChoreTemplate.DeactivatedAt != nil {
+			<span data-state="deactivated">Deactivated</span>
+		} else if model.EditHref != "" || model.DeactivateHref != "" {
 			@detailActions(model.EditHref, model.DeactivateHref)
 		}
 	</div>

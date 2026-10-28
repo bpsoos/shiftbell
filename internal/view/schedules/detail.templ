@@ -9,7 +9,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/view/resourcenavigation"
 )
 
-templ detail(model viewmodels.Detail) {
+templ detail(t *Templater, model viewmodels.Detail) {
 	<section aria-labelledby="schedule-heading">
 		<style>
 			me {
@@ -47,11 +47,11 @@ templ detail(model viewmodels.Detail) {
 		if model.Notice != "" {
 			<p data-notice role="status">{ model.Notice }</p>
 		}
-		@scheduleCard(model.Schedule)
+		@scheduleCard(t, model.Schedule)
 	</section>
 }
 
-templ scheduleCard(schedule apimodels.Representation) {
+templ scheduleCard(t *Templater, schedule apimodels.Representation) {
 	<article data-schedule-detail>
 		<style>
 			me {
@@ -68,7 +68,7 @@ templ scheduleCard(schedule apimodels.Representation) {
 			}
 		</style>
 		@scheduleHeader(schedule)
-		@scheduleProperties(schedule)
+		@scheduleProperties(t, schedule)
 		@currentChore(schedule)
 	</article>
 }
@@ -114,7 +114,7 @@ templ scheduleHeader(schedule apimodels.Representation) {
 	</header>
 }
 
-templ scheduleProperties(schedule apimodels.Representation) {
+templ scheduleProperties(t *Templater, schedule apimodels.Representation) {
 	<dl>
 		<style>
 			me {
@@ -163,6 +163,12 @@ templ scheduleProperties(schedule apimodels.Representation) {
 				{ intervalLabel(schedule.IntervalDays) }
 			</dd>
 		</div>
+		if schedule.DeactivatedAt != nil {
+			<div data-deactivated>
+				<dt>Deactivated</dt>
+				<dd><time datetime={ schedule.DeactivatedAt.Format(time.RFC3339) }>{ t.formatTime(*schedule.DeactivatedAt) }</time></dd>
+			</div>
+		}
 	</dl>
 }
 
@@ -194,7 +200,7 @@ templ currentChore(schedule apimodels.Representation) {
 		<h2>Current chore</h2>
 		if href := schedule.Links.Href("active_chore"); href != "" {
 			if schedule.ActiveChoreDeadline != nil {
-				<p data-deadline>Due <time datetime={ schedule.ActiveChoreDeadline.Format(time.DateOnly) }>{ schedule.ActiveChoreDeadline.Format("Monday, 2 January 2006") }</time></p>
+				<p data-deadline>Due <time datetime={ schedule.ActiveChoreDeadline.Format(time.DateOnly) }>{ schedule.ActiveChoreDeadline.Format("2006.01.02.") }</time></p>
 			}
 			<div data-view-chore>
 				@resourcenavigation.Link(href, "View chore")

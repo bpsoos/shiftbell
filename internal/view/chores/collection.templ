@@ -289,7 +289,7 @@ templ choreSummaryContent(t *Templater, item choreviewmodels.CollectionItem, tod
 		}
 	</span>
 	if item.Status == choremodels.ChoreStatusCompleted && item.CompletedOn != nil {
-		<time datetime={ *item.CompletedOn }>{ "Completed " + *item.CompletedOn }</time>
+		<time datetime={ *item.CompletedOn }>{ "Completed " + t.exactDeadline(*item.CompletedOn) }</time>
 	} else {
 		<time
 			data-deadline-state={ t.deadlineState(item.Deadline, today) }

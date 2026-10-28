@@ -198,7 +198,7 @@ templ scheduleRow(schedule apimodels.Response) {
 				if schedule.DeactivatedAt != nil {
 					Deactivated
 				} else if schedule.ActiveChoreDeadline != nil {
-					Due <time datetime={ schedule.ActiveChoreDeadline.Format(time.DateOnly) }>{ schedule.ActiveChoreDeadline.Format("2 Jan 2006") }</time>
+					Due <time datetime={ schedule.ActiveChoreDeadline.Format(time.DateOnly) }>{ schedule.ActiveChoreDeadline.Format("2006.01.02.") }</time>
 				} else {
 					No active chore
 				}

@@ -36,7 +36,7 @@ func (t *Templater) Collection(
 }
 
 func (t *Templater) Detail(model viewmodels.Detail, fullPage bool) templ.Component {
-	return layouts.Frame("schedules", fullPage, t.appTimezone.String(), detail(model))
+	return layouts.Frame("schedules", fullPage, t.appTimezone.String(), detail(t, model))
 }
 
 func (t *Templater) Error(model viewmodels.Error, fullPage bool) templ.Component {
@@ -54,6 +54,10 @@ func (t *Templater) EditForm(model viewmodels.EditForm, fullPage bool) templ.Com
 
 func (t *Templater) ConfirmationDialog(model confirmationmodels.Dialog) templ.Component {
 	return confirmationview.Dialog(model)
+}
+
+func (t *Templater) formatTime(value time.Time) string {
+	return value.In(t.appTimezone).Format("2006.01.02. 15:04")
 }
 
 func intervalLabel(days int) string {
