@@ -64,8 +64,22 @@ templ detailCard(t *Templater, model viewmodels.Detail) {
 templ detailHeader(model viewmodels.Detail) {
 	<div data-detail-header>
 		<style>
-			me { align-items: flex-start; display: flex; gap: 1rem; justify-content: space-between; margin-bottom: 1rem; }
-			me > h1 { font-size: 1.875rem; letter-spacing: -0.035em; line-height: 1.1; margin: 0; }
+			me {
+				align-items: flex-start;
+				display: flex;
+				flex-wrap: wrap;
+				gap: 1rem;
+				justify-content: space-between;
+				margin-bottom: 1rem;
+			}
+			me > h1 {
+				flex: 1 1 15rem;
+				font-size: 1.875rem;
+				letter-spacing: -0.035em;
+				line-height: 1.1;
+				margin: 0;
+				min-width: 0;
+			}
 			@media sm- {
 				me > h1 { font-size: 1.625rem; }
 			}

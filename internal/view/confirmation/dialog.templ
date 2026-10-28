@@ -63,7 +63,19 @@ templ Dialog(model confirmationviewmodels.Dialog) {
 
 templ FrameStyles() {
 	<style>
-		me { background: var(--sb-surface); border: 2px solid var(--sb-frame); border-radius: var(--sb-radius-overlay); box-shadow: 5px 5px 0 var(--sb-depth); color: var(--sb-text); max-height: calc(100dvh - 2rem); max-width: calc(100% - 2rem); overflow: auto; padding: 0; width: 30rem; }
+		me {
+			background: var(--sb-surface);
+			border: 2px solid var(--sb-frame);
+			border-radius: var(--sb-radius-overlay);
+			box-shadow: 5px 5px 0 var(--sb-depth);
+			color: var(--sb-text);
+			max-height: calc(100dvh - 2rem);
+			max-width: calc(100% - 2rem);
+			overflow: auto;
+			overflow-wrap: anywhere;
+			padding: 0;
+			width: 30rem;
+		}
 		me::backdrop { background: rgb(0 0 0 / 0.58); }
 		@media xs- {
 			me { border: 0; border-radius: var(--sb-radius-overlay) var(--sb-radius-overlay) 0 0; border-top: 3px solid var(--sb-frame); box-shadow: 0 -3px 0 var(--sb-depth); margin: auto 0 0; max-height: calc(100dvh - 1rem); max-width: none; width: 100%; }
