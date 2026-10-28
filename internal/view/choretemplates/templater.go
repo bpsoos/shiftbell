@@ -31,7 +31,12 @@ func (t *Templater) Collection(
 	if fullPage && model.SearchOpen {
 		model.AutofocusSearch = true
 	}
-	return layouts.Frame("chore-templates", fullPage, collection(model))
+	return layouts.Frame(
+		"chore-templates",
+		fullPage,
+		t.appTimezone.String(),
+		collection(model),
+	)
 }
 
 func templateCollectionViewHref(filter models.ChoreTemplateFilter) string {
@@ -72,28 +77,43 @@ func (t *Templater) Picker(
 	model viewmodels.Picker,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chores", fullPage, picker(model))
+	return layouts.Frame("chores", fullPage, t.appTimezone.String(), picker(model))
 }
 
 func (t *Templater) Detail(
 	model viewmodels.Detail,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chore-templates", fullPage, detail(t, model))
+	return layouts.Frame(
+		"chore-templates",
+		fullPage,
+		t.appTimezone.String(),
+		detail(t, model),
+	)
 }
 
 func (t *Templater) EditForm(
 	model viewmodels.EditForm,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chore-templates", fullPage, editForm(model))
+	return layouts.Frame(
+		"chore-templates",
+		fullPage,
+		t.appTimezone.String(),
+		editForm(model),
+	)
 }
 
 func (t *Templater) CreateForm(
 	model viewmodels.CreateForm,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chore-templates", fullPage, createForm(model))
+	return layouts.Frame(
+		"chore-templates",
+		fullPage,
+		t.appTimezone.String(),
+		createForm(model),
+	)
 }
 
 func (t *Templater) ConfirmationDialog(
@@ -109,14 +129,24 @@ func (t *Templater) ScheduleList(
 	if model.Inline {
 		return scheduleList(model)
 	}
-	return layouts.Frame("chore-templates", fullPage, scheduleListPage(model))
+	return layouts.Frame(
+		"chore-templates",
+		fullPage,
+		t.appTimezone.String(),
+		scheduleListPage(model),
+	)
 }
 
 func (t *Templater) Error(
 	model viewmodels.Error,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chore-templates", fullPage, errorContent(model))
+	return layouts.Frame(
+		"chore-templates",
+		fullPage,
+		t.appTimezone.String(),
+		errorContent(model),
+	)
 }
 
 func (t *Templater) formatTime(value time.Time) string {

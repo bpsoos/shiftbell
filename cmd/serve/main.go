@@ -110,7 +110,9 @@ func execute() int {
 
 	router := routing.NewRouter(&routing.RouterDeps{
 		ScheduleHandler: schedulesendpoint.NewHandler(&schedulesendpoint.HandlerDeps{
-			View: schedulesview.NewTemplater(),
+			View: schedulesview.NewTemplater(
+				schedulesview.Config{AppTimezone: appConfig.AppTimezone},
+			),
 			Service: schedulesservice.NewService(
 				&schedulesservice.Deps{
 					Persister: schedulespersistence.NewPersister(

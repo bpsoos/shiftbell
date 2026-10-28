@@ -2,6 +2,7 @@ package schedules
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/a-h/templ"
 	apimodels "github.com/bpsoos/shiftbell/internal/models/api/schedules"
@@ -12,10 +13,16 @@ import (
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
 
-type Templater struct{}
+type Config struct {
+	AppTimezone *time.Location
+}
 
-func NewTemplater() *Templater {
-	return &Templater{}
+type Templater struct {
+	appTimezone *time.Location
+}
+
+func NewTemplater(config Config) *Templater {
+	return &Templater{appTimezone: config.AppTimezone}
 }
 
 func (t *Templater) Collection(
@@ -25,19 +32,24 @@ func (t *Templater) Collection(
 	if fullPage && model.SearchOpen {
 		model.AutofocusSearch = true
 	}
-	return layouts.Frame("schedules", fullPage, collection(model))
+	return layouts.Frame("schedules", fullPage, t.appTimezone.String(), collection(model))
 }
 
 func (t *Templater) Detail(model viewmodels.Detail, fullPage bool) templ.Component {
-	return layouts.Frame("schedules", fullPage, detail(model))
+	return layouts.Frame("schedules", fullPage, t.appTimezone.String(), detail(model))
 }
 
 func (t *Templater) Error(model viewmodels.Error, fullPage bool) templ.Component {
-	return layouts.Frame("schedules", fullPage, errorContent(model))
+	return layouts.Frame(
+		"schedules",
+		fullPage,
+		t.appTimezone.String(),
+		errorContent(model),
+	)
 }
 
 func (t *Templater) EditForm(model viewmodels.EditForm, fullPage bool) templ.Component {
-	return layouts.Frame("schedules", fullPage, editForm(model))
+	return layouts.Frame("schedules", fullPage, t.appTimezone.String(), editForm(model))
 }
 
 func (t *Templater) ConfirmationDialog(model confirmationmodels.Dialog) templ.Component {

@@ -1,14 +1,14 @@
 package layouts
 
-templ Frame(active string, fullPage bool, content templ.Component) {
+templ Frame(active string, fullPage bool, timezone string, content templ.Component) {
 	if fullPage {
-		@page(active, content)
+		@page(active, timezone, content)
 	} else {
 		@main(content)
 	}
 }
 
-templ page(active string, content templ.Component) {
+templ page(active string, timezone string, content templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -20,21 +20,33 @@ templ page(active string, content templ.Component) {
 		</head>
 		<body>
 			<style>
+				me {
+					display: flex;
+					flex-direction: column;
+					min-height: 100dvh;
+				}
 				me .shiftbell-skip-link { background: var(--sb-surface); border: 1px solid var(--sb-frame); border-radius: var(--sb-radius-overlay); box-shadow: 3px 3px 0 var(--sb-depth); color: var(--sb-text); left: 0.5rem; padding: 0.5rem 0.75rem; position: fixed; top: 0.5rem; transform: translateY(calc(-100% - 1rem)); z-index: 1100; }
 				me .shiftbell-skip-link:focus { box-shadow: 3px 3px 0 var(--sb-depth); transform: translateY(0); }
-				me #main { padding-bottom: 3.5rem; padding-top: 1.75rem; }
+				me #main {
+					flex: 1;
+					padding-bottom: 1rem;
+					padding-top: 1.75rem;
+				}
 				me #main:focus { outline: none; }
 				me #main.htmx-swapping { opacity: 0.45; }
 				@media (prefers-reduced-motion: no-preference) {
 					me .shiftbell-skip-link, me #main { transition: opacity 150ms ease, transform 150ms ease; }
 				}
 				@media xs- {
-					me #main { padding-bottom: 2.5rem; padding-top: 1.25rem; }
+					me #main {
+						padding-top: 1.25rem;
+					}
 				}
 			</style>
 			<a class="shiftbell-skip-link" href="#main">Skip to content</a>
 			@nav(active)
 			@main(content)
+			@applicationFooter(timezone)
 			<div id="dialog-root"></div>
 		</body>
 	</html>

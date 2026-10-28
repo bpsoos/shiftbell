@@ -1,0 +1,19 @@
+package layouts
+
+templ applicationFooter(timezone string) {
+	<footer class="container" data-app-footer>
+		<style>
+			me {
+				color: var(--sb-muted);
+				font-size: 0.75rem;
+				margin-top: 1rem;
+				padding-block: 0.75rem 1.5rem;
+				text-align: center;
+			}
+			me > p {
+				margin: 0;
+			}
+		</style>
+		<p>Dates use { timezone } timezone.</p>
+	</footer>
+}

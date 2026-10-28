@@ -40,7 +40,12 @@ func (t *Templater) Collection(
 	if fullPage && model.SearchOpen {
 		model.AutofocusSearch = true
 	}
-	return layouts.Frame("chores", fullPage, collectionContent(t, model, today))
+	return layouts.Frame(
+		"chores",
+		fullPage,
+		t.timezone.String(),
+		collectionContent(t, model, today),
+	)
 }
 
 func choreCollectionViewHref(status choremodels.ChoreStatus) string {
@@ -69,14 +74,19 @@ func (t *Templater) Detail(
 	fullPage bool,
 ) templ.Component {
 	today := t.today()
-	return layouts.Frame("chores", fullPage, detailContent(t, model, today))
+	return layouts.Frame(
+		"chores",
+		fullPage,
+		t.timezone.String(),
+		detailContent(t, model, today),
+	)
 }
 
 func (t *Templater) Creation(
 	model choreviewmodels.Creation,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chores", fullPage, creationContent(model))
+	return layouts.Frame("chores", fullPage, t.timezone.String(), creationContent(model))
 }
 
 func (t *Templater) ManualOneOffForm(
@@ -86,7 +96,12 @@ func (t *Templater) ManualOneOffForm(
 	if form.NeedsDefaultDeadline() {
 		form.Deadline.Value = t.localDate()
 	}
-	return layouts.Frame("chores", fullPage, manualOneOffFormContent(form))
+	return layouts.Frame(
+		"chores",
+		fullPage,
+		t.timezone.String(),
+		manualOneOffFormContent(form),
+	)
 }
 
 func (t *Templater) TemplateOneOffForm(
@@ -96,7 +111,12 @@ func (t *Templater) TemplateOneOffForm(
 	if form.NeedsDefaultDeadline() {
 		form.Deadline.Value = t.localDate()
 	}
-	return layouts.Frame("chores", fullPage, templateOneOffFormContent(form))
+	return layouts.Frame(
+		"chores",
+		fullPage,
+		t.timezone.String(),
+		templateOneOffFormContent(form),
+	)
 }
 
 func (t *Templater) ScheduledForm(
@@ -106,21 +126,26 @@ func (t *Templater) ScheduledForm(
 	if !form.Submitted && form.Deadline.Value == "" {
 		form.Deadline.Value = t.localDate()
 	}
-	return layouts.Frame("chores", fullPage, scheduledFormContent(form))
+	return layouts.Frame(
+		"chores",
+		fullPage,
+		t.timezone.String(),
+		scheduledFormContent(form),
+	)
 }
 
 func (t *Templater) EditForm(
 	form choreviewmodels.EditForm,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chores", fullPage, editFormContent(form))
+	return layouts.Frame("chores", fullPage, t.timezone.String(), editFormContent(form))
 }
 
 func (t *Templater) Error(
 	model choreviewmodels.Error,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chores", fullPage, errorContent(model))
+	return layouts.Frame("chores", fullPage, t.timezone.String(), errorContent(model))
 }
 
 func (t *Templater) CompletionDialog(
@@ -139,7 +164,12 @@ func (t *Templater) CompletionCorrectionForm(
 	fullPage bool,
 ) templ.Component {
 	form.CompletedOnMax = t.localDate()
-	return layouts.Frame("chores", fullPage, completionCorrectionForm(form))
+	return layouts.Frame(
+		"chores",
+		fullPage,
+		t.timezone.String(),
+		completionCorrectionForm(form),
+	)
 }
 
 func (t *Templater) ConfirmationDialog(
