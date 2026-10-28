@@ -24,3 +24,13 @@ type Error struct {
 	Links   api.Relations
 	Actions api.Relations
 }
+
+type EditForm struct {
+	ActionHref        string
+	CancelHref        string
+	Name              string
+	IntervalDays      string
+	NameError         string
+	IntervalDaysError string
+	SummaryError      string
+}

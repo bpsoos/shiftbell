@@ -1,0 +1,93 @@
+package schedules
+
+import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
+
+templ editForm(model viewmodels.EditForm) {
+	@schedulePanel(model.CancelHref, "Schedule", "edit-schedule-heading", "Edit schedule") {
+		<p data-help>Interval changes apply to future chores.</p>
+		<form action={ model.ActionHref } method="post" hx-patch={ model.ActionHref } hx-target="#main" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']" aria-labelledby="edit-schedule-heading">
+			<style>
+				me > [data-field] {
+					margin-bottom: 1rem;
+				}
+				me .form-label {
+					font-size: 0.875rem;
+					font-weight: 650;
+				}
+				me .form-control {
+					background-color: var(--sb-input);
+					border-color: var(--sb-control-border);
+					border-radius: var(--sb-radius-control);
+					color: var(--sb-text);
+				}
+				me .form-control:focus {
+					border-color: var(--sb-accent);
+					box-shadow: none;
+					outline: 2px solid var(--sb-focus);
+					outline-offset: 2px;
+				}
+				me .form-control[aria-invalid="true"] {
+					border-color: var(--sb-danger);
+				}
+				me [data-field-error] {
+					color: var(--sb-danger);
+					font-size: 0.875rem;
+					margin-top: 0.25rem;
+				}
+			</style>
+			if model.SummaryError != "" {
+				<p class="alert alert-danger" role="alert">{ model.SummaryError }</p>
+			}
+			<div data-field>
+				<label class="form-label" for="edit-schedule-name">Name</label>
+				<input class="form-control" type="text" id="edit-schedule-name" name="name" value={ model.Name } maxlength="200" required
+					if model.IntervalDaysError == "" {
+						autofocus
+					}
+					if model.NameError != "" {
+						aria-invalid="true"
+						aria-describedby="edit-schedule-name-error"
+					}
+				/>
+				@editFieldError("edit-schedule-name-error", model.NameError)
+			</div>
+			<div data-field>
+				<label class="form-label" for="edit-schedule-interval">Interval (days)</label>
+				<input class="form-control" type="number" id="edit-schedule-interval" name="interval_days" value={ model.IntervalDays } min="1" max="3650" step="1" required aria-describedby="edit-schedule-interval-help edit-schedule-interval-error"
+					if model.IntervalDaysError != "" {
+						aria-invalid="true"
+						autofocus
+					}
+				/>
+				<div class="form-text" id="edit-schedule-interval-help">Between 1 and 3650 days.</div>
+				@editFieldError("edit-schedule-interval-error", model.IntervalDaysError)
+			</div>
+			@editFormActions(model.CancelHref)
+		</form>
+	}
+}
+
+templ editFieldError(id string, message string) {
+	<div id={ id }>
+		if message != "" {
+			<div data-field-error role="alert">{ message }</div>
+		}
+	</div>
+}
+
+templ editFormActions(cancelHref string) {
+	<div>
+		<style>
+			me {
+				border-top: 1px solid var(--sb-border);
+				display: flex;
+				gap: 0.75rem;
+				justify-content: flex-end;
+				margin-top: 1.25rem;
+				padding-top: 1rem;
+			}
+		</style>
+		<a class="btn btn-secondary" href={ cancelHref } hx-get={ cancelHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">Cancel</a>
+		<button class="btn btn-primary" type="submit">Save changes</button>
+	</div>
+}

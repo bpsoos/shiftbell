@@ -54,14 +54,9 @@ func deactivationDialogViewModel(
 	errorMessage string,
 ) confirmationviewmodels.Dialog {
 	return confirmationviewmodels.Dialog{
-		Heading: "Deactivate template?",
-		Prompt:  "Deactivate",
-		Name:    choreTemplate.Name,
-		Supporting: []string{
-			"It will no longer appear in template selectors.",
-			"Existing chores are not changed.",
-			"This cannot be reversed.",
-		},
+		Heading:      "Deactivate template?",
+		Prompt:       "Deactivate",
+		Name:         choreTemplate.Name,
 		ActionHref:   newRepresentation(choreTemplate).Actions.Href("deactivate"),
 		ActionMethod: "put",
 		ActionLabel:  "Deactivate permanently",

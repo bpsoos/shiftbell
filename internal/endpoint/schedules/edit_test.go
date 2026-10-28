@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"time"
 
@@ -35,6 +36,19 @@ var _ = Describe("Edit", func() {
 		)
 		app = echo.New()
 		app.PATCH("/schedules/:id", handler.Edit)
+	})
+
+	It("does not edit for an unsupported representation", func(ctx SpecContext) {
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodPatch,
+			"/schedules/42",
+			strings.NewReader(`{"name":"Kitchen","interval_days":7}`),
+		)
+		request.Header.Set("Accept", "image/png")
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusNotAcceptable))
 	})
 
 	DescribeTable(
@@ -84,33 +98,36 @@ var _ = Describe("Edit", func() {
 		Entry("HTMX fragment", "true", false),
 	)
 
-	It("renders a name conflict with its retry action as HTML", func(ctx SpecContext) {
-		service.EXPECT().
-			Edit(ctx, &models.EditScheduleParams{Id: 42, Name: "Taken", IntervalDays: 7}).
-			Return(nil, models.ErrNameConflict).
-			Once()
-		view.EXPECT().Error(viewmodels.Error{
-			Message: models.ErrNameConflict.Error(),
-			Links: api.Relations{
-				{Rel: "collection", Href: "/schedules"},
-			},
-			Actions: api.Relations{{Rel: "edit", Href: "/schedules/42"}},
-		}, false).Return(templ.Raw("edit conflict")).Once()
-		request := httptest.NewRequestWithContext(
-			ctx,
-			http.MethodPatch,
-			"/schedules/42",
-			strings.NewReader(`{"name":"Taken","interval_days":7}`),
-		)
-		request.Header.Set("Accept", "text/html")
-		request.Header.Set("HX-Request", "true")
-		response := httptest.NewRecorder()
+	It(
+		"renders a name conflict as an HTML form even for JSON input",
+		func(ctx SpecContext) {
+			service.EXPECT().
+				Edit(ctx, &models.EditScheduleParams{Id: 42, Name: "Taken", IntervalDays: 7}).
+				Return(nil, models.ErrNameConflict).
+				Once()
+			view.EXPECT().EditForm(viewmodels.EditForm{
+				ActionHref:   "/schedules/42",
+				CancelHref:   "/schedules/42",
+				Name:         "Taken",
+				IntervalDays: "7",
+				NameError:    "An active schedule already uses this name.",
+			}, false).Return(templ.Raw("edit conflict")).Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPatch,
+				"/schedules/42",
+				strings.NewReader(`{"name":"Taken","interval_days":7}`),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
 
-		app.ServeHTTP(response, request)
+			app.ServeHTTP(response, request)
 
-		Expect(response.Code).To(Equal(http.StatusConflict))
-		Expect(response.Body.String()).To(Equal("edit conflict"))
-	})
+			Expect(response.Code).To(Equal(http.StatusConflict))
+			Expect(response.Body.String()).To(Equal("edit conflict"))
+		},
+	)
 
 	It(
 		"edits the name and interval without accepting a replacement template",
@@ -279,4 +296,294 @@ var _ = Describe("Edit", func() {
 			response.Body.Bytes(),
 		).To(MatchJSON(`{"error":"invalid schedule id","_links":[{"rel":"collection","href":"/schedules"}]}`))
 	}, Entry("zero", "0"), Entry("negative", "-1"), Entry("non-numeric", "invalid"))
+
+	Context("request decoding", func() {
+		DescribeTable(
+			"decodes input independently of JSON response negotiation",
+			func(ctx SpecContext, contentType, body string) {
+				service.EXPECT().
+					Edit(ctx, &models.EditScheduleParams{Id: 42, Name: "Kitchen", IntervalDays: 14}).
+					Return(&models.Schedule{Id: 42, Name: "Kitchen", IntervalDays: 14}, nil).
+					Once()
+				request := httptest.NewRequestWithContext(
+					ctx,
+					http.MethodPatch,
+					"/schedules/42",
+					strings.NewReader(body),
+				)
+				request.Header.Set("Content-Type", contentType)
+				request.Header.Set("Accept", hypermedia.MediaType)
+				response := httptest.NewRecorder()
+				app.ServeHTTP(response, request)
+				Expect(response.Code).To(Equal(http.StatusOK))
+				Expect(
+					response.Header().Get("Content-Type"),
+				).To(Equal(hypermedia.MediaType))
+				Expect(response.Header().Get("HX-Replace-Url")).To(BeEmpty())
+				Expect(response.Body.String()).To(ContainSubstring(`"name":"Kitchen"`))
+			},
+			Entry(
+				"JSON",
+				echo.MIMEApplicationJSON,
+				`{"name":"Kitchen","interval_days":14}`,
+			),
+			Entry(
+				"vendor JSON",
+				hypermedia.MediaType,
+				`{"name":"Kitchen","interval_days":14}`,
+			),
+			Entry(
+				"legacy missing content type",
+				"",
+				`{"name":"Kitchen","interval_days":14}`,
+			),
+			Entry("form", echo.MIMEApplicationForm, "name=Kitchen&interval_days=14"),
+			Entry(
+				"form with charset",
+				echo.MIMEApplicationForm+"; charset=UTF-8",
+				"name=Kitchen&interval_days=14",
+			),
+		)
+
+		DescribeTable(
+			"renders HTML feedback independently of input encoding",
+			func(ctx SpecContext, contentType, body string) {
+				service.EXPECT().
+					Edit(ctx, &models.EditScheduleParams{Id: 42, Name: "Kitchen", IntervalDays: 14}).
+					Return(nil, models.ErrNameConflict).
+					Once()
+				view.EXPECT().EditForm(viewmodels.EditForm{
+					ActionHref:   "/schedules/42",
+					CancelHref:   "/schedules/42",
+					Name:         "Kitchen",
+					IntervalDays: "14",
+					NameError:    "An active schedule already uses this name.",
+				}, false).Return(templ.Raw("inline feedback")).Once()
+				request := httptest.NewRequestWithContext(
+					ctx,
+					http.MethodPatch,
+					"/schedules/42",
+					strings.NewReader(body),
+				)
+				request.Header.Set("Content-Type", contentType)
+				request.Header.Set("Accept", "text/html")
+				request.Header.Set("HX-Request", "true")
+				response := httptest.NewRecorder()
+				app.ServeHTTP(response, request)
+				Expect(response.Code).To(Equal(http.StatusConflict))
+				Expect(response.Body.String()).To(Equal("inline feedback"))
+			},
+			Entry(
+				"JSON",
+				echo.MIMEApplicationJSON,
+				`{"name":"Kitchen","interval_days":14}`,
+			),
+			Entry("form", echo.MIMEApplicationForm, "name=Kitchen&interval_days=14"),
+		)
+
+		It(
+			"renders invalid form intervals as JSON when requested",
+			func(ctx SpecContext) {
+				request := httptest.NewRequestWithContext(
+					ctx,
+					http.MethodPatch,
+					"/schedules/42",
+					strings.NewReader("name=Kitchen&interval_days=weekly"),
+				)
+				request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+				request.Header.Set("Accept", hypermedia.MediaType)
+				response := httptest.NewRecorder()
+				app.ServeHTTP(response, request)
+				Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+				Expect(
+					response.Body.String(),
+				).To(ContainSubstring(`"error":"invalid interval"`))
+			},
+		)
+
+		DescribeTable(
+			"rejects unsupported input encodings without editing",
+			func(ctx SpecContext, contentType string) {
+				request := httptest.NewRequestWithContext(
+					ctx,
+					http.MethodPatch,
+					"/schedules/42",
+					strings.NewReader(`{"name":"Kitchen","interval_days":14}`),
+				)
+				request.Header.Set("Content-Type", contentType)
+				request.Header.Set("Accept", hypermedia.MediaType)
+				response := httptest.NewRecorder()
+				app.ServeHTTP(response, request)
+				Expect(response.Code).To(Equal(http.StatusUnsupportedMediaType))
+				Expect(
+					response.Body.String(),
+				).To(ContainSubstring(`"error":"unsupported media type"`))
+			},
+			Entry("text", "text/plain"),
+			Entry("malformed", "application/json; charset"),
+			Entry("form-like", echo.MIMEApplicationForm+"-invalid"),
+		)
+	})
+
+	Context("form submissions", func() {
+		var request *http.Request
+		BeforeEach(func(ctx SpecContext) {
+			request = httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPatch,
+				"/schedules/42",
+				strings.NewReader(url.Values{
+					"name": {
+						" Kitchen ",
+					},
+					"interval_days":     {"14"},
+					"chore_template_id": {"99"},
+				}.Encode()),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+			request.Header.Set("HX-Request", "true")
+		})
+
+		It(
+			"saves editable fields and replaces the edit URL with the detail URL",
+			func(ctx SpecContext) {
+				service.EXPECT().
+					Edit(request.Context(), &models.EditScheduleParams{Id: 42, Name: " Kitchen ", IntervalDays: 14}).
+					Return(&models.Schedule{Id: 42, Name: "Kitchen", IntervalDays: 14, ChoreTemplateId: 7}, nil).
+					Once()
+				view.EXPECT().Detail(viewmodels.Detail{Schedule: apimodels.Representation{
+					Response: apimodels.Response{
+						Id:              42,
+						Name:            "Kitchen",
+						IntervalDays:    14,
+						ChoreTemplateId: 7,
+						Links: api.Relations{
+							{
+								Rel:  "self",
+								Href: "/schedules/42",
+							},
+							{Rel: "collection", Href: "/schedules"},
+							{Rel: "chore_template", Href: "/chore-templates/7"},
+						},
+					},
+					Actions: api.Relations{
+						{Rel: "edit", Href: "/schedules/42"},
+						{Rel: "deactivate", Href: "/schedules/42/deactivation"},
+					},
+				}, Notice: "Schedule updated."}, false).Return(templ.Raw("saved")).Once()
+				response := httptest.NewRecorder()
+				app.ServeHTTP(response, request)
+				Expect(response.Code).To(Equal(http.StatusOK))
+				Expect(response.Header().Get("HX-Replace-Url")).To(Equal("/schedules/42"))
+				Expect(response.Body.String()).To(Equal("saved"))
+			},
+		)
+
+		DescribeTable(
+			"preserves submitted values on validation and storage failures",
+			func(ctx SpecContext, err error, status int, nameError, intervalError, summary string) {
+				service.EXPECT().
+					Edit(request.Context(), &models.EditScheduleParams{Id: 42, Name: " Kitchen ", IntervalDays: 14}).
+					Return(nil, err).
+					Once()
+				view.EXPECT().EditForm(viewmodels.EditForm{
+					ActionHref:        "/schedules/42",
+					CancelHref:        "/schedules/42",
+					Name:              " Kitchen ",
+					IntervalDays:      "14",
+					NameError:         nameError,
+					IntervalDaysError: intervalError,
+					SummaryError:      summary,
+				}, false).Return(templ.Raw("feedback")).Once()
+				response := httptest.NewRecorder()
+				app.ServeHTTP(response, request)
+				Expect(response.Code).To(Equal(status))
+				Expect(response.Header().Get("HX-Replace-Url")).To(BeEmpty())
+				Expect(response.Body.String()).To(Equal("feedback"))
+			},
+			Entry(
+				"name conflict",
+				models.ErrNameConflict,
+				409,
+				"An active schedule already uses this name.",
+				"",
+				"",
+			),
+			Entry(
+				"invalid name",
+				validationerrors.ErrInvalidName,
+				422,
+				"Enter a name between 1 and 200 characters.",
+				"",
+				"",
+			),
+			Entry(
+				"invalid interval",
+				validationerrors.ErrInvalidInterval,
+				422,
+				"",
+				"Enter a whole number between 1 and 3650.",
+				"",
+			),
+			Entry(
+				"storage failure",
+				errors.New("storage"),
+				500,
+				"",
+				"",
+				"The schedule could not be updated. Try again.",
+			),
+		)
+
+		DescribeTable(
+			"rejects non-integer intervals without mutating",
+			func(ctx SpecContext, interval string) {
+				request = httptest.NewRequestWithContext(
+					ctx,
+					http.MethodPatch,
+					"/schedules/42",
+					strings.NewReader(url.Values{
+						"name": {"Kitchen"}, "interval_days": {interval},
+					}.Encode()),
+				)
+				request.Header.Set("Accept", "text/html")
+				request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+				request.Header.Set("HX-Request", "true")
+				view.EXPECT().EditForm(viewmodels.EditForm{
+					ActionHref:        "/schedules/42",
+					CancelHref:        "/schedules/42",
+					Name:              "Kitchen",
+					IntervalDays:      interval,
+					IntervalDaysError: "Enter a whole number between 1 and 3650.",
+				}, false).Return(templ.Raw("interval error")).Once()
+				response := httptest.NewRecorder()
+				app.ServeHTTP(response, request)
+				Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+			},
+			Entry("empty", ""),
+			Entry("fraction", "1.5"),
+			Entry("text", "weekly"),
+			Entry("overflow", "999999999999999999999999"),
+		)
+
+		DescribeTable(
+			"rejects schedules that are no longer editable",
+			func(ctx SpecContext, err error, status int) {
+				service.EXPECT().
+					Edit(request.Context(), &models.EditScheduleParams{Id: 42, Name: " Kitchen ", IntervalDays: 14}).
+					Return(nil, err).
+					Once()
+				view.EXPECT().
+					Error(viewmodels.Error{Message: err.Error(), Links: api.Relations{{Rel: "collection", Href: "/schedules"}}}, false).
+					Return(templ.Raw("unavailable")).
+					Once()
+				response := httptest.NewRecorder()
+				app.ServeHTTP(response, request)
+				Expect(response.Code).To(Equal(status))
+			},
+			Entry("deactivated", models.ErrInactive, 422),
+			Entry("missing", models.ErrNotFound, 404),
+		)
+	})
 })

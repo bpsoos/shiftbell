@@ -115,6 +115,8 @@ templ scheduleHeader(schedule apimodels.Representation) {
 			<h1 id="schedule-heading">{ schedule.Name }</h1>
 			if schedule.DeactivatedAt != nil {
 				<span data-state="deactivated">Deactivated</span>
+			} else {
+				@scheduleActions(schedule)
 			}
 		</div>
 	</header>

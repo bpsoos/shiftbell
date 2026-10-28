@@ -11,6 +11,8 @@ type ScheduleHandler interface {
 	Get(*echo.Context) error
 	Edit(*echo.Context) error
 	Deactivate(*echo.Context) error
+	EditForm(*echo.Context) error
+	ConfirmDeactivation(*echo.Context) error
 }
 
 type ChoreTemplateHandler interface {

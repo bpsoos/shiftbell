@@ -6,7 +6,9 @@ import (
 	"github.com/a-h/templ"
 	apimodels "github.com/bpsoos/shiftbell/internal/models/api/schedules"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
+	confirmationmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
+	confirmationview "github.com/bpsoos/shiftbell/internal/view/confirmation"
 	"github.com/bpsoos/shiftbell/internal/view/layouts"
 )
 
@@ -30,8 +32,16 @@ func (t *Templater) Detail(model viewmodels.Detail, fullPage bool) templ.Compone
 	return layouts.Frame("schedules", fullPage, detail(model))
 }
 
-func (t *Templater) Error(_ viewmodels.Error, fullPage bool) templ.Component {
-	return layouts.Frame("schedules", fullPage, templ.Raw(""))
+func (t *Templater) Error(model viewmodels.Error, fullPage bool) templ.Component {
+	return layouts.Frame("schedules", fullPage, errorContent(model))
+}
+
+func (t *Templater) EditForm(model viewmodels.EditForm, fullPage bool) templ.Component {
+	return layouts.Frame("schedules", fullPage, editForm(model))
+}
+
+func (t *Templater) ConfirmationDialog(model confirmationmodels.Dialog) templ.Component {
+	return confirmationview.Dialog(model)
 }
 
 func intervalLabel(days int) string {

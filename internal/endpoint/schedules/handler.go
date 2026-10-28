@@ -5,6 +5,7 @@ import (
 
 	"github.com/a-h/templ"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
+	confirmationmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
 )
 
@@ -29,6 +30,8 @@ type View interface {
 	Collection(viewmodels.Collection, bool) templ.Component
 	Detail(viewmodels.Detail, bool) templ.Component
 	Error(viewmodels.Error, bool) templ.Component
+	EditForm(viewmodels.EditForm, bool) templ.Component
+	ConfirmationDialog(confirmationmodels.Dialog) templ.Component
 }
 
 func NewHandler(deps *HandlerDeps) *Handler {

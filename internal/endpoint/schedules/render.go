@@ -95,3 +95,12 @@ func (h *Handler) renderBrowseFeedback(
 func fullPage(ctx *echo.Context) bool {
 	return ctx.Request().Header.Get("HX-Request") != "true"
 }
+
+func supported(ctx *echo.Context) bool {
+	return hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationUnsupported
+}
+
+func acceptsHTMXHTML(ctx *echo.Context) bool {
+	return !fullPage(ctx) &&
+		hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML
+}

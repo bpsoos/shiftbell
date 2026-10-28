@@ -238,6 +238,7 @@
 	});
 
 	document.addEventListener("choreCompleted", closeDialog);
+	document.addEventListener("scheduleDeactivated", closeDialog);
 
 	window.addEventListener("popstate", syncNavigation);
 	if (document.readyState === "loading") {

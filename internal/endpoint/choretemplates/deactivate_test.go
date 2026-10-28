@@ -88,14 +88,9 @@ var _ = Describe("Deactivate chore template", func() {
 			}, nil).Once()
 			view := NewMockView(GinkgoT())
 			view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{
-				Heading: "Deactivate template?",
-				Prompt:  "Deactivate",
-				Name:    "Laundry",
-				Supporting: []string{
-					"It will no longer appear in template selectors.",
-					"Existing chores are not changed.",
-					"This cannot be reversed.",
-				},
+				Heading:      "Deactivate template?",
+				Prompt:       "Deactivate",
+				Name:         "Laundry",
 				ActionHref:   "/chore-templates/8/deactivation",
 				ActionMethod: "put",
 				ActionLabel:  "Deactivate permanently",

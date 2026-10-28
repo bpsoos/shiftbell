@@ -1,10 +1,10 @@
 package schedules
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
+	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
@@ -12,12 +12,10 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-type editRequest struct {
-	Name         string `json:"name"`
-	IntervalDays int    `json:"interval_days"`
-}
-
 func (h *Handler) Edit(ctx *echo.Context) error {
+	if !supported(ctx) {
+		return hypermedia.NotAcceptable(ctx)
+	}
 	id, err := parseScheduleID(ctx)
 	if err != nil {
 		return h.renderError(
@@ -26,26 +24,17 @@ func (h *Handler) Edit(ctx *echo.Context) error {
 			errorResponse{Error: err.Error(), Links: collectionLink()},
 		)
 	}
-	var request editRequest
-	if err := json.NewDecoder(ctx.Request().Body).Decode(&request); err != nil {
-		return h.renderError(
-			ctx,
-			http.StatusBadRequest,
-			editErrorResponse(id, "invalid request body"),
-		)
+	request, err := parseEditRequest(ctx)
+	if err != nil {
+		return h.renderEditRequestError(ctx, id, request, err)
 	}
 	schedule, err := h.service.Edit(ctx.Request().Context(), &models.EditScheduleParams{
 		Id: id, Name: request.Name, IntervalDays: request.IntervalDays,
 	})
 	if err != nil {
-		return h.renderEditError(ctx, id, err)
+		return h.renderEditFailure(ctx, id, request, err)
 	}
-	return h.renderDetail(
-		ctx,
-		http.StatusOK,
-		newRepresentation(schedule),
-		"Schedule updated.",
-	)
+	return h.renderEditedSchedule(ctx, schedule)
 }
 
 func (h *Handler) renderEditError(ctx *echo.Context, id int, err error) error {

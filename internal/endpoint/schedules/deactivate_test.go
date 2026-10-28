@@ -13,6 +13,7 @@ import (
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	apimodels "github.com/bpsoos/shiftbell/internal/models/api/schedules"
 	models "github.com/bpsoos/shiftbell/internal/models/schedules"
+	confirmationmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
@@ -62,7 +63,7 @@ var _ = Describe("Deactivate", func() {
 					},
 				},
 				Actions: api.Relations{},
-			}, Notice: "Schedule permanently deactivated."}, fullPage).Return(templ.Raw("deactivated schedule")).Once()
+			}, Notice: "Schedule deactivated."}, fullPage).Return(templ.Raw("deactivated schedule")).Once()
 			request := httptest.NewRequestWithContext(
 				ctx,
 				http.MethodPut,
@@ -84,6 +85,92 @@ var _ = Describe("Deactivate", func() {
 		Entry("full page", "", true),
 		Entry("HTMX fragment", "true", false),
 	)
+
+	It(
+		"retargets a confirmed deactivation to the read-only detail and closes the dialog",
+		func(ctx SpecContext) {
+			now := time.Now()
+			service.EXPECT().
+				Deactivate(ctx, 42).
+				Return(&models.Schedule{Id: 42, DeactivatedAt: &now}, nil).
+				Once()
+			view.EXPECT().Detail(viewmodels.Detail{Schedule: apimodels.Representation{
+				Response: apimodels.Response{
+					Id:            42,
+					DeactivatedAt: &now,
+					Links: api.Relations{
+						{
+							Rel:  "self",
+							Href: "/schedules/42",
+						},
+						{Rel: "collection", Href: "/schedules"},
+						{Rel: "chore_template", Href: "/chore-templates/0"},
+					},
+				},
+				Actions: api.Relations{},
+			}, Notice: "Schedule deactivated."}, false).Return(templ.Raw("read-only detail")).Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPut,
+				"/schedules/42/deactivation",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Header().Get("HX-Retarget")).To(Equal("#main"))
+			Expect(response.Header().Get("HX-Reswap")).To(Equal("outerHTML"))
+			Expect(response.Header().Get("HX-Replace-Url")).To(Equal("/schedules/42"))
+			Expect(response.Header().Get("HX-Trigger")).To(Equal("scheduleDeactivated"))
+		},
+	)
+
+	It("keeps a failed deactivation retryable in its dialog", func(ctx SpecContext) {
+		service.EXPECT().Deactivate(ctx, 42).Return(nil, errors.New("storage")).Once()
+		service.EXPECT().
+			Get(ctx, 42).
+			Return(&models.Schedule{Id: 42, Name: "Kitchen"}, nil).
+			Once()
+		view.EXPECT().ConfirmationDialog(confirmationmodels.Dialog{
+			Heading:      "Deactivate schedule?",
+			Prompt:       "Deactivate",
+			Name:         "Kitchen",
+			ActionHref:   "/schedules/42/deactivation",
+			ActionMethod: "put",
+			ActionLabel:  "Deactivate permanently",
+			Icon:         "archive",
+			Error:        "The schedule could not be deactivated. Try again.",
+		}).Return(templ.Raw("retry")).Once()
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodPut,
+			"/schedules/42/deactivation",
+			nil,
+		)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("HX-Request", "true")
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusInternalServerError))
+		Expect(response.Header().Get("HX-Trigger")).To(BeEmpty())
+		Expect(response.Header().Get("HX-Retarget")).To(BeEmpty())
+		Expect(response.Body.String()).To(Equal("retry"))
+	})
+
+	It("does not deactivate for an unsupported representation", func(ctx SpecContext) {
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodPut,
+			"/schedules/42/deactivation",
+			nil,
+		)
+		request.Header.Set("Accept", "image/png")
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusNotAcceptable))
+	})
 
 	It("renders deactivation failures as HTML", func(ctx SpecContext) {
 		service.EXPECT().Deactivate(ctx, 42).Return(nil, models.ErrNotFound).Once()

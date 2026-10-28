@@ -1,0 +1,15 @@
+package schedules
+
+import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/schedules"
+
+templ errorContent(model viewmodels.Error) {
+	@schedulePanel("/schedules", "Schedules", "schedule-error-heading", "Unable to continue") {
+		<p role="alert">{ model.Message }</p>
+		if href := model.Links.Href("self"); href != "" {
+			<a href={ href } hx-get={ href } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">Back to schedule</a>
+		}
+		if href := model.Actions.Href("edit"); href != "" {
+			<a href={ href + "/edit" } hx-get={ href + "/edit" } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">Try editing again</a>
+		}
+	}
+}
