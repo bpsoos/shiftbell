@@ -1,22 +1,33 @@
 package chores
 
 import (
-	"strconv"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+	"strconv"
 )
 
 templ scheduledFormContent(form choreviewmodels.ScheduledForm) {
-	if form.Template == nil {
-		@unavailableNotice() {
-			<h1>Unable to create repeating chore</h1>
-			<p>Choose a chore template to continue.</p>
-		}
-	} else {
-		@panelPage(form.BackHref, "Recurrence", "create-chore-heading") {
-			@panel("create-chore-heading", "Add repeating chore") {
-				@panelForm() {
-					<form action={ form.ActionHref } method="post" hx-post={ form.ActionHref } hx-target="#main" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']">
-						@formSummary("scheduled-chore-form-summary", form.SummaryError)
+	@panelPage(form.BackHref, "Recurrence", "create-chore-heading") {
+		@panel("create-chore-heading", "Add repeating chore") {
+			@panelForm() {
+				<form
+					action={ form.ActionHref }
+					method="post"
+					hx-post={ form.ActionHref }
+					hx-target="#main"
+					hx-swap="outerHTML"
+					hx-disabled-elt="find button[type='submit']"
+					if form.Template == nil {
+						data-manual-scheduled-form
+						if form.Submitted {
+							data-schedule-name-edited="true"
+						}
+					}
+				>
+					@formSummary("scheduled-chore-form-summary", form.SummaryError)
+					if form.Template == nil {
+						@createNameField(form.Name)
+						@createDescriptionField(form.Description)
+					} else {
 						@selectedTemplate("Using chore template") {
 							if form.Template.Name != "" {
 								<strong>{ form.Template.Name }</strong>
@@ -28,37 +39,57 @@ templ scheduledFormContent(form choreviewmodels.ScheduledForm) {
 							}
 						}
 						<input type="hidden" name="chore_template_id" value={ strconv.Itoa(form.Template.Id) }/>
-						@scheduledNameField(form.ScheduleName)
-						@scheduledIntervalField(form.IntervalDays)
-						@createDeadlineFieldNamed(form.Deadline, "First deadline")
-						@formActions() {
-							<a class="btn btn-secondary" href={ form.CancelHref } hx-get={ form.CancelHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">Cancel</a>
-							<button class="btn btn-primary" type="submit">Add chore</button>
-						}
-					</form>
-				}
+					}
+					@scheduledNameField(form)
+					@scheduledIntervalField(form.IntervalDays)
+					@createDeadlineFieldNamed(form.Deadline, "First deadline")
+					@formActions() {
+						<a class="btn btn-secondary" href={ form.CancelHref } hx-get={ form.CancelHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">Cancel</a>
+						<button class="btn btn-primary" type="submit">Add chore</button>
+					}
+				</form>
 			}
 		}
 	}
 }
 
-templ scheduledNameField(field choreviewmodels.Field) {
+templ scheduledNameField(form choreviewmodels.ScheduledForm) {
 	<div data-field>
 		<label class="form-label" for="create-schedule-name">Schedule name</label>
-		<input class={ formControlClass("form-control", field.Error) } id="create-schedule-name" name="schedule_name" type="text" value={ field.Value } maxlength="200" required autofocus
-			if field.Error != "" {
+		<input
+			class={ formControlClass("form-control", form.ScheduleName.Error) }
+			id="create-schedule-name"
+			name="schedule_name"
+			type="text"
+			value={ form.ScheduleName.Value }
+			maxlength="200"
+			required
+			if form.Template != nil {
+				autofocus
+			}
+			if form.ScheduleName.Error != "" {
 				aria-invalid="true"
 				aria-describedby="create-schedule-name-error"
 			}
 		/>
-		@fieldFeedback("create-schedule-name-error", field.Error)
+		@fieldFeedback("create-schedule-name-error", form.ScheduleName.Error)
 	</div>
 }
 
 templ scheduledIntervalField(field choreviewmodels.Field) {
 	<div data-field>
 		<label class="form-label" for="create-schedule-interval">Interval (days)</label>
-		<input class={ formControlClass("form-control", field.Error) } id="create-schedule-interval" name="interval_days" type="number" value={ field.Value } min="1" max="3650" step="1" required aria-describedby="create-schedule-interval-error" 
+		<input
+			class={ formControlClass("form-control", field.Error) }
+			id="create-schedule-interval"
+			name="interval_days"
+			type="number"
+			value={ field.Value }
+			min="1"
+			max="3650"
+			step="1"
+			required
+			aria-describedby="create-schedule-interval-error"
 			if field.Error != "" {
 				aria-invalid="true"
 			}

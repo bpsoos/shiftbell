@@ -23,6 +23,87 @@ import (
 
 var _ = Describe("Create chore", func() {
 	DescribeTable(
+		"renders manual repeating validation on the correct fields",
+		func(ctx SpecContext, serviceErr error, status int, nameError, descriptionError, scheduleError string) {
+			service := NewMockService(GinkgoT())
+			interval := 7
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				Name:         "Kitchen",
+				Description:  "Steps.",
+				ScheduleName: "Weekly",
+				IntervalDays: &interval,
+				Deadline:     time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+			}).Return(nil, serviceErr).Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ScheduledForm(choreviewmodels.ScheduledForm{
+				ActionHref: "/chores",
+				CancelHref: "/chores",
+				BackHref:   "/chores/new?source=manual",
+				Submitted:  true,
+				Name:       choreviewmodels.Field{Value: "Kitchen", Error: nameError},
+				Description: choreviewmodels.Field{
+					Value: "Steps.",
+					Error: descriptionError,
+				},
+				ScheduleName: choreviewmodels.Field{
+					Value: "Weekly",
+					Error: scheduleError,
+				},
+				IntervalDays: choreviewmodels.Field{
+					Value: "7",
+				},
+				Deadline:     choreviewmodels.Field{Value: "2020-02-03"},
+				SummaryError: serviceErr.Error(),
+			}, false).Return(templ.Raw("feedback")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service, View: view},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(
+					"name=Kitchen&description=Steps.&schedule_name=Weekly&interval_days=7&deadline=2020-02-03",
+				),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(status))
+			Expect(response.Body.String()).To(Equal("feedback"))
+		},
+		Entry("chore name", validationerrors.ErrInvalidName, 422, "invalid name", "", ""),
+		Entry(
+			"schedule name",
+			validationerrors.ErrInvalidScheduleName,
+			422,
+			"",
+			"",
+			"invalid name",
+		),
+		Entry(
+			"description",
+			validationerrors.ErrInvalidDescription,
+			422,
+			"",
+			"invalid description",
+			"",
+		),
+		Entry(
+			"schedule conflict",
+			schedulemodels.ErrNameConflict,
+			409,
+			"",
+			"",
+			schedulemodels.ErrNameConflict.Error(),
+		),
+	)
+
+	DescribeTable(
 		"preserves template context on scheduled HTML validation failures",
 		func(ctx SpecContext, serviceErr error, scheduleError, intervalError string) {
 			service := NewMockService(GinkgoT())
@@ -162,6 +243,7 @@ var _ = Describe("Create chore", func() {
 				CancelHref:   "/chores",
 				Submitted:    true,
 				SummaryError: "invalid interval",
+				BackHref:     "/chores/new?source=manual",
 				Name: choreviewmodels.Field{
 					Value: "Kitchen",
 				},

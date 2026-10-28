@@ -49,9 +49,7 @@ templ creationRecurrence(model choreviewmodels.Creation) {
 		}
 		@creationOptions() {
 			@creationOption(model.OneOffHref, "One-off", "Create a single chore.")
-			if model.Creation.Template != nil {
-				@creationOption(model.ScheduledHref, "Repeating", "Create chores on a recurring schedule.")
-			}
+			@creationOption(model.ScheduledHref, "Repeating", "Create chores on a recurring schedule.")
 		}
 	}
 }

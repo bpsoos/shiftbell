@@ -298,6 +298,8 @@ func createFormValues(request createChoreRequest) map[string]string {
 func createFieldErrors(err error) map[string]string {
 	field := ""
 	switch {
+	case errors.Is(err, validationerrors.ErrInvalidScheduleName):
+		field = "schedule_name"
 	case errors.Is(err, validationerrors.ErrInvalidName):
 		field = "name"
 	case errors.Is(err, validationerrors.ErrInvalidDescription):

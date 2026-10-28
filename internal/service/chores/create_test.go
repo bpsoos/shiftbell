@@ -361,6 +361,8 @@ var _ = Describe("Create", func() {
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidName))
+		Expect(errors.Is(err, validationerrors.ErrInvalidScheduleName)).To(BeTrue())
+		Expect(errors.Is(err, validationerrors.ErrInvalidName)).To(BeTrue())
 	})
 
 	It("rejects an invalid template-based schedule name without persisting", func() {
@@ -383,6 +385,8 @@ var _ = Describe("Create", func() {
 
 		Expect(result).To(BeNil())
 		Expect(err).To(MatchError(validationerrors.ErrInvalidName))
+		Expect(errors.Is(err, validationerrors.ErrInvalidScheduleName)).To(BeTrue())
+		Expect(errors.Is(err, validationerrors.ErrInvalidName)).To(BeTrue())
 	})
 
 	DescribeTable(

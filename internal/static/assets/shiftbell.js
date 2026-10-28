@@ -145,6 +145,21 @@
 		});
 	};
 
+	document.addEventListener("input", (event) => {
+		const form = event.target.closest?.("[data-manual-scheduled-form]");
+		if (!form) {
+			return;
+		}
+		if (event.target.name === "schedule_name") {
+			form.dataset.scheduleNameEdited = "true";
+			return;
+		}
+		if (event.target.name === "name" && form.dataset.scheduleNameEdited !== "true") {
+			const name = event.target.value.trim();
+			form.elements.schedule_name.value = name ? `${name} schedule` : "";
+		}
+	});
+
 	document.addEventListener("click", (event) => {
 		const dialogButton = event.target.closest?.("[data-complete-chore], [data-delete-action], [data-deactivate-action]");
 		if (dialogButton) {

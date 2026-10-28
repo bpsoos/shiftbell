@@ -1,9 +1,13 @@
 package validation
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	ErrInvalidName           = errors.New("invalid name")
+	ErrInvalidScheduleName   = fmt.Errorf("%w", ErrInvalidName)
 	ErrInvalidDescription    = errors.New("invalid description")
 	ErrInvalidSearch         = errors.New("invalid search")
 	ErrInvalidFilter         = errors.New("invalid filter")

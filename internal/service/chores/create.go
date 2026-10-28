@@ -37,7 +37,7 @@ func (s *Service) Create(
 	if s.isTemplateScheduled(input) {
 		scheduleName, err := s.normalizer.NormalizeName(input.ScheduleName)
 		if err != nil {
-			return nil, validationerrors.ErrInvalidName
+			return nil, validationerrors.ErrInvalidScheduleName
 		}
 
 		result, err := s.persister.CreateTemplateScheduled(
@@ -67,7 +67,7 @@ func (s *Service) Create(
 	if s.isScheduled(input) {
 		scheduleName, err := s.normalizer.NormalizeName(input.ScheduleName)
 		if err != nil {
-			return nil, validationerrors.ErrInvalidName
+			return nil, validationerrors.ErrInvalidScheduleName
 		}
 
 		result, err := s.persister.CreateManualScheduled(

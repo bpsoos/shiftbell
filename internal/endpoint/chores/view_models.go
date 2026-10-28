@@ -114,10 +114,7 @@ func creationViewModel(
 	for _, choice := range creation.Choices {
 		switch choice.Label {
 		case "Specify new":
-			model.CreateFromScratchHref = (routes.ChoreCreation{
-				Source:     routes.ChoreCreationSourceManual,
-				Recurrence: routes.ChoreCreationRecurrenceOneOff,
-			}).Href()
+			model.CreateFromScratchHref = choice.Href
 		case "Select template":
 			model.SelectTemplateHref = choice.Href
 		case "One-off":
@@ -138,6 +135,7 @@ func scheduledFormViewModel(
 		),
 		CancelHref: choreCollectionHref,
 		Template:   creation.Template,
+		BackHref:   (routes.ChoreCreation{Source: routes.ChoreCreationSourceManual}).Href(),
 	}
 	if creation.Template != nil {
 		model.BackHref = (routes.ChoreCreation{ChoreTemplateId: creation.Template.Id}).Href()
@@ -154,6 +152,7 @@ func scheduledFormErrorViewModel(
 		ActionHref:   feedback.Action.Href,
 		CancelHref:   feedback.CancelHref,
 		Submitted:    true,
+		BackHref:     (routes.ChoreCreation{Source: routes.ChoreCreationSourceManual}).Href(),
 		SummaryError: formFeedbackMessage(feedback),
 		Name: fieldViewModel(
 			feedback,

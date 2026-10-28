@@ -22,7 +22,7 @@ var _ = Describe("Start chore creation", func() {
 		func(ctx SpecContext, hxRequest string, fullPage bool) {
 			view := NewMockView(GinkgoT())
 			view.EXPECT().
-				ScheduledForm(choreviewmodels.ScheduledForm{ActionHref: "/chores", CancelHref: "/chores"}, fullPage).
+				ScheduledForm(choreviewmodels.ScheduledForm{ActionHref: "/chores", CancelHref: "/chores", BackHref: "/chores/new?source=manual"}, fullPage).
 				Return(templ.Raw("manual scheduled form")).
 				Once()
 			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{View: view})
@@ -165,7 +165,7 @@ var _ = Describe("Start chore creation", func() {
 				},
 			},
 			BackHref:              "/chores",
-			CreateFromScratchHref: "/chores/new?recurrence=one-off&source=manual",
+			CreateFromScratchHref: "/chores/new?source=manual",
 			SelectTemplateHref:    "/chore-templates?picker=1",
 		}, false).Return(templ.Raw("creation sentinel")).Once()
 		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{View: view})
