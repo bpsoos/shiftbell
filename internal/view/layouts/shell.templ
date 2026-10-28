@@ -53,7 +53,7 @@ templ page(active string, timezone string, content templ.Component) {
 }
 
 templ main(content templ.Component) {
-	<main id="main" class="container" tabindex="-1">
+	<main id="main" class="container" tabindex="-1" hx-history-elt>
 		@content
 	</main>
 }

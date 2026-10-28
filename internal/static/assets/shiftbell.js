@@ -225,6 +225,16 @@
 		Collapse.getOrCreateInstance(navigation).hide();
 	};
 
+	const focusMain = () => {
+		const main = document.getElementById("main");
+		const field = main?.querySelector("[autofocus]");
+		if (field) {
+			field.focus({ preventScroll: true });
+		} else if (!main?.contains(document.activeElement)) {
+			main?.focus({ preventScroll: true });
+		}
+	};
+
 	document.addEventListener("htmx:beforeSwap", (event) => {
 		const status = event.detail.xhr.status;
 
@@ -271,13 +281,7 @@
 		if (event.detail.target?.id === "main") {
 			closeDialog();
 			closeNavigation();
-			const main = document.getElementById("main");
-			const autofocus = main?.querySelector("[autofocus]");
-			if (autofocus) {
-				autofocus.focus({ preventScroll: true });
-			} else if (!main?.contains(document.activeElement)) {
-				main?.focus({ preventScroll: true });
-			}
+			focusMain();
 		}
 	});
 
@@ -289,6 +293,18 @@
 		syncTemplateSchedules();
 		document.getElementById("template-schedule-list")?.focus();
 		emphasizeDeactivationBlock();
+	});
+
+	document.addEventListener("htmx:historyRestore", () => {
+		closeDialog();
+		closeNavigation();
+		syncNavigation();
+		syncTemplateSchedules();
+		focusMain();
+	});
+
+	document.addEventListener("htmx:historyCacheMissLoadError", () => {
+		window.location.reload();
 	});
 
 	window.addEventListener("popstate", syncNavigation);
