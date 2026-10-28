@@ -136,7 +136,7 @@ func (h *Handler) ConfirmDeletion(ctx *echo.Context) error {
 
 func (h *Handler) Edit(ctx *echo.Context) error {
 	ctx.Response().Header().Set(echo.HeaderVary, "Accept, HX-Request")
-	if !acceptsHTMXHTML(ctx) {
+	if !acceptsHTML(ctx) {
 		return hypermedia.NotAcceptable(ctx)
 	}
 	return h.editForm(ctx)

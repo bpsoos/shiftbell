@@ -12,7 +12,7 @@ import (
 
 func (h *Handler) EditForm(ctx *echo.Context) error {
 	ctx.Response().Header().Set(echo.HeaderVary, "Accept, HX-Request")
-	if !acceptsHTMXHTML(ctx) {
+	if !acceptsHTML(ctx) {
 		return hypermedia.NotAcceptable(ctx)
 	}
 

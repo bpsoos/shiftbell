@@ -8,6 +8,7 @@ import (
 
 	"github.com/a-h/templ"
 	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
+	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	"github.com/labstack/echo/v5"
@@ -16,7 +17,7 @@ import (
 )
 
 var _ = Describe("Edit chore template form", func() {
-	It("rejects an ordinary HTML request", func(ctx SpecContext) {
+	It("rejects a vendor representation", func(ctx SpecContext) {
 		handler := choretemplatesendpoint.NewHandler(
 			&choretemplatesendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},
 		)
@@ -28,7 +29,7 @@ var _ = Describe("Edit chore template form", func() {
 			"/chore-templates/8/edit",
 			nil,
 		)
-		request.Header.Set("Accept", "text/html")
+		request.Header.Set("Accept", hypermedia.MediaType)
 		response := httptest.NewRecorder()
 
 		e.ServeHTTP(response, request)
@@ -37,44 +38,49 @@ var _ = Describe("Edit chore template form", func() {
 		Expect(response.Body.String()).To(BeEmpty())
 	})
 
-	It("renders an active template edit form", func(ctx SpecContext) {
-		service := NewMockService(GinkgoT())
-		service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-			Id:          8,
-			Name:        "Laundry",
-			Description: "Wash and fold",
-		}, nil).Once()
-		view := NewMockView(GinkgoT())
-		view.EXPECT().EditForm(viewmodels.EditForm{
-			ActionHref: "/chore-templates/8",
-			CancelHref: "/chore-templates/8",
-			Name: viewmodels.Field{
-				Value: "Laundry",
-			},
-			Description: viewmodels.Field{
-				Value: "Wash and fold",
-			},
-		}, false).Return(templ.Raw("edit form sentinel")).Once()
-		handler := choretemplatesendpoint.NewHandler(
-			&choretemplatesendpoint.HandlerDeps{Service: service, View: view},
-		)
-		e := echo.New()
-		e.GET("/chore-templates/:id/edit", handler.EditForm)
-		request := httptest.NewRequestWithContext(
-			ctx,
-			http.MethodGet,
-			"/chore-templates/8/edit",
-			nil,
-		)
-		request.Header.Set("Accept", "text/html")
-		request.Header.Set("HX-Request", "true")
-		response := httptest.NewRecorder()
+	DescribeTable(
+		"renders an active template edit form",
+		func(ctx SpecContext, hxRequest string, fullPage bool) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
+				Id:          8,
+				Name:        "Laundry",
+				Description: "Wash and fold",
+			}, nil).Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().EditForm(viewmodels.EditForm{
+				ActionHref: "/chore-templates/8",
+				CancelHref: "/chore-templates/8",
+				Name: viewmodels.Field{
+					Value: "Laundry",
+				},
+				Description: viewmodels.Field{
+					Value: "Wash and fold",
+				},
+			}, fullPage).Return(templ.Raw("edit form sentinel")).Once()
+			handler := choretemplatesendpoint.NewHandler(
+				&choretemplatesendpoint.HandlerDeps{Service: service, View: view},
+			)
+			e := echo.New()
+			e.GET("/chore-templates/:id/edit", handler.EditForm)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chore-templates/8/edit",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", hxRequest)
+			response := httptest.NewRecorder()
 
-		e.ServeHTTP(response, request)
+			e.ServeHTTP(response, request)
 
-		Expect(response.Code).To(Equal(http.StatusOK))
-		Expect(response.Body.String()).To(Equal("edit form sentinel"))
-	})
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.String()).To(Equal("edit form sentinel"))
+		},
+		Entry("on a full-page load", "", true),
+		Entry("through HTMX", "true", false),
+	)
 
 	It("rejects a deactivated template", func(ctx SpecContext) {
 		deactivatedAt := time.Date(2026, time.August, 8, 12, 0, 0, 0, time.UTC)
