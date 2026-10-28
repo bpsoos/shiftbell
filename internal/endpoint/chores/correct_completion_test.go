@@ -23,7 +23,7 @@ import (
 var _ = Describe("Correct chore completion", func() {
 	DescribeTable(
 		"renders the corrected chore as HTML",
-		func(ctx SpecContext, hxRequest string, fullPage bool) {
+		func(ctx SpecContext, hxRequest string, fullPage bool, contentType, body string) {
 			completedOn := time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC)
 			deadline := time.Date(2020, 2, 1, 0, 0, 0, 0, time.UTC)
 			service := NewMockService(GinkgoT())
@@ -64,8 +64,9 @@ var _ = Describe("Correct chore completion", func() {
 				ctx,
 				http.MethodPatch,
 				"/chores/42/completion",
-				strings.NewReader(`{"completed_on":"2020-02-04"}`),
+				strings.NewReader(body),
 			)
+			request.Header.Set("Content-Type", contentType)
 			request.Header.Set("Accept", "text/html")
 			request.Header.Set("HX-Request", hxRequest)
 			response := httptest.NewRecorder()
@@ -77,9 +78,23 @@ var _ = Describe("Correct chore completion", func() {
 				response.Header().Get("Content-Type"),
 			).To(Equal(echo.MIMETextHTMLCharsetUTF8))
 			Expect(response.Body.String()).To(Equal("corrected chore"))
+			Expect(response.Header().Get("HX-Replace-Url")).To(Equal("/chores/42"))
 		},
-		Entry("full page", "", true),
-		Entry("HTMX fragment", "true", false),
+		Entry("full page JSON", "", true, "", `{"completed_on":"2020-02-04"}`),
+		Entry(
+			"HTMX JSON",
+			"true",
+			false,
+			"application/json",
+			`{"completed_on":"2020-02-04"}`,
+		),
+		Entry(
+			"HTMX form",
+			"true",
+			false,
+			echo.MIMEApplicationForm,
+			"completed_on=2020-02-04",
+		),
 	)
 
 	DescribeTable(
@@ -116,27 +131,129 @@ var _ = Describe("Correct chore completion", func() {
 			Expect(response.Body.String()).To(Equal("correction error"))
 		},
 		Entry(
-			"invalid date",
-			validationerrors.ErrInvalidCompletionDate,
-			http.StatusUnprocessableEntity,
-			"invalid completion date",
-		),
-		Entry(
 			"missing chore",
 			choremodels.ErrNotFound,
 			http.StatusNotFound,
 			"chore not found",
 		),
+	)
+
+	DescribeTable(
+		"preserves the entered HTML date when correction fails",
+		func(ctx SpecContext, serviceErr error, status int, fieldError, summaryError string) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().
+				CorrectCompletion(ctx, &choremodels.CorrectCompletionParams{Id: 42, CompletedOn: time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC)}).
+				Return(nil, serviceErr).
+				Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().CompletionCorrectionForm(viewmodels.CompletionCorrectionForm{
+				ActionHref: "/chores/42/completion",
+				CancelHref: "/chores/42",
+				CompletedOn: viewmodels.Field{
+					Value: "2020-02-04",
+					Error: fieldError,
+				},
+				SummaryError: summaryError,
+			}, false).Return(templ.Raw("feedback")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service, View: view},
+			)
+			app := echo.New()
+			app.PATCH("/chores/:id/completion", handler.CorrectCompletion)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPatch,
+				"/chores/42/completion",
+				strings.NewReader("completed_on=2020-02-04"),
+			)
+			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(status))
+			Expect(response.Header().Get("HX-Replace-Url")).To(BeEmpty())
+			Expect(response.Body.String()).To(Equal("feedback"))
+		},
 		Entry(
-			"storage failure",
+			"invalid date",
+			validationerrors.ErrInvalidCompletionDate,
+			422,
+			"Enter a valid date no later than today.",
+			"",
+		),
+		Entry(
+			"storage error",
 			errors.New("storage failed"),
-			http.StatusInternalServerError,
-			"something went wrong",
+			500,
+			"",
+			"The completion date could not be updated. Try again.",
 		),
 	)
-	It(
-		"corrects a one-off completion through its advertised action",
-		func(ctx SpecContext) {
+
+	DescribeTable(
+		"rejects malformed HTML dates without calling the service",
+		func(ctx SpecContext, date string) {
+			view := NewMockView(GinkgoT())
+			view.EXPECT().CompletionCorrectionForm(viewmodels.CompletionCorrectionForm{
+				ActionHref: "/chores/42/completion",
+				CancelHref: "/chores/42",
+				CompletedOn: viewmodels.Field{
+					Value: date,
+					Error: "Enter a valid date no later than today.",
+				},
+			}, true).Return(templ.Raw("date error")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{
+					Service: NewMockService(GinkgoT()),
+					View:    view,
+				},
+			)
+			app := echo.New()
+			app.PATCH("/chores/:id/completion", handler.CorrectCompletion)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPatch,
+				"/chores/42/completion",
+				strings.NewReader("completed_on="+date),
+			)
+			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+			request.Header.Set("Accept", "text/html")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+		},
+		Entry("empty", ""),
+		Entry("invalid calendar date", "2020-02-30"),
+		Entry("text", "yesterday"),
+	)
+
+	DescribeTable(
+		"rejects unsupported representations and invalid IDs without correction",
+		func(ctx SpecContext, path, accept string, status int) {
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},
+			)
+			app := echo.New()
+			app.PATCH("/chores/:id/completion", handler.CorrectCompletion)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPatch,
+				path,
+				strings.NewReader(`{"completed_on":"2020-02-04"}`),
+			)
+			request.Header.Set("Accept", accept)
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(status))
+		},
+		Entry("unsupported", "/chores/42/completion", "image/png", 406),
+		Entry("invalid ID", "/chores/invalid/completion", hypermedia.MediaType, 422),
+	)
+	DescribeTable(
+		"corrects a one-off completion as JSON independently of input encoding",
+		func(ctx SpecContext, contentType, body string) {
 			completedOn := time.Date(2020, time.February, 4, 0, 0, 0, 0, time.UTC)
 			deadline := time.Date(2020, time.February, 1, 0, 0, 0, 0, time.UTC)
 			service := NewMockService(GinkgoT())
@@ -160,10 +277,10 @@ var _ = Describe("Correct chore completion", func() {
 				ctx,
 				http.MethodPatch,
 				"/chores/42/completion",
-				strings.NewReader(`{"completed_on":"2020-02-04"}`),
+				strings.NewReader(body),
 			)
 			request.Header.Set("Accept", hypermedia.MediaType)
-			request.Header.Set("Content-Type", "application/json")
+			request.Header.Set("Content-Type", contentType)
 			response := httptest.NewRecorder()
 
 			e.ServeHTTP(response, request)
@@ -188,5 +305,7 @@ var _ = Describe("Correct chore completion", func() {
 			]
 		}`))
 		},
+		Entry("JSON", "application/json", `{"completed_on":"2020-02-04"}`),
+		Entry("form", echo.MIMEApplicationForm, "completed_on=2020-02-04"),
 	)
 })

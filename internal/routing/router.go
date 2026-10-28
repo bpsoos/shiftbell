@@ -35,6 +35,7 @@ type ChoreHandler interface {
 	ConfirmCompletion(*echo.Context) error
 	Complete(*echo.Context) error
 	CorrectCompletion(*echo.Context) error
+	CompletionCorrectionForm(*echo.Context) error
 	ConfirmDeletion(*echo.Context) error
 	Delete(*echo.Context) error
 }

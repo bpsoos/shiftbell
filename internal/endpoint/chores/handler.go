@@ -53,6 +53,10 @@ type formFeedback struct {
 type View interface {
 	Collection(choreviewmodels.Collection, bool) templ.Component
 	CompletionDialog(choreviewmodels.CompletionDialog) templ.Component
+	CompletionCorrectionForm(
+		choreviewmodels.CompletionCorrectionForm,
+		bool,
+	) templ.Component
 	ConfirmationDialog(confirmationviewmodels.Dialog) templ.Component
 	Detail(choreviewmodels.Detail, bool) templ.Component
 	Creation(choreviewmodels.Creation, bool) templ.Component

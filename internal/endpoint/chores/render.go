@@ -298,6 +298,10 @@ func supported(ctx *echo.Context) bool {
 	return hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationUnsupported
 }
 
+func acceptsHTML(ctx *echo.Context) bool {
+	return hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML
+}
+
 func acceptsHTMXHTML(ctx *echo.Context) bool {
 	return !fullPage(ctx) &&
 		hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML

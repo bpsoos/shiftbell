@@ -58,7 +58,11 @@ templ detailCard(t *Templater, chore choreapimodels.Representation, editHref str
 			}
 		</style>
 		@choreDetailHeader(chore.Name, editHref, deleteHref)
-		@choreDeadline(t, chore.Deadline, today)
+		if chore.CompletedOn != nil {
+			@choreCompletion(t, chore)
+		} else {
+			@choreDeadline(t, chore.Deadline, today)
+		}
 		if chore.Description != "" {
 			<p data-description>{ chore.Description }</p>
 		}

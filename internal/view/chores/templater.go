@@ -134,6 +134,14 @@ func (t *Templater) CompletionDialog(
 	return completionDialog(model)
 }
 
+func (t *Templater) CompletionCorrectionForm(
+	form choreviewmodels.CompletionCorrectionForm,
+	fullPage bool,
+) templ.Component {
+	form.CompletedOnMax = t.localDate()
+	return layouts.Frame("chores", fullPage, completionCorrectionForm(form))
+}
+
 func (t *Templater) ConfirmationDialog(
 	model confirmationviewmodels.Dialog,
 ) templ.Component {

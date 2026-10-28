@@ -1,0 +1,31 @@
+package chores
+
+import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+
+templ completionCorrectionForm(form viewmodels.CompletionCorrectionForm) {
+	@panelPage(form.CancelHref, "Chore", "correct-completion-heading") {
+		@panel("correct-completion-heading", "Correct completion date") {
+			@panelForm() {
+				<form action={ form.ActionHref } method="post" hx-patch={ form.ActionHref } hx-target="#main" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']">
+					if form.SummaryError != "" {
+						@formSummary("correct-completion-summary", form.SummaryError)
+					}
+					<div data-field>
+						<label class="form-label" for="correct-completed-on">Completed on</label>
+						<input class={ formControlClass("form-control", form.CompletedOn.Error) } id="correct-completed-on" type="date" name="completed_on" value={ form.CompletedOn.Value } max={ form.CompletedOnMax } required autofocus
+							if form.CompletedOn.Error != "" {
+								aria-invalid="true"
+								aria-describedby="correct-completed-on-error"
+							}
+						/>
+						@fieldFeedback("correct-completed-on-error", form.CompletedOn.Error)
+					</div>
+					@formActions() {
+						<a class="btn btn-secondary" href={ form.CancelHref } hx-get={ form.CancelHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">Cancel</a>
+						<button class="btn btn-primary" type="submit">Save changes</button>
+					}
+				</form>
+			}
+		}
+	}
+}

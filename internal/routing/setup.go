@@ -31,6 +31,7 @@ func (r *Router) Setup(app *echo.Echo) error {
 	app.GET("/chores/:id/completion", r.choreHandler.ConfirmCompletion)
 	app.PUT("/chores/:id/completion", r.choreHandler.Complete)
 	app.PATCH("/chores/:id/completion", r.choreHandler.CorrectCompletion)
+	app.GET("/chores/:id/completion/edit", r.choreHandler.CompletionCorrectionForm)
 	app.GET("/chores/:id/deletion", r.choreHandler.ConfirmDeletion)
 
 	app.POST("/chore-templates", r.choreTemplateHandler.Create)
