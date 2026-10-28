@@ -307,6 +307,12 @@
 		window.location.reload();
 	});
 
+	window.addEventListener("pageshow", (event) => {
+		if (event.persisted && document.querySelector(".htmx-request")) {
+			window.location.reload();
+		}
+	});
+
 	window.addEventListener("popstate", syncNavigation);
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", () => {
