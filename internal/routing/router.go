@@ -16,6 +16,7 @@ type ScheduleHandler interface {
 }
 
 type ChoreTemplateHandler interface {
+	CreateForm(*echo.Context) error
 	Browse(*echo.Context) error
 	Create(*echo.Context) error
 	Get(*echo.Context) error

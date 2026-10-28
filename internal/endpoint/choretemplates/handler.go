@@ -47,6 +47,7 @@ type View interface {
 	Picker(choretemplateviewmodels.Picker, bool) templ.Component
 	Detail(choretemplateviewmodels.Detail, bool) templ.Component
 	EditForm(choretemplateviewmodels.EditForm, bool) templ.Component
+	CreateForm(choretemplateviewmodels.CreateForm, bool) templ.Component
 	ConfirmationDialog(confirmationviewmodels.Dialog) templ.Component
 	Error(choretemplateviewmodels.Error, bool) templ.Component
 }

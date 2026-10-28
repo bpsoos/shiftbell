@@ -89,6 +89,13 @@ func (t *Templater) EditForm(
 	return layouts.Frame("chore-templates", fullPage, editForm(model))
 }
 
+func (t *Templater) CreateForm(
+	model viewmodels.CreateForm,
+	fullPage bool,
+) templ.Component {
+	return layouts.Frame("chore-templates", fullPage, createForm(model))
+}
+
 func (t *Templater) ConfirmationDialog(
 	model confirmationviewmodels.Dialog,
 ) templ.Component {
