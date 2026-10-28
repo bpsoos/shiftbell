@@ -227,7 +227,7 @@
 
 	const focusMain = () => {
 		const main = document.getElementById("main");
-		const field = main?.querySelector("[autofocus]");
+		const field = main?.querySelector('[aria-invalid="true"]') ?? main?.querySelector("[autofocus]");
 		if (field) {
 			field.focus({ preventScroll: true });
 		} else if (!main?.contains(document.activeElement)) {
