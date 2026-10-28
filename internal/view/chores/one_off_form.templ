@@ -115,8 +115,12 @@ templ createDescriptionField(field choreviewmodels.Field) {
 }
 
 templ createDeadlineField(field choreviewmodels.Field) {
+	@createDeadlineFieldNamed(field, "Deadline")
+}
+
+templ createDeadlineFieldNamed(field choreviewmodels.Field, label string) {
 	<div data-field>
-		<label class="form-label" for="create-chore-deadline">Deadline</label>
+		<label class="form-label" for="create-chore-deadline">{ label }</label>
 		<input
 			class={ formControlClass("form-control", field.Error) }
 			type="date"

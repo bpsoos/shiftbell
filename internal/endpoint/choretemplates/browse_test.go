@@ -139,7 +139,7 @@ var _ = Describe("Browse chore templates", func() {
 		view.EXPECT().Picker(viewmodels.Picker{
 			Items: []viewmodels.PickerItem{{
 				Name:       "Kitchen",
-				SelectHref: "/chores/new?recurrence=one-off&template_id=42",
+				SelectHref: "/chores/new?template_id=42",
 			}},
 			PreviousHref:    "/chore-templates?limit=7&offset=0&picker=1&search=Kitchen",
 			BackHref:        "/chores/new",

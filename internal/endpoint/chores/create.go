@@ -95,11 +95,50 @@ func (h *Handler) renderCreateBindingError(
 			apiErrorResponse{Error: binding.ErrUnsupportedMediaType.Error()},
 		)
 	}
+	if hasScheduledFormValues(ctx) {
+		return h.renderScheduledBindingError(ctx, request)
+	}
 	return h.renderCreateFormError(
 		ctx,
 		http.StatusBadRequest,
 		request,
 		formFeedback{Error: apiErrorResponse{Error: "invalid JSON"}},
+	)
+}
+
+func hasScheduledFormValues(ctx *echo.Context) bool {
+	mediaType, _, _ := mime.ParseMediaType(
+		ctx.Request().Header.Get(echo.HeaderContentType),
+	)
+	return mediaType == echo.MIMEApplicationForm &&
+		ctx.Request().PostForm.Has("interval_days")
+}
+
+func (h *Handler) renderScheduledBindingError(
+	ctx *echo.Context,
+	request createChoreRequest,
+) error {
+	interval := 0
+	request.IntervalDays = &interval
+	values := createFormValues(request)
+	for key, entries := range ctx.Request().PostForm {
+		if len(entries) > 0 {
+			values[key] = entries[0]
+		}
+	}
+	return h.renderCreateFormError(
+		ctx,
+		http.StatusUnprocessableEntity,
+		request,
+		formFeedback{
+			Values: values,
+			FieldErrors: map[string]string{
+				"interval_days": validationerrors.ErrInvalidInterval.Error(),
+			},
+			Error: apiErrorResponse{
+				Error: validationerrors.ErrInvalidInterval.Error(),
+			},
+		},
 	)
 }
 

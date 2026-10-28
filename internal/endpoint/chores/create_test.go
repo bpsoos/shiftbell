@@ -22,6 +22,127 @@ import (
 )
 
 var _ = Describe("Create chore", func() {
+	DescribeTable(
+		"preserves template context on scheduled HTML validation failures",
+		func(ctx SpecContext, serviceErr error, scheduleError, intervalError string) {
+			service := NewMockService(GinkgoT())
+			templateID, interval := 7, 7
+			service.EXPECT().Create(ctx, &choremodels.CreateChoreParams{
+				ChoreTemplateId: &templateID,
+				ScheduleName:    "Weekly",
+				IntervalDays:    &interval,
+				Deadline:        time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC),
+			}).Return(nil, serviceErr).Once()
+			templates := NewMockChoreTemplateService(GinkgoT())
+			templates.EXPECT().
+				Get(ctx, 7).
+				Return(&choretemplatemodels.ChoreTemplateDetails{Id: 7, Name: "Kitchen", Description: "Steps."}, nil).
+				Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ScheduledForm(choreviewmodels.ScheduledForm{
+				ActionHref: "/chores",
+				CancelHref: "/chores",
+				BackHref:   "/chores/new?template_id=7",
+				Submitted:  true,
+				Template: &choreapimodels.CreationTemplate{
+					Id:          7,
+					Name:        "Kitchen",
+					Description: "Steps.",
+				},
+				ScheduleName: choreviewmodels.Field{
+					Value: "Weekly",
+					Error: scheduleError,
+				},
+				IntervalDays: choreviewmodels.Field{Value: "7", Error: intervalError},
+				Deadline: choreviewmodels.Field{
+					Value: "2020-02-03",
+				},
+				SummaryError: serviceErr.Error(),
+			}, false).Return(templ.Raw("feedback")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{
+					Service:              service,
+					View:                 view,
+					ChoreTemplateService: templates,
+				},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(
+					"chore_template_id=7&schedule_name=Weekly&deadline=2020-02-03&interval_days=7",
+				),
+			)
+			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+			Expect(response.Body.String()).To(Equal("feedback"))
+		},
+		Entry("name", validationerrors.ErrInvalidName, "invalid name", ""),
+		Entry("interval", validationerrors.ErrInvalidInterval, "", "invalid interval"),
+	)
+
+	DescribeTable(
+		"rejects malformed scheduled intervals with inline feedback",
+		func(ctx SpecContext, interval string) {
+			templates := NewMockChoreTemplateService(GinkgoT())
+			templates.EXPECT().
+				Get(ctx, 7).
+				Return(&choretemplatemodels.ChoreTemplateDetails{Id: 7, Name: "Kitchen"}, nil).
+				Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ScheduledForm(choreviewmodels.ScheduledForm{
+				ActionHref: "/chores",
+				CancelHref: "/chores",
+				BackHref:   "/chores/new?template_id=7",
+				Submitted:  true,
+				Template:   &choreapimodels.CreationTemplate{Id: 7, Name: "Kitchen"},
+				ScheduleName: choreviewmodels.Field{
+					Value: "Weekly",
+				},
+				Deadline: choreviewmodels.Field{Value: "2020-02-03"},
+				IntervalDays: choreviewmodels.Field{
+					Value: interval,
+					Error: "invalid interval",
+				},
+				SummaryError: "invalid interval",
+			}, false).Return(templ.Raw("feedback")).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{
+					Service:              NewMockService(GinkgoT()),
+					View:                 view,
+					ChoreTemplateService: templates,
+				},
+			)
+			app := echo.New()
+			app.POST("/chores", handler.Create)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/chores",
+				strings.NewReader(
+					"chore_template_id=7&schedule_name=Weekly&deadline=2020-02-03&interval_days="+interval,
+				),
+			)
+			request.Header.Set("Content-Type", echo.MIMEApplicationForm)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+			Expect(response.Body.String()).To(Equal("feedback"))
+		},
+		Entry("fraction", "1.5"),
+		Entry("text", "weekly"),
+		Entry("overflow", "9999999999999999999999999"),
+	)
+
 	It(
 		"renders scheduled HTML validation feedback with the submitted fields",
 		func(ctx SpecContext) {
@@ -97,6 +218,7 @@ var _ = Describe("Create chore", func() {
 				CancelHref:   "/chores",
 				Submitted:    true,
 				SummaryError: schedulemodels.ErrNameConflict.Error(),
+				BackHref:     "/chores/new?template_id=7",
 				Template:     &choreapimodels.CreationTemplate{Id: 7},
 				ScheduleName: choreviewmodels.Field{
 					Value: "Weekly",
@@ -107,8 +229,17 @@ var _ = Describe("Create chore", func() {
 				},
 				IntervalDays: choreviewmodels.Field{Value: "7"},
 			}, true).Return(templ.Raw("scheduled conflict")).Once()
+			templateService := NewMockChoreTemplateService(GinkgoT())
+			templateService.EXPECT().
+				Get(ctx, 7).
+				Return(&choretemplatemodels.ChoreTemplateDetails{Id: 7}, nil).
+				Once()
 			handler := choresendpoint.NewHandler(
-				&choresendpoint.HandlerDeps{Service: service, View: view},
+				&choresendpoint.HandlerDeps{
+					Service:              service,
+					View:                 view,
+					ChoreTemplateService: templateService,
+				},
 			)
 			app := echo.New()
 			app.POST("/chores", handler.Create)
@@ -132,7 +263,7 @@ var _ = Describe("Create chore", func() {
 	)
 
 	It(
-		"redirects a successful scheduled HTML submission to chores",
+		"redirects a successful scheduled HTML submission to the created chore",
 		func(ctx SpecContext) {
 			deadline := time.Date(2020, 2, 3, 0, 0, 0, 0, time.UTC)
 			interval, scheduleId := 7, 3
@@ -169,7 +300,7 @@ var _ = Describe("Create chore", func() {
 			app.ServeHTTP(response, request)
 
 			Expect(response.Code).To(Equal(http.StatusSeeOther))
-			Expect(response.Header().Get("Location")).To(Equal("/chores"))
+			Expect(response.Header().Get("Location")).To(Equal("/chores/42"))
 		},
 	)
 

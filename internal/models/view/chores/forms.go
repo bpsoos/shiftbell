@@ -3,6 +3,7 @@ package chores
 import apimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 
 type ScheduledForm struct {
+	BackHref     string
 	ActionHref   string
 	CancelHref   string
 	SummaryError string

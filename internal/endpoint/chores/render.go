@@ -219,11 +219,26 @@ func (h *Handler) renderScheduledFormError(
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, status, feedback.Error)
 	case hypermedia.RepresentationHTML:
+		model := scheduledFormErrorViewModel(request, feedback)
+		if request.ChoreTemplateId != nil {
+			details, err := h.choreTemplateService.Get(
+				ctx.Request().Context(),
+				*request.ChoreTemplateId,
+			)
+			if err != nil {
+				return h.renderNewChoreTemplateError(ctx, err)
+			}
+			model.Template = &choreCreationTemplate{
+				Id:          details.Id,
+				Name:        details.Name,
+				Description: details.Description,
+			}
+		}
 		return hypermedia.HTML(
 			ctx,
 			status,
 			h.view.ScheduledForm(
-				scheduledFormErrorViewModel(request, feedback),
+				model,
 				fullPage(ctx),
 			),
 		)
@@ -259,6 +274,9 @@ func (h *Handler) renderCreated(
 	chore choreRepresentation,
 ) error {
 	if hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML {
+		if chore.ScheduleId != nil {
+			return renderHTMLRedirect(ctx, chore.Links.Href("self"))
+		}
 		return renderHTMLRedirect(ctx, choreCollectionHref)
 	}
 	ctx.Response().Header().Set(

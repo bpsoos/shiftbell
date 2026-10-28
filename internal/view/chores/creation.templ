@@ -6,7 +6,7 @@ import (
 )
 
 templ creationContent(model choreviewmodels.Creation) {
-	@creationPage(model.BackHref) {
+	@panelPage(model.BackHref, creationBackLabel(model), "create-chore-heading") {
 		switch model.Creation.Step {
 			case "source":
 				@creationSource(model)
@@ -48,7 +48,10 @@ templ creationRecurrence(model choreviewmodels.Creation) {
 			}
 		}
 		@creationOptions() {
-			@creationOption(model.OneOffHref, "Continue", "Set the deadline and add this chore.")
+			@creationOption(model.OneOffHref, "One-off", "Create a single chore.")
+			if model.Creation.Template != nil {
+				@creationOption(model.ScheduledHref, "Repeating", "Create chores on a recurring schedule.")
+			}
 		}
 	}
 }

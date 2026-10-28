@@ -100,10 +100,13 @@ func (t *Templater) TemplateOneOffForm(
 }
 
 func (t *Templater) ScheduledForm(
-	_ choreviewmodels.ScheduledForm,
+	form choreviewmodels.ScheduledForm,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chores", fullPage, templ.Raw(""))
+	if !form.Submitted && form.Deadline.Value == "" {
+		form.Deadline.Value = t.localDate()
+	}
+	return layouts.Frame("chores", fullPage, scheduledFormContent(form))
 }
 
 func (t *Templater) EditForm(
@@ -241,4 +244,15 @@ func formControlClass(className string, errorMessage string) string {
 		className += " is-invalid"
 	}
 	return className
+}
+
+func scheduleHref(id int) string {
+	return fmt.Sprintf("/schedules/%d", id)
+}
+
+func creationBackLabel(model choreviewmodels.Creation) string {
+	if model.Creation.Template != nil {
+		return "Templates"
+	}
+	return "Chores"
 }

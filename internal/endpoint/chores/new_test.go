@@ -62,8 +62,10 @@ var _ = Describe("Start chore creation", func() {
 				Once()
 			view := NewMockView(GinkgoT())
 			view.EXPECT().ScheduledForm(choreviewmodels.ScheduledForm{
-				ActionHref: "/chores",
-				CancelHref: "/chores",
+				ActionHref:   "/chores",
+				CancelHref:   "/chores",
+				BackHref:     "/chores/new?template_id=42",
+				ScheduleName: choreviewmodels.Field{Value: "Kitchen schedule"},
 				Template: &choreapimodels.CreationTemplate{
 					Id:          42,
 					Name:        "Kitchen",

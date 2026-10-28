@@ -108,6 +108,9 @@ func creationViewModel(
 		Creation: creation,
 		BackHref: choreCollectionHref,
 	}
+	if creation.Template != nil {
+		model.BackHref = "/chore-templates?picker=1"
+	}
 	for _, choice := range creation.Choices {
 		switch choice.Label {
 		case "Specify new":
@@ -129,13 +132,18 @@ func creationViewModel(
 func scheduledFormViewModel(
 	creation choreCreationResponse,
 ) choreviewmodels.ScheduledForm {
-	return choreviewmodels.ScheduledForm{
+	model := choreviewmodels.ScheduledForm{
 		ActionHref: creationActionHref(
 			creation,
 		),
 		CancelHref: choreCollectionHref,
 		Template:   creation.Template,
 	}
+	if creation.Template != nil {
+		model.BackHref = (routes.ChoreCreation{ChoreTemplateId: creation.Template.Id}).Href()
+		model.ScheduleName.Value = creation.Template.Name + " schedule"
+	}
+	return model
 }
 
 func scheduledFormErrorViewModel(
@@ -161,6 +169,11 @@ func scheduledFormErrorViewModel(
 	}
 	if request.ChoreTemplateId != nil {
 		model.Template = &choreCreationTemplate{Id: *request.ChoreTemplateId}
+		model.BackHref = (routes.ChoreCreation{ChoreTemplateId: *request.ChoreTemplateId}).Href()
+		if model.Name.Error != "" {
+			model.ScheduleName.Error = model.Name.Error
+			model.Name.Error = ""
+		}
 	}
 	return model
 }

@@ -63,7 +63,7 @@ templ detailCard(t *Templater, chore choreapimodels.Representation, editHref str
 			<p data-description>{ chore.Description }</p>
 		}
 		if chore.ScheduleId != nil {
-			<span data-repeating>Repeating chore</span>
+			<a data-repeating href={ scheduleHref(*chore.ScheduleId) } hx-get={ scheduleHref(*chore.ScheduleId) } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">View schedule</a>
 		}
 	</article>
 }

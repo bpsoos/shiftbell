@@ -47,7 +47,6 @@ func pickerViewModel(
 			Name: item.Name,
 			SelectHref: (routes.ChoreCreation{
 				ChoreTemplateId: item.Id,
-				Recurrence:      routes.ChoreCreationRecurrenceOneOff,
 			}).Href(),
 		}
 	}
