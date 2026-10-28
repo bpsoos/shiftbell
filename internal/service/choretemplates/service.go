@@ -5,6 +5,7 @@ import (
 	"time"
 
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
 )
 
 type Service struct {
@@ -39,6 +40,11 @@ type Persister interface {
 		*models.BrowseChoreTemplatesParams,
 	) (*models.ChoreTemplatePage, error)
 	Get(context.Context, int) (*models.ChoreTemplateDetails, error)
+	ListSchedules(
+		context.Context,
+		int,
+		schedulemodels.ScheduleFilter,
+	) ([]models.ScheduleReference, error)
 	Edit(context.Context, *models.EditChoreTemplateParams) (*models.ChoreTemplate, error)
 	Deactivate(
 		context.Context,

@@ -145,6 +145,26 @@
 		});
 	};
 
+	const syncTemplateSchedules = () => {
+		const list = document.querySelector("#template-schedule-list [data-template-schedule-list]");
+		document.querySelectorAll("[data-template-schedules]").forEach((button) => {
+			const selected = button.dataset.scheduleState === list?.dataset.scheduleState;
+			button.setAttribute("aria-expanded", String(selected));
+			if (selected) {
+				button.querySelector("strong").textContent = list.dataset.scheduleTotal;
+			}
+		});
+	};
+
+	const emphasizeDeactivationBlock = () => {
+		const message = document.querySelector("[data-deactivation-blocked]");
+		if (!message) {
+			return;
+		}
+		message.setAttribute("data-emphasized", "");
+		window.setTimeout(() => message.removeAttribute("data-emphasized"), 600);
+	};
+
 	document.addEventListener("input", (event) => {
 		const form = event.target.closest?.("[data-manual-scheduled-form]");
 		if (!form) {
@@ -215,7 +235,14 @@
 	});
 
 	document.addEventListener("htmx:beforeRequest", (event) => {
-		const form = htmxRequestElement(event)?.closest?.("[data-completion-form]");
+		const requestElement = htmxRequestElement(event);
+		if (requestElement?.matches?.('[data-template-schedules][aria-expanded="true"]')) {
+			event.preventDefault();
+			document.getElementById("template-schedule-list")?.replaceChildren();
+			syncTemplateSchedules();
+			return;
+		}
+		const form = requestElement?.closest?.("[data-completion-form]");
 		if (form) {
 			setCompletionPending(form, true);
 		}
@@ -235,12 +262,14 @@
 	document.addEventListener("htmx:afterSwap", (event) => {
 		syncNavigation();
 		syncThemeControls(document.documentElement.getAttribute("data-bs-theme"));
+		syncTemplateSchedules();
 
 		if (event.detail.target?.id === "dialog-root") {
 			showDialog(event.detail.target);
 		}
 
 		if (event.detail.target?.id === "main") {
+			closeDialog();
 			closeNavigation();
 			const main = document.getElementById("main");
 			const autofocus = main?.querySelector("[autofocus]");
@@ -254,6 +283,13 @@
 
 	document.addEventListener("choreCompleted", closeDialog);
 	document.addEventListener("scheduleDeactivated", closeDialog);
+	document.addEventListener("templateDeactivationBlocked", () => {
+		dialogTrigger = null;
+		closeDialog();
+		syncTemplateSchedules();
+		document.getElementById("template-schedule-list")?.focus();
+		emphasizeDeactivationBlock();
+	});
 
 	window.addEventListener("popstate", syncNavigation);
 	if (document.readyState === "loading") {

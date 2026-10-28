@@ -3,11 +3,14 @@ package choretemplates_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"time"
 
 	"github.com/a-h/templ"
 	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
@@ -107,4 +110,70 @@ var _ = Describe("Confirm chore template deactivation", func() {
 		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
 		Expect(response.Body.String()).To(Equal("inactive dialog sentinel"))
 	})
+
+	DescribeTable(
+		"reveals active references instead of opening confirmation",
+		func(ctx SpecContext, count int, viewAllHref string) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
+				Id: 8, Name: "Laundry", ActiveScheduleCount: count,
+			}, nil).Once()
+			schedules := make([]choretemplatemodels.ScheduleReference, count)
+			links := make([]viewmodels.ScheduleLink, min(count, 10))
+			for i := range schedules {
+				schedules[i] = choretemplatemodels.ScheduleReference{
+					Id:   i + 1,
+					Name: "Laundry " + strconv.Itoa(i),
+				}
+			}
+			for i := range links {
+				links[i] = viewmodels.ScheduleLink{
+					Name: schedules[i].Name,
+					Href: "/schedules/" + strconv.Itoa(i+1),
+				}
+			}
+			service.EXPECT().
+				ListSchedules(ctx, 8, schedulemodels.ScheduleFilterActive).
+				Return(&choretemplatemodels.TemplateSchedules{TemplateName: "Laundry", Schedules: schedules}, nil).
+				Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().ScheduleList(viewmodels.ScheduleList{
+				Heading:      "Active schedules",
+				EmptyMessage: "No active schedules.",
+				TemplateHref: "/chore-templates/8",
+				State:        "active",
+				Total:        count,
+				Inline:       true,
+				Notice:       "Deactivate these active schedules before deactivating the template.",
+				ViewAllHref:  viewAllHref,
+				Schedules:    links,
+			}, false).Return(templ.Raw("blocked schedules")).Once()
+			handler := choretemplatesendpoint.NewHandler(
+				&choretemplatesendpoint.HandlerDeps{Service: service, View: view},
+			)
+			e := echo.New()
+			e.GET("/chore-templates/:id/deactivation", handler.ConfirmDeactivation)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chore-templates/8/deactivation",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusConflict))
+			Expect(
+				response.Header().Get("HX-Retarget"),
+			).To(Equal("#template-schedule-list"))
+			Expect(response.Header().Get("HX-Reswap")).To(Equal("innerHTML"))
+			Expect(
+				response.Header().Get("HX-Trigger-After-Swap"),
+			).To(Equal("templateDeactivationBlocked"))
+			Expect(response.Body.String()).To(Equal("blocked schedules"))
+		},
+		Entry("a few schedules", 2, ""),
+		Entry("more than ten", 12, "/chore-templates/8/schedules?state=active"),
+	)
 })

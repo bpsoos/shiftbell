@@ -76,14 +76,6 @@ templ scheduleCard(schedule apimodels.Representation) {
 templ scheduleHeader(schedule apimodels.Representation) {
 	<header>
 		<style>
-			me > [data-eyebrow] {
-				color: var(--sb-muted);
-				font-size: 0.6875rem;
-				font-weight: 700;
-				letter-spacing: 0.08em;
-				margin: 0 0 0.5rem;
-				text-transform: uppercase;
-			}
 			me > [data-heading] {
 				align-items: flex-start;
 				display: flex;
@@ -111,7 +103,6 @@ templ scheduleHeader(schedule apimodels.Representation) {
 				}
 			}
 		</style>
-		<p data-eyebrow>Schedule</p>
 		<div data-heading>
 			<h1 id="schedule-heading">{ schedule.Name }</h1>
 			if schedule.DeactivatedAt != nil {

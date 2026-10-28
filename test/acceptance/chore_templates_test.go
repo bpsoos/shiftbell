@@ -3,6 +3,7 @@ package acceptance_test
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -23,6 +24,72 @@ var _ = Describe("Chore template API", func() {
 		Expect(baseURL).NotTo(BeEmpty())
 		client = shiftbellapi.NewAPIClient(baseURL)
 	})
+
+	It(
+		"lists related schedules inline and reveals them when deactivation is blocked",
+		func(ctx SpecContext) {
+			name := uniqueChoreTemplateName("Inline relationships")
+			template := createChoreTemplate(
+				ctx,
+				client,
+				discoverChoreTemplateCollection(ctx, client),
+				name,
+				"Reusable steps.",
+			)
+			created := createTemplateScheduledChore(
+				ctx,
+				client,
+				template.ChoreTemplate,
+				name+" weekly",
+				7,
+			)
+			href := template.ChoreTemplate.Links.Href(shiftbellapi.RelationSelf)
+			getHTML := func(path, target string) (*http.Response, string) {
+				GinkgoHelper()
+				request, err := http.NewRequestWithContext(
+					ctx,
+					http.MethodGet,
+					os.Getenv("SHIFTBELL_BASE_URL")+path,
+					nil,
+				)
+				Expect(err).NotTo(HaveOccurred())
+				request.Header.Set("Accept", "text/html")
+				request.Header.Set("HX-Request", "true")
+				request.Header.Set("HX-Target", target)
+				response, err := http.DefaultClient.Do(request)
+				Expect(err).NotTo(HaveOccurred())
+				DeferCleanup(response.Body.Close)
+				body, err := io.ReadAll(response.Body)
+				Expect(err).NotTo(HaveOccurred())
+				return response, string(body)
+			}
+
+			response, body := getHTML(
+				href+"/schedules?state=active",
+				"template-schedule-list",
+			)
+			Expect(response.StatusCode).To(Equal(http.StatusOK))
+			Expect(body).To(ContainSubstring(`data-schedule-total="1"`))
+			Expect(
+				body,
+			).To(ContainSubstring(fmt.Sprintf(`href="/schedules/%d"`, *created.Chore.ScheduleId)))
+			Expect(body).To(ContainSubstring(name + " weekly"))
+			Expect(body).NotTo(ContainSubstring("<dialog"))
+
+			blocked, blockedBody := getHTML(href+"/deactivation", "dialog-root")
+			Expect(blocked.StatusCode).To(Equal(http.StatusConflict))
+			Expect(blocked.Header.Get("HX-Retarget")).To(Equal("#template-schedule-list"))
+			Expect(
+				blocked.Header.Get("HX-Trigger-After-Swap"),
+			).To(Equal("templateDeactivationBlocked"))
+			Expect(
+				blockedBody,
+			).To(ContainSubstring("Deactivate these active schedules before deactivating the template."))
+			Expect(blockedBody).To(ContainSubstring(name + " weekly"))
+			Expect(blockedBody).NotTo(ContainSubstring("<dialog"))
+			Expect(blockedBody).NotTo(ContainSubstring("data-destructive-action"))
+		},
+	)
 
 	It(
 		"creates a normalized chore template that can be retrieved",

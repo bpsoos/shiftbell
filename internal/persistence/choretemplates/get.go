@@ -17,18 +17,30 @@ func (p *Persister) Get(
 	row := p.db.QueryRowContext(
 		ctx,
 		`
-			select name, description, deactivated_at
-			from chore_templates
-			where id = ?
+			select t.name, t.description, t.deactivated_at,
+				(select count(*) from schedules s
+				 where s.chore_template_id = t.id and s.deactivated_at is null),
+				(select count(*) from schedules s
+				 where s.chore_template_id = t.id and s.deactivated_at is not null)
+			from chore_templates t
+			where t.id = ?
 		`,
 		id,
 	)
 	var (
-		name          string
-		description   sql.NullString
-		deactivatedAt sql.NullTime
+		name                     string
+		description              sql.NullString
+		deactivatedAt            sql.NullTime
+		activeScheduleCount      int
+		deactivatedScheduleCount int
 	)
-	err := row.Scan(&name, &description, &deactivatedAt)
+	err := row.Scan(
+		&name,
+		&description,
+		&deactivatedAt,
+		&activeScheduleCount,
+		&deactivatedScheduleCount,
+	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNotFound
@@ -42,9 +54,11 @@ func (p *Persister) Get(
 	}
 
 	return &models.ChoreTemplateDetails{
-		Id:            id,
-		Name:          name,
-		Description:   description.String,
-		DeactivatedAt: deactivatedAtValue,
+		Id:                       id,
+		Name:                     name,
+		Description:              description.String,
+		DeactivatedAt:            deactivatedAtValue,
+		ActiveScheduleCount:      activeScheduleCount,
+		DeactivatedScheduleCount: deactivatedScheduleCount,
 	}, nil
 }

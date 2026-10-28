@@ -94,4 +94,63 @@ var _ = Describe("Get", func() {
 			).To(Equal(&models.ChoreTemplateDetails{Id: 2, Name: "Dishes", Description: "Load the dishwasher"}))
 		})
 	})
+
+	Context("with schedules linked to different templates", func() {
+		BeforeEach(func() {
+			_, err := db.Exec(
+				`insert into chore_templates (id, name) values (1, 'Laundry'), (2, 'Kitchen')`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = db.Exec(
+				`insert into schedules (id, name, chore_template_id, interval_days, deactivated_at) values
+				(1, 'Weekly laundry', 1, 7, null),
+				(2, 'Monthly laundry', 1, 30, null),
+				(3, 'Previous laundry', 1, 14, '2026-10-01 00:00:00'),
+				(4, 'Weekly kitchen', 2, 7, null)`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		DescribeTable(
+			"counts only schedules linked to the requested template",
+			func(ctx SpecContext, id, active, deactivated int) {
+				result, err := persister.Get(ctx, id)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.ActiveScheduleCount).To(Equal(active))
+				Expect(result.DeactivatedScheduleCount).To(Equal(deactivated))
+			},
+			Entry("mixed states", 1, 2, 1),
+			Entry("another template", 2, 1, 0),
+		)
+
+		It("reflects schedule deactivation in the counts", func(ctx SpecContext) {
+			_, err := db.ExecContext(
+				ctx,
+				`update schedules set deactivated_at = '2026-10-02 00:00:00' where id = 1`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			result, err := persister.Get(ctx, 1)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.ActiveScheduleCount).To(Equal(1))
+			Expect(result.DeactivatedScheduleCount).To(Equal(2))
+		})
+
+		It("keeps historical counts for a deactivated template", func(ctx SpecContext) {
+			_, err := db.ExecContext(
+				ctx,
+				`update schedules set deactivated_at = '2026-10-02 00:00:00' where chore_template_id = 1`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = db.ExecContext(
+				ctx,
+				`update chore_templates set deactivated_at = '2026-10-02 00:00:00' where id = 1`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			result, err := persister.Get(ctx, 1)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.DeactivatedAt).NotTo(BeNil())
+			Expect(result.ActiveScheduleCount).To(BeZero())
+			Expect(result.DeactivatedScheduleCount).To(Equal(3))
+		})
+	})
 })

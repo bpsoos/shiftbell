@@ -218,12 +218,16 @@ func (h *Handler) renderEditedTemplate(
 	ctx *echo.Context,
 	edited *models.ChoreTemplate,
 ) error {
+	details, err := h.service.Get(ctx.Request().Context(), edited.Id)
+	if err != nil {
+		return h.renderEditLoadError(ctx, err)
+	}
 	representation := newRepresentation(edited)
 	ctx.Response().Header().Set("HX-Replace-Url", representation.Links.Href("self"))
-	return h.renderDetail(
+	return h.renderTemplateDetails(
 		ctx,
 		http.StatusOK,
-		representation,
+		details,
 		"Template updated.",
 	)
 }

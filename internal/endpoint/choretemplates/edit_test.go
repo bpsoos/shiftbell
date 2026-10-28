@@ -67,62 +67,72 @@ var _ = Describe("Edit chore template", func() {
 		}`))
 	})
 
-	It("edits a template from an HTMX form", func(ctx SpecContext) {
-		service := NewMockService(GinkgoT())
-		service.EXPECT().Edit(ctx, &choretemplatemodels.EditChoreTemplateParams{
-			Id:          8,
-			Name:        "Laundry edited",
-			Description: "Wash, dry, and fold",
-		}).Return(&choretemplatemodels.ChoreTemplate{
-			Id:          8,
-			Name:        "Laundry edited",
-			Description: "Wash, dry, and fold",
-		}, nil).Once()
-		representation := choretemplateapimodels.Representation{
-			Id:          8,
-			Name:        "Laundry edited",
-			Description: "Wash, dry, and fold",
-			Links: api.Relations{
-				{Rel: "self", Href: "/chore-templates/8"},
-				{Rel: "collection", Href: "/chore-templates"},
-			},
-			Actions: api.Relations{
-				{Rel: "edit", Href: "/chore-templates/8"},
-				{Rel: "deactivate", Href: "/chore-templates/8/deactivation"},
-			},
-		}
-		view := NewMockView(GinkgoT())
-		view.EXPECT().Detail(viewmodels.Detail{
-			ChoreTemplate:  representation,
-			CollectionHref: "/chore-templates",
-			EditHref:       "/chore-templates/8/edit",
-			DeactivateHref: "/chore-templates/8/deactivation",
-			Notice:         "Template updated.",
-		}, false).Return(templ.Raw("updated detail sentinel")).Once()
-		handler := choretemplatesendpoint.NewHandler(
-			&choretemplatesendpoint.HandlerDeps{Service: service, View: view},
-		)
-		e := echo.New()
-		e.PATCH("/chore-templates/:id", handler.Edit)
-		request := httptest.NewRequestWithContext(
-			ctx,
-			http.MethodPatch,
-			"/chore-templates/8",
-			strings.NewReader(
-				"name=Laundry+edited&description=Wash%2C+dry%2C+and+fold",
-			),
-		)
-		request.Header.Set("Accept", "text/html")
-		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		request.Header.Set("HX-Request", "true")
-		response := httptest.NewRecorder()
+	It(
+		"edits a template from an HTMX form and preserves its schedule counts",
+		func(ctx SpecContext) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Edit(ctx, &choretemplatemodels.EditChoreTemplateParams{
+				Id:          8,
+				Name:        "Laundry edited",
+				Description: "Wash, dry, and fold",
+			}).Return(&choretemplatemodels.ChoreTemplate{
+				Id:          8,
+				Name:        "Laundry edited",
+				Description: "Wash, dry, and fold",
+			}, nil).Once()
+			service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
+				Id: 8, Name: "Laundry edited", Description: "Wash, dry, and fold",
+				ActiveScheduleCount: 2, DeactivatedScheduleCount: 1,
+			}, nil).Once()
+			representation := choretemplateapimodels.Representation{
+				Id:          8,
+				Name:        "Laundry edited",
+				Description: "Wash, dry, and fold",
+				Links: api.Relations{
+					{Rel: "self", Href: "/chore-templates/8"},
+					{Rel: "collection", Href: "/chore-templates"},
+				},
+				Actions: api.Relations{
+					{Rel: "edit", Href: "/chore-templates/8"},
+					{Rel: "deactivate", Href: "/chore-templates/8/deactivation"},
+				},
+			}
+			view := NewMockView(GinkgoT())
+			view.EXPECT().Detail(viewmodels.Detail{
+				ChoreTemplate:       representation,
+				CollectionHref:      "/chore-templates",
+				EditHref:            "/chore-templates/8/edit",
+				DeactivateHref:      "/chore-templates/8/deactivation",
+				Notice:              "Template updated.",
+				ActiveScheduleCount: 2, DeactivatedScheduleCount: 1,
+			}, false).Return(templ.Raw("updated detail sentinel")).Once()
+			handler := choretemplatesendpoint.NewHandler(
+				&choretemplatesendpoint.HandlerDeps{Service: service, View: view},
+			)
+			e := echo.New()
+			e.PATCH("/chore-templates/:id", handler.Edit)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPatch,
+				"/chore-templates/8",
+				strings.NewReader(
+					"name=Laundry+edited&description=Wash%2C+dry%2C+and+fold",
+				),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
 
-		e.ServeHTTP(response, request)
+			e.ServeHTTP(response, request)
 
-		Expect(response.Code).To(Equal(http.StatusOK))
-		Expect(response.Header().Get("HX-Replace-Url")).To(Equal("/chore-templates/8"))
-		Expect(response.Body.String()).To(Equal("updated detail sentinel"))
-	})
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(
+				response.Header().Get("HX-Replace-Url"),
+			).To(Equal("/chore-templates/8"))
+			Expect(response.Body.String()).To(Equal("updated detail sentinel"))
+		},
+	)
 
 	It("preserves values and shows field validation feedback", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())

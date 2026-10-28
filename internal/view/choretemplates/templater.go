@@ -102,6 +102,16 @@ func (t *Templater) ConfirmationDialog(
 	return confirmationview.Dialog(model)
 }
 
+func (t *Templater) ScheduleList(
+	model viewmodels.ScheduleList,
+	fullPage bool,
+) templ.Component {
+	if model.Inline {
+		return scheduleList(model)
+	}
+	return layouts.Frame("chore-templates", fullPage, scheduleListPage(model))
+}
+
 func (t *Templater) Error(
 	model viewmodels.Error,
 	fullPage bool,

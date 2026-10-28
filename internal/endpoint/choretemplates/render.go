@@ -85,6 +85,22 @@ func (h *Handler) renderDetail(
 	}
 }
 
+func (h *Handler) renderTemplateDetails(
+	ctx *echo.Context,
+	status int,
+	details *choretemplatemodels.ChoreTemplateDetails,
+	notice string,
+) error {
+	representation := newRepresentation(&details.ChoreTemplate)
+	if !acceptsHTML(ctx) {
+		return h.renderDetail(ctx, status, representation, notice)
+	}
+	model := detailViewModel(representation, notice)
+	model.ActiveScheduleCount = details.ActiveScheduleCount
+	model.DeactivatedScheduleCount = details.DeactivatedScheduleCount
+	return hypermedia.HTML(ctx, status, h.view.Detail(model, fullPage(ctx)))
+}
+
 func (h *Handler) renderEditForm(
 	ctx *echo.Context,
 	status int,

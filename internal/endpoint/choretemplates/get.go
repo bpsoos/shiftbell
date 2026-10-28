@@ -30,10 +30,10 @@ func (h *Handler) Get(ctx *echo.Context) error {
 		return h.renderGetError(ctx, err)
 	}
 
-	return h.renderDetail(
+	return h.renderTemplateDetails(
 		ctx,
 		http.StatusOK,
-		newRepresentation(&details.ChoreTemplate),
+		details,
 		"",
 	)
 }

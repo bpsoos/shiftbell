@@ -38,6 +38,7 @@ func (r *Router) Setup(app *echo.Echo) error {
 	app.GET("/chore-templates", r.choreTemplateHandler.Browse)
 	app.GET("/chore-templates/new", r.choreTemplateHandler.CreateForm)
 	app.GET("/chore-templates/:id", r.choreTemplateHandler.Get)
+	app.GET("/chore-templates/:id/schedules", r.choreTemplateHandler.ListSchedules)
 	app.GET("/chore-templates/:id/edit", r.choreTemplateHandler.EditForm)
 	app.PATCH("/chore-templates/:id", r.choreTemplateHandler.Edit)
 	app.GET(

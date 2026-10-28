@@ -57,6 +57,7 @@ templ detailCard(t *Templater, model viewmodels.Detail) {
 		if model.ChoreTemplate.DeactivatedAt != nil {
 			<p data-deactivated>Deactivated { t.formatTime(*model.ChoreTemplate.DeactivatedAt) }</p>
 		}
+		@templateScheduleCounts(model)
 	</article>
 }
 
@@ -109,7 +110,6 @@ templ detailActions(editHref string, deactivateHref string) {
 				hx-get={ deactivateHref }
 				hx-target="#dialog-root"
 				hx-swap="innerHTML"
-				aria-haspopup="dialog"
 			>
 				@viewicons.Archive()
 				<span>Deactivate</span>

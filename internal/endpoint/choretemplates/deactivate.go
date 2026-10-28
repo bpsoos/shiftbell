@@ -7,6 +7,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
 	"github.com/labstack/echo/v5"
 )
 
@@ -95,12 +96,11 @@ func (h *Handler) renderHTMXDeactivationError(
 	id int,
 	err error,
 ) error {
-	if _, ok := errors.AsType[*models.ActiveScheduleReferencesError](err); ok {
-		return h.renderDeactivationDialogError(
+	if references, ok := errors.AsType[*models.ActiveScheduleReferencesError](err); ok {
+		return h.renderBlockedDeactivation(
 			ctx,
-			http.StatusConflict,
 			id,
-			"This template cannot be deactivated while active schedules use it.",
+			references.Schedules,
 		)
 	}
 	if errors.Is(err, models.ErrInactive) {
@@ -116,6 +116,24 @@ func (h *Handler) renderHTMXDeactivationError(
 		id,
 		deactivationFailedMessage,
 	)
+}
+
+func (h *Handler) renderBlockedDeactivation(
+	ctx *echo.Context,
+	id int,
+	schedules []models.ScheduleReference,
+) error {
+	model := scheduleListViewModel(
+		id,
+		schedulemodels.ScheduleFilterActive,
+		schedules,
+		true,
+	)
+	model.Notice = "Deactivate these active schedules before deactivating the template."
+	ctx.Response().Header().Set("HX-Retarget", "#template-schedule-list")
+	ctx.Response().Header().Set("HX-Reswap", "innerHTML")
+	ctx.Response().Header().Set("HX-Trigger-After-Swap", "templateDeactivationBlocked")
+	return h.renderScheduleList(ctx, http.StatusConflict, model)
 }
 
 func (h *Handler) renderMissingDeactivationResult(

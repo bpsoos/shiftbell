@@ -20,9 +20,10 @@ var _ = Describe("Get chore template", func() {
 	It("maps an active template to a read-only HTML detail", func(ctx SpecContext) {
 		service := NewMockService(GinkgoT())
 		service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-			Id:          8,
-			Name:        "Laundry",
-			Description: "Wash and fold",
+			Id:                  8,
+			Name:                "Laundry",
+			Description:         "Wash and fold",
+			ActiveScheduleCount: 2, DeactivatedScheduleCount: 1,
 		}, nil).Once()
 		view := NewMockView(GinkgoT())
 		view.EXPECT().Detail(viewmodels.Detail{
@@ -39,9 +40,10 @@ var _ = Describe("Get chore template", func() {
 					{Rel: "deactivate", Href: "/chore-templates/8/deactivation"},
 				},
 			},
-			CollectionHref: "/chore-templates",
-			EditHref:       "/chore-templates/8/edit",
-			DeactivateHref: "/chore-templates/8/deactivation",
+			CollectionHref:      "/chore-templates",
+			EditHref:            "/chore-templates/8/edit",
+			DeactivateHref:      "/chore-templates/8/deactivation",
+			ActiveScheduleCount: 2, DeactivatedScheduleCount: 1,
 		}, true).Return(templ.Raw("detail sentinel")).Once()
 		handler := choretemplatesendpoint.NewHandler(&choretemplatesendpoint.HandlerDeps{
 			Service: service,
@@ -70,9 +72,10 @@ var _ = Describe("Get chore template", func() {
 			deactivatedAt := time.Date(2026, time.August, 8, 12, 0, 0, 0, time.UTC)
 			service := NewMockService(GinkgoT())
 			service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-				Id:            8,
-				Name:          "Laundry",
-				DeactivatedAt: &deactivatedAt,
+				Id:                       8,
+				Name:                     "Laundry",
+				DeactivatedAt:            &deactivatedAt,
+				DeactivatedScheduleCount: 3,
 			}, nil).Once()
 			view := NewMockView(GinkgoT())
 			view.EXPECT().Detail(viewmodels.Detail{
@@ -86,7 +89,8 @@ var _ = Describe("Get chore template", func() {
 					},
 					Actions: api.Relations{},
 				},
-				CollectionHref: "/chore-templates",
+				CollectionHref:           "/chore-templates",
+				DeactivatedScheduleCount: 3,
 			}, true).Return(templ.Raw("read-only detail sentinel")).Once()
 			handler := choretemplatesendpoint.NewHandler(
 				&choretemplatesendpoint.HandlerDeps{

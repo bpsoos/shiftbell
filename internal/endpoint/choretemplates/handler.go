@@ -9,6 +9,7 @@ import (
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choretemplateapimodels "github.com/bpsoos/shiftbell/internal/models/api/choretemplates"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
 	choretemplateviewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 )
@@ -25,6 +26,11 @@ type Service interface {
 		*models.CreateChoreTemplateParams,
 	) (*models.ChoreTemplate, error)
 	Get(context.Context, int) (*models.ChoreTemplateDetails, error)
+	ListSchedules(
+		context.Context,
+		int,
+		schedulemodels.ScheduleFilter,
+	) (*models.TemplateSchedules, error)
 	Edit(
 		context.Context,
 		*models.EditChoreTemplateParams,
@@ -48,6 +54,7 @@ type View interface {
 	Detail(choretemplateviewmodels.Detail, bool) templ.Component
 	EditForm(choretemplateviewmodels.EditForm, bool) templ.Component
 	CreateForm(choretemplateviewmodels.CreateForm, bool) templ.Component
+	ScheduleList(choretemplateviewmodels.ScheduleList, bool) templ.Component
 	ConfirmationDialog(confirmationviewmodels.Dialog) templ.Component
 	Error(choretemplateviewmodels.Error, bool) templ.Component
 }

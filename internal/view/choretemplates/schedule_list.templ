@@ -1,0 +1,116 @@
+package choretemplates
+
+import (
+	"strconv"
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
+	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+	"github.com/bpsoos/shiftbell/internal/view/resourcenavigation"
+)
+
+templ scheduleList(model viewmodels.ScheduleList) {
+	<div data-template-schedule-list data-schedule-state={ model.State } data-schedule-total={ strconv.Itoa(model.Total) }>
+		<style>
+			me > [data-empty-schedules],
+			me > [role="alert"] {
+				color: var(--sb-muted);
+				font-size: 0.875rem;
+				margin: 0.5rem 0;
+			}
+			me > ul {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			me li {
+				overflow-wrap: anywhere;
+			}
+		</style>
+		if model.Error != "" {
+			<p role="alert">{ model.Error }</p>
+		} else {
+			if model.Notice != "" {
+				@deactivationBlockedNotice(model.Notice)
+			}
+			if len(model.Schedules) == 0 {
+				<p data-empty-schedules>{ model.EmptyMessage }</p>
+			} else {
+				<ul aria-label={ model.Heading }>
+					for _, schedule := range model.Schedules {
+						<li>@resourcenavigation.Link(schedule.Href, schedule.Name)</li>
+					}
+				</ul>
+			}
+			if model.ViewAllHref != "" {
+				@resourcenavigation.Link(model.ViewAllHref, "View all")
+			}
+		}
+	</div>
+}
+
+templ deactivationBlockedNotice(notice string) {
+	<p data-deactivation-blocked role="status">
+		<style>
+			me {
+				align-items: flex-start;
+				background: var(--sb-subtle);
+				border-left: 3px solid color-mix(in srgb, var(--sb-warning) 55%, var(--sb-border));
+				color: var(--sb-text);
+				display: flex;
+				font-size: 0.875rem;
+				font-weight: 600;
+				gap: 0.5rem;
+				line-height: 1.4;
+				margin: 0.5rem 0;
+				padding: 0.625rem 0.75rem;
+			}
+			me > svg {
+				color: var(--sb-warning);
+				flex: 0 0 auto;
+				height: 1rem;
+				margin-top: 0.125rem;
+				width: 1rem;
+			}
+			me[data-emphasized] {
+				background: color-mix(in srgb, var(--sb-accent) 18%, var(--sb-surface));
+				border-left-color: var(--sb-warning);
+			}
+			@media (prefers-reduced-motion: no-preference) {
+				me[data-emphasized] {
+					animation: me-emphasis 600ms ease-in-out;
+				}
+			}
+			@keyframes me-emphasis {
+				0%, 100% {
+					background: var(--sb-subtle);
+					border-left-color: color-mix(in srgb, var(--sb-warning) 55%, var(--sb-border));
+				}
+				40% {
+					background: color-mix(in srgb, var(--sb-accent) 18%, var(--sb-surface));
+					border-left-color: var(--sb-warning);
+				}
+			}
+		</style>
+		@viewicons.WarningCircle()
+		<span>{ notice }</span>
+	</p>
+}
+
+templ scheduleListPage(model viewmodels.ScheduleList) {
+	<section aria-labelledby="template-schedule-list-heading">
+		<style>
+			me {
+				margin-inline: auto;
+				max-width: 42rem;
+			}
+			me > h1 {
+				font-size: 1.875rem;
+				margin: 1rem 0 0.5rem;
+			}
+		</style>
+		if model.TemplateHref != "" {
+			@resourcenavigation.Link(model.TemplateHref, model.TemplateName)
+		}
+		<h1 id="template-schedule-list-heading">{ model.Heading }</h1>
+		@scheduleList(model)
+	</section>
+}

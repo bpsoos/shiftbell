@@ -7,6 +7,7 @@ import (
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	models "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	schedulemodels "github.com/bpsoos/shiftbell/internal/models/schedules"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
 )
@@ -26,6 +27,19 @@ func (h *Handler) ConfirmDeactivation(ctx *echo.Context) error {
 		return h.renderDeactivationLoadError(ctx, err)
 	}
 	if details.DeactivatedAt == nil {
+		if details.ActiveScheduleCount > 0 {
+			result, err := h.service.ListSchedules(
+				ctx.Request().Context(),
+				id,
+				schedulemodels.ScheduleFilterActive,
+			)
+			if err != nil {
+				return h.renderDeactivationLoadError(ctx, err)
+			}
+			if len(result.Schedules) > 0 {
+				return h.renderBlockedDeactivation(ctx, id, result.Schedules)
+			}
+		}
 		return h.renderConfirmationDialog(
 			ctx,
 			http.StatusOK,

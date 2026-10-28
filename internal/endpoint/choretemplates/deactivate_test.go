@@ -9,6 +9,7 @@ import (
 	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
@@ -70,11 +71,12 @@ var _ = Describe("Deactivate chore template", func() {
 	})
 
 	It(
-		"keeps the dialog open when active schedules block deactivation",
+		"replaces a stale confirmation with the authoritative active inline list",
 		func(ctx SpecContext) {
 			blocked := &choretemplatemodels.ActiveScheduleReferencesError{
 				Schedules: []choretemplatemodels.ActiveScheduleReference{
 					{Id: 7, Name: "Every two weeks"},
+					{Id: 9, Name: "Weekly laundry"},
 				},
 			}
 			service := NewMockService(GinkgoT())
@@ -82,21 +84,20 @@ var _ = Describe("Deactivate chore template", func() {
 				errors.New("deactivate chore template"),
 				blocked,
 			)).Once()
-			service.EXPECT().Get(ctx, 8).Return(&choretemplatemodels.ChoreTemplateDetails{
-				Id:   8,
-				Name: "Laundry",
-			}, nil).Once()
 			view := NewMockView(GinkgoT())
-			view.EXPECT().ConfirmationDialog(confirmationviewmodels.Dialog{
-				Heading:      "Deactivate template?",
-				Prompt:       "Deactivate",
-				Name:         "Laundry",
-				ActionHref:   "/chore-templates/8/deactivation",
-				ActionMethod: "put",
-				ActionLabel:  "Deactivate permanently",
-				Error:        "This template cannot be deactivated while active schedules use it.",
-				Icon:         "archive",
-			}).Return(templ.Raw("blocked dialog sentinel")).Once()
+			view.EXPECT().ScheduleList(viewmodels.ScheduleList{
+				Heading:      "Active schedules",
+				EmptyMessage: "No active schedules.",
+				TemplateHref: "/chore-templates/8",
+				State:        "active",
+				Total:        2,
+				Inline:       true,
+				Notice:       "Deactivate these active schedules before deactivating the template.",
+				Schedules: []viewmodels.ScheduleLink{
+					{Name: "Every two weeks", Href: "/schedules/7"},
+					{Name: "Weekly laundry", Href: "/schedules/9"},
+				},
+			}, false).Return(templ.Raw("blocked list sentinel")).Once()
 			handler := choretemplatesendpoint.NewHandler(
 				&choretemplatesendpoint.HandlerDeps{Service: service, View: view},
 			)
@@ -116,7 +117,14 @@ var _ = Describe("Deactivate chore template", func() {
 
 			Expect(response.Code).To(Equal(http.StatusConflict))
 			Expect(response.Header().Get("HX-Redirect")).To(BeEmpty())
-			Expect(response.Body.String()).To(Equal("blocked dialog sentinel"))
+			Expect(
+				response.Header().Get("HX-Retarget"),
+			).To(Equal("#template-schedule-list"))
+			Expect(response.Header().Get("HX-Reswap")).To(Equal("innerHTML"))
+			Expect(
+				response.Header().Get("HX-Trigger-After-Swap"),
+			).To(Equal("templateDeactivationBlocked"))
+			Expect(response.Body.String()).To(Equal("blocked list sentinel"))
 		},
 	)
 

@@ -45,6 +45,11 @@ type ChoreTemplateDetails struct {
 	DeactivatedScheduleCount int
 }
 
+type TemplateSchedules struct {
+	TemplateName string
+	Schedules    []ScheduleReference
+}
+
 type GetChoreTemplateBatchResult struct {
 	ChoreTemplates []ChoreTemplate
 	More           bool

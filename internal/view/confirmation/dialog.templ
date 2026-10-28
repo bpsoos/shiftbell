@@ -39,7 +39,13 @@ templ Dialog(model confirmationviewmodels.Dialog) {
 				}
 			}
 			@Actions() {
-				<button class="btn" type="button" data-dialog-cancel>Cancel</button>
+				<button class="btn" type="button" data-dialog-cancel>
+					if model.ActionHref == "" {
+						Close
+					} else {
+						Cancel
+					}
+				</button>
 				if model.ActionHref != "" {
 					<button class="btn btn-primary" type="submit" data-destructive-action>
 						if model.Icon == "trash" {

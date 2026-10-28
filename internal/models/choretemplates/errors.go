@@ -13,10 +13,12 @@ var (
 	)
 )
 
-type ActiveScheduleReference struct {
+type ScheduleReference struct {
 	Id   int
 	Name string
 }
+
+type ActiveScheduleReference = ScheduleReference
 
 type ActiveScheduleReferencesError struct {
 	Schedules []ActiveScheduleReference
