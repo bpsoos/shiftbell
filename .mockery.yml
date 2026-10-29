@@ -22,6 +22,9 @@ require-template-schema-exists: true
 template: testify
 template-schema: '{{.Template}}.schema.json'
 packages:
+  github.com/bpsoos/shiftbell/internal/service/populate:
+    config:
+      all: true
   github.com/bpsoos/shiftbell/internal/endpoint/schedules:
     config:
       all: true

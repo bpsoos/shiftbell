@@ -1,5 +1,6 @@
 dev_image := "shiftbell-dev"
 prod_image := "shiftbell"
+demo_image := "shiftbell-demo"
 golangci_lint_image := "golangci/golangci-lint:v2.15.0"
 bootstrap_version := "5.3.8"
 bootstrap_css_sha256 := "05b86c3a7fef0df5874fd856c683ec09cb17dceeab36da061ebd1667796fea79"
@@ -15,6 +16,12 @@ default:
 
 build:
     docker compose build -q
+
+build-prod:
+    docker build -f Dockerfile.serve -t {{prod_image}} .
+
+build-demo: build-prod
+    docker build -f Dockerfile.demo --build-arg PROD_IMAGE={{prod_image}} -t {{demo_image}} .
 
 shell: build (_prepare-cache "shiftbell-go-cache")
     docker run --rm -it \

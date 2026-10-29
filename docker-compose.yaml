@@ -14,7 +14,7 @@ services:
     image: ${DEV_IMAGE}
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     depends_on:
-      dev-permissions:
+      dev-seed:
         condition: service_completed_successfully
     ports:
       - "8080:80"
@@ -42,19 +42,26 @@ services:
     image: ${DEV_IMAGE}
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     environment:
+      HOME: /tmp
+      GOCACHE: /cache/go-build
+      DATABASE_FILEPATH: /data/app.db
+      DEMO_DATA_FILEPATH: /src/dev/demo/data.json
+      LOG_FORMAT: text
+      APP_TIMEZONE: "${APP_TIMEZONE:-Europe/Budapest}"
       TZ: "${APP_TIMEZONE:-Europe/Budapest}"
     volumes:
-      - "./dev/seed.sql:/seed.sql:ro"
+      - "./:/src"
+      - "go_build_cache:/cache/go-build"
+      - "go_module_cache:/go/pkg/mod"
       - "appdata:/data"
-    entrypoint: ["/bin/sh", "-c"]
+    entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
-        if [ "$$(sqlite3 /data/app.db 'select (select count(*) from chores) + (select count(*) from chore_templates) + (select count(*) from schedules)')" = "0" ]; then
-          sqlite3 -bail /data/app.db < /seed.sql
-        fi
+        go tool templ generate
+        go run ./cmd/populate-demo
     depends_on:
-      shiftbell:
-        condition: service_healthy
+      dev-permissions:
+        condition: service_completed_successfully
 
 volumes:
   go_build_cache:

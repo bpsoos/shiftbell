@@ -1,0 +1,19 @@
+ARG PROD_IMAGE=shiftbell
+
+FROM golang:1.27.3-alpine AS build
+
+WORKDIR /src
+
+COPY go.mod go.sum ./
+COPY cmd/populate-demo cmd/populate-demo
+COPY internal internal
+
+RUN go tool templ generate
+RUN CGO_ENABLED=0 go build -o /populate-demo ./cmd/populate-demo
+
+FROM ${PROD_IMAGE}
+
+COPY --from=build /populate-demo /populate-demo
+COPY dev/demo/data.json /demo-data.json
+
+ENV DEMO_DATA_FILEPATH=/demo-data.json
