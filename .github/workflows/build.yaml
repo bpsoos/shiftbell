@@ -66,3 +66,24 @@ jobs:
       - name: Log out of Docker Hub
         if: always()
         run: docker logout
+
+  publish-demo:
+    needs: [publish]
+    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: printf '%s' "$DOCKERHUB_TOKEN" | docker login --username bpsoos --password-stdin
+      - name: Build demo image
+        run: >-
+          docker build -f Dockerfile.demo
+          --build-arg "PROD_IMAGE=bpsoos/shiftbell:${GITHUB_SHA:0:7}"
+          -t "bpsoos/shiftbell-demo:${GITHUB_SHA:0:7}" .
+      - name: Push demo image
+        run: docker push "bpsoos/shiftbell-demo:${GITHUB_SHA:0:7}"
+      - name: Log out of Docker Hub
+        if: always()
+        run: docker logout

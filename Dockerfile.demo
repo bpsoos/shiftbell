@@ -14,6 +14,3 @@ RUN CGO_ENABLED=0 go build -o /populate-demo ./cmd/populate-demo
 FROM ${PROD_IMAGE}
 
 COPY --from=build /populate-demo /populate-demo
-COPY dev/demo/data.json /demo-data.json
-
-ENV DEMO_DATA_FILEPATH=/demo-data.json
