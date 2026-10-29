@@ -2,11 +2,10 @@ package populate_test
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 
-	"github.com/bpsoos/shiftbell/internal/app"
 	"github.com/bpsoos/shiftbell/internal/persistence/populate"
+	"github.com/bpsoos/shiftbell/internal/testsupport/sqlitetest"
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -22,10 +21,7 @@ var _ = Describe("HasData", func() {
 	var persister *populate.Persister
 
 	BeforeEach(func() {
-		var err error
-		db, err = app.OpenDatabase(filepath.Join(GinkgoT().TempDir(), "demo.db"))
-		Expect(err).NotTo(HaveOccurred())
-		DeferCleanup(db.Close)
+		db = sqlitetest.NewMigratedDB()
 		persister = populate.NewPersister(&populate.PersisterDeps{Db: db})
 	})
 
