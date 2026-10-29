@@ -7,6 +7,8 @@ bootstrap_js_sha256 := "e4fd49181388c48ec5040bd3fe66f57c29c8e67fcd8502b3354b96ec
 htmx_version := "2.0.11"
 htmx_js_sha256 := "d6fdc75f204e6bdefa99b69bf1e6d4ac69b8a364f77929f45c13476b4000f717"
 export DEV_IMAGE := dev_image
+export LOCAL_UID := `id -u`
+export LOCAL_GID := `id -g`
 
 default:
     just --list
@@ -14,8 +16,14 @@ default:
 build:
     docker compose build -q
 
-shell: build
-    docker run --rm -it -v {{justfile_dir()}}:/src {{dev_image}}
+shell: build (_prepare-cache "shiftbell-go-cache")
+    docker run --rm -it \
+        --user "$LOCAL_UID:$LOCAL_GID" \
+        -e HOME=/tmp \
+        -e GOCACHE=/cache/go-build \
+        -e GOMODCACHE=/cache/go-mod \
+        -v shiftbell-go-cache:/cache \
+        -v {{justfile_dir()}}:/src {{dev_image}}
 
 up: build
     docker compose up
@@ -43,8 +51,13 @@ dump-dev-db:
         testdb
     docker compose cp postgres:/testdb.dump .
 
-go *args: build
+go *args: build (_prepare-cache "shiftbell-go-cache")
     docker run --rm \
+        --user "$LOCAL_UID:$LOCAL_GID" \
+        -e HOME=/tmp \
+        -e GOCACHE=/cache/go-build \
+        -e GOMODCACHE=/cache/go-mod \
+        -v shiftbell-go-cache:/cache \
         -v {{justfile_dir()}}:/src \
         --entrypoint go \
         --workdir /src \
@@ -93,8 +106,10 @@ fetch-htmx: build
         "{{htmx_version}}" \
         "{{htmx_js_sha256}}"
 
-@golangci-lint *args:
+@golangci-lint *args: (_prepare-cache "shiftbell-golangci-cache")
     docker run --rm \
+        --user "$LOCAL_UID:$LOCAL_GID" \
+        -e HOME=/tmp \
         -v "{{justfile_directory()}}:/app" \
         -v "shiftbell-golangci-cache:/cache" \
         -w /app \
@@ -104,16 +119,28 @@ fetch-htmx: build
         {{golangci_lint_image}} \
         golangci-lint {{args}}
 
-mockery *args:
+mockery *args: (_prepare-cache "shiftbell-go-cache")
     docker run --rm \
+        --user "$LOCAL_UID:$LOCAL_GID" \
+        -e HOME=/tmp \
+        -e GOCACHE=/cache/go-build \
+        -e GOMODCACHE=/cache/go-mod \
+        -v shiftbell-go-cache:/cache \
         -v {{justfile_dir()}}:/src \
         --workdir /src \
         vektra/mockery:v3.8.1 {{args}}
 
 @regenerate-mocks:
     docker run --rm -v {{justfile_dir()}}:/src \
+            --user "$LOCAL_UID:$LOCAL_GID" \
             --entrypoint /bin/sh \
             --workdir /src \
             alpine \
             -c "find /src -type f \( -name mocks_test.go -o -name mocks.go \) -delete"
     just mockery
+
+[private]
+_prepare-cache volume:
+    docker run --rm \
+        -v "{{volume}}:/cache" \
+        alpine chown -R "$LOCAL_UID:$LOCAL_GID" /cache

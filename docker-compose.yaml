@@ -1,17 +1,33 @@
 services:
+  dev-permissions:
+    image: ${DEV_IMAGE}
+    user: "0:0"
+    volumes:
+      - "go_build_cache:/cache/go-build"
+      - "go_module_cache:/go/pkg/mod"
+      - "appdata:/data"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["chown -R ${LOCAL_UID:-1000}:${LOCAL_GID:-1000} /cache/go-build /go/pkg/mod /data"]
+
   shiftbell:
     build: .
     image: ${DEV_IMAGE}
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    depends_on:
+      dev-permissions:
+        condition: service_completed_successfully
     ports:
       - "8080:80"
     environment:
+      HOME: /tmp
+      GOCACHE: /cache/go-build
       DATABASE_FILEPATH: "/data/app.db"
       LOG_FORMAT: "text"
       APP_TIMEZONE: "${APP_TIMEZONE:-Europe/Budapest}"
       TZ: "${APP_TIMEZONE:-Europe/Budapest}"
     volumes:
       - "./:/src"
-      - "go_build_cache:/root/.cache/go-build"
+      - "go_build_cache:/cache/go-build"
       - "go_module_cache:/go/pkg/mod"
       - "appdata:/data"
     entrypoint: ["go"]
@@ -24,6 +40,7 @@ services:
 
   dev-seed:
     image: ${DEV_IMAGE}
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     environment:
       TZ: "${APP_TIMEZONE:-Europe/Budapest}"
     volumes:
