@@ -52,7 +52,10 @@ func loadAppPort() (int, error) {
 	}
 	port, err := strconv.Atoi(value)
 	if err != nil || port < 1 || port > 65535 {
-		return 0, fmt.Errorf("invalid APP_PORT %q: expected a port between 1 and 65535", value)
+		return 0, fmt.Errorf(
+			"invalid APP_PORT %q: expected a port between 1 and 65535",
+			value,
+		)
 	}
 	return port, nil
 }
