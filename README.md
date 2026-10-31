@@ -20,7 +20,7 @@ Go+htmx and sqlite, packaged as a single binary.
 
 ## quick start
 
-The examples below assume Linux. The Docker options require Docker; building the binary requires Go 1.27 or newer.
+The examples below assume Linux.
 
 Create a data folder in your chosen installation directory:
 
