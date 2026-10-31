@@ -56,13 +56,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Build image
-        run: docker build -f Dockerfile.serve -t "bpsoos/shiftbell:${GITHUB_SHA:0:7}" .
+        run: docker build -f Dockerfile.serve -t "bpsoos/shiftbell:${GITHUB_SHA:0:7}" -t bpsoos/shiftbell:latest .
       - name: Log in to Docker Hub
         env:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: printf '%s' "$DOCKERHUB_TOKEN" | docker login --username bpsoos --password-stdin
       - name: Push image
-        run: docker push "bpsoos/shiftbell:${GITHUB_SHA:0:7}"
+        run: |
+          docker push "bpsoos/shiftbell:${GITHUB_SHA:0:7}"
+          docker push bpsoos/shiftbell:latest
       - name: Log out of Docker Hub
         if: always()
         run: docker logout
