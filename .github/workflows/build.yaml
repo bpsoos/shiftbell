@@ -83,9 +83,12 @@ jobs:
         run: >-
           docker build -f Dockerfile.demo
           --build-arg "PROD_IMAGE=bpsoos/shiftbell:${GITHUB_SHA:0:7}"
-          -t "bpsoos/shiftbell-demo:${GITHUB_SHA:0:7}" .
+          -t "bpsoos/shiftbell-demo:${GITHUB_SHA:0:7}"
+          -t bpsoos/shiftbell-demo:latest .
       - name: Push demo image
-        run: docker push "bpsoos/shiftbell-demo:${GITHUB_SHA:0:7}"
+        run: |
+          docker push "bpsoos/shiftbell-demo:${GITHUB_SHA:0:7}"
+          docker push bpsoos/shiftbell-demo:latest
       - name: Log out of Docker Hub
         if: always()
         run: docker logout

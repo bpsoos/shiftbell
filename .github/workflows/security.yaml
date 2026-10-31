@@ -12,11 +12,15 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [shiftbell, shiftbell-demo]
     steps:
       - name: Scan published image
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
-          image-ref: bpsoos/shiftbell:latest
+          image-ref: bpsoos/${{ matrix.image }}:latest
           scanners: vuln
           severity: HIGH,CRITICAL
           format: sarif
@@ -27,4 +31,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@793b778da9c9275a0f276522b27cb5fc14bba279
         with:
           sarif_file: trivy-results.sarif
-          category: shiftbell-container
+          category: ${{ matrix.image }}-container
