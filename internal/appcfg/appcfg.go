@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/bpsoos/shiftbell/internal/logging"
@@ -14,6 +15,7 @@ type AppCfg struct {
 	DatabaseFilepath string
 	LogHandler       logging.Handler
 	AppTimezone      *time.Location
+	AppPort          int
 }
 
 func Load() (*AppCfg, error) {
@@ -30,11 +32,29 @@ func Load() (*AppCfg, error) {
 		return nil, err
 	}
 
+	appPort, err := loadAppPort()
+	if err != nil {
+		return nil, err
+	}
+
 	return &AppCfg{
 		DatabaseFilepath: dbFilepath,
 		LogHandler:       logHandler,
 		AppTimezone:      appTimezone,
+		AppPort:          appPort,
 	}, nil
+}
+
+func loadAppPort() (int, error) {
+	value := os.Getenv("APP_PORT")
+	if value == "" {
+		return 80, nil
+	}
+	port, err := strconv.Atoi(value)
+	if err != nil || port < 1 || port > 65535 {
+		return 0, fmt.Errorf("invalid APP_PORT %q: expected a port between 1 and 65535", value)
+	}
+	return port, nil
 }
 
 func loadDatabaseFilepath() (string, error) {

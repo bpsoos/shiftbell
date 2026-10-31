@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/bpsoos/shiftbell/internal/appcfg"
@@ -105,5 +106,5 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 		return err
 	}
 
-	return e.Start("0.0.0.0:80")
+	return e.Start("0.0.0.0:" + strconv.Itoa(appConfig.AppPort))
 }
