@@ -1,0 +1,30 @@
+name: Container security
+
+on:
+  schedule:
+    - cron: "39 16 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scan published image
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          image-ref: bpsoos/shiftbell:latest
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: "0"
+          limit-severities-for-sarif: "true"
+      - name: Upload security findings
+        uses: github/codeql-action/upload-sarif@793b778da9c9275a0f276522b27cb5fc14bba279
+        with:
+          sarif_file: trivy-results.sarif
+          category: shiftbell-container
