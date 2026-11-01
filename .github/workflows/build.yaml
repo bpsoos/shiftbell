@@ -51,19 +51,28 @@ jobs:
 
   publish:
     needs: [unit-tests, acceptance-tests, lint]
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
     if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set image tag
+        id: image-tag
+        run: echo "tag=$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
       - name: Build image
-        run: docker build -f Dockerfile.serve -t "bpsoos/shiftbell:${GITHUB_SHA:0:7}" -t bpsoos/shiftbell:latest .
+        env:
+          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
+        run: docker build -f Dockerfile.serve -t "bpsoos/shiftbell:${IMAGE_TAG}" -t bpsoos/shiftbell:latest .
       - name: Log in to Docker Hub
         env:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: printf '%s' "$DOCKERHUB_TOKEN" | docker login --username bpsoos --password-stdin
       - name: Push image
+        env:
+          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
         run: |
-          docker push "bpsoos/shiftbell:${GITHUB_SHA:0:7}"
+          docker push "bpsoos/shiftbell:${IMAGE_TAG}"
           docker push bpsoos/shiftbell:latest
       - name: Log out of Docker Hub
         if: always()
@@ -71,6 +80,8 @@ jobs:
 
   publish-demo:
     needs: [publish]
+    env:
+      IMAGE_TAG: ${{ needs.publish.outputs.image-tag }}
     if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     steps:
@@ -82,12 +93,12 @@ jobs:
       - name: Build demo image
         run: >-
           docker build -f Dockerfile.demo
-          --build-arg "PROD_IMAGE=bpsoos/shiftbell:${GITHUB_SHA:0:7}"
-          -t "bpsoos/shiftbell-demo:${GITHUB_SHA:0:7}"
+          --build-arg "PROD_IMAGE=bpsoos/shiftbell:${IMAGE_TAG}"
+          -t "bpsoos/shiftbell-demo:${IMAGE_TAG}"
           -t bpsoos/shiftbell-demo:latest .
       - name: Push demo image
         run: |
-          docker push "bpsoos/shiftbell-demo:${GITHUB_SHA:0:7}"
+          docker push "bpsoos/shiftbell-demo:${IMAGE_TAG}"
           docker push bpsoos/shiftbell-demo:latest
       - name: Log out of Docker Hub
         if: always()
