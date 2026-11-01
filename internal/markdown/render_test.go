@@ -15,7 +15,9 @@ func TestMarkdown(t *testing.T) {
 
 var _ = Describe("Render", func() {
 	It("renders standard Markdown", func() {
-		output, err := markdown.Render("# Instructions\n\n**Clean** the *kitchen*.\n\n- Counters\n- Sink\n\n[Guide](https://example.com)\n\n> Carefully\n\n```\n<sample>\n```")
+		output, err := markdown.Render(
+			"# Instructions\n\n**Clean** the *kitchen*.\n\n- Counters\n- Sink\n\n[Guide](https://example.com)\n\n> Carefully\n\n```\n<sample>\n```",
+		)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(ContainSubstring("<h1>Instructions</h1>"))
 		Expect(output).To(ContainSubstring("<strong>Clean</strong>"))
@@ -33,7 +35,9 @@ var _ = Describe("Render", func() {
 	})
 
 	It("omits raw HTML and unsafe link destinations", func() {
-		output, err := markdown.Render("<script>alert(1)</script>\n\n[Click](javascript:alert%281%29)\n\n[Data](data:text/html,test)")
+		output, err := markdown.Render(
+			"<script>alert(1)</script>\n\n[Click](javascript:alert%281%29)\n\n[Data](data:text/html,test)",
+		)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).NotTo(ContainSubstring("<script>"))
 		Expect(output).NotTo(ContainSubstring("javascript:"))
