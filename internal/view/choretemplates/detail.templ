@@ -43,7 +43,7 @@ templ detailCard(t *Templater, model viewmodels.Detail) {
 		<style>
 			me { background: var(--sb-surface); border: 2px solid var(--sb-frame); overflow-wrap: anywhere; padding: 1.5rem 1.25rem 1.25rem; position: relative; }
 			me::before { background: var(--sb-accent); content: ""; height: 3px; left: 0; position: absolute; right: 0; top: 0; }
-			me > [data-description] { margin: 0; }
+			me > [data-description] { margin: 0; white-space: pre-wrap; }
 			me > [data-description][data-empty] { color: var(--sb-muted); }
 			@media sm- {
 				me { padding: 1.25rem 1rem 1rem; }
