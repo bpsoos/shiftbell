@@ -10,7 +10,13 @@ import (
 )
 
 templ detailContent(t *Templater, model choreviewmodels.Detail, today time.Time) {
-	<section aria-labelledby="chore-heading">
+	<section
+		aria-labelledby="chore-heading"
+		hx-get={ model.Chore.Links.Href("self") }
+		hx-trigger="choreCompleted from:body"
+		hx-target="#main"
+		hx-swap="outerHTML"
+	>
 		<style>
 			me { margin-inline: auto; max-width: 42rem; }
 			me > [data-back] { align-items: center; color: var(--sb-muted); display: inline-flex; font-size: 0.875rem; gap: 0.375rem; margin-bottom: 1.125rem; text-decoration: none; }
@@ -56,6 +62,8 @@ templ detailCard(t *Templater, chore choreapimodels.Representation, editHref str
 			me > [data-repeating] {
 				margin-top: 1.25rem;
 			}
+			me > [data-completion-action] { border-top: 1px solid var(--sb-border); display: flex; justify-content: center; margin-top: 1.5rem; padding-top: 1.25rem; }
+			me > [data-completion-action] > button { gap: 0.375rem; }
 			@media sm- {
 				me { padding: 1.25rem 1rem 1rem; }
 			}
@@ -72,6 +80,22 @@ templ detailCard(t *Templater, chore choreapimodels.Representation, editHref str
 		if chore.ScheduleId != nil {
 			<div data-repeating>
 				@resourcenavigation.Link(scheduleHref(*chore.ScheduleId), "View schedule")
+			</div>
+		}
+		if completeHref := chore.Actions.Href("complete"); completeHref != "" {
+			<div data-completion-action>
+				<button
+					class="btn btn-primary"
+					type="button"
+					data-complete-chore
+					hx-get={ completeHref }
+					hx-target="#dialog-root"
+					hx-swap="innerHTML"
+					aria-haspopup="dialog"
+				>
+					@viewicons.CheckCircle()
+					<span>Complete</span>
+				</button>
 			</div>
 		}
 	</article>
