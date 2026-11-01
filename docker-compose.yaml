@@ -45,7 +45,7 @@ services:
       HOME: /tmp
       GOCACHE: /cache/go-build
       DATABASE_FILEPATH: /data/app.db
-      DEMO_DATA_FILEPATH: /src/dev/demo/data.json
+      DEMO_DATA_FILEPATH: /src/dev/data.json
       LOG_FORMAT: text
       APP_TIMEZONE: "${APP_TIMEZONE:-Europe/Budapest}"
       TZ: "${APP_TIMEZONE:-Europe/Budapest}"
