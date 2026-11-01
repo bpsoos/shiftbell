@@ -70,9 +70,10 @@ func detailViewModel(
 func editFormViewModel(chore *choremodels.ChoreDetails) choreviewmodels.EditForm {
 	response := newChoreResponse(chore)
 	return choreviewmodels.EditForm{
-		ActionHref: response.Links.Href("self"),
-		CancelHref: response.Links.Href("self"),
-		Scheduled:  chore.ScheduleId != nil,
+		ActionHref:              response.Links.Href("self"),
+		CancelHref:              response.Links.Href("self"),
+		Scheduled:               chore.ScheduleId != nil,
+		AlsoUpdateChoreTemplate: chore.ScheduleId != nil,
 		Name: choreviewmodels.Field{
 			Value: chore.Name,
 		},

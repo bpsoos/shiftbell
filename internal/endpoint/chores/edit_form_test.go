@@ -91,7 +91,7 @@ var _ = Describe("Edit chore form", func() {
 	)
 
 	It(
-		"prepares a scheduled chore form with a read-only deadline",
+		"prepares a scheduled chore form with a read-only deadline and template updates checked",
 		func(ctx SpecContext) {
 			scheduleId := 7
 			deadline := time.Date(2026, time.August, 15, 0, 0, 0, 0, time.UTC)
@@ -106,9 +106,10 @@ var _ = Describe("Edit chore form", func() {
 			}, nil).Once()
 			view := NewMockView(GinkgoT())
 			view.EXPECT().EditForm(choreviewmodels.EditForm{
-				ActionHref: "/chores/42",
-				CancelHref: "/chores/42",
-				Scheduled:  true,
+				ActionHref:              "/chores/42",
+				CancelHref:              "/chores/42",
+				Scheduled:               true,
+				AlsoUpdateChoreTemplate: true,
 				Name: choreviewmodels.Field{
 					Value: "Kitchen",
 				},
