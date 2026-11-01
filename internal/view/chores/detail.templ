@@ -6,6 +6,7 @@ import (
 	choreapimodels "github.com/bpsoos/shiftbell/internal/models/api/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+	markdownview "github.com/bpsoos/shiftbell/internal/view/markdown"
 	"github.com/bpsoos/shiftbell/internal/view/resourcenavigation"
 )
 
@@ -58,7 +59,7 @@ templ detailCard(t *Templater, chore choreapimodels.Representation, editHref str
 		<style>
 			me { background: var(--sb-surface); border: 2px solid var(--sb-frame); overflow-wrap: anywhere; padding: 1.5rem 1.25rem 1.25rem; position: relative; }
 			me::before { background: var(--sb-accent); content: ""; height: 3px; left: 0; position: absolute; right: 0; top: 0; }
-			me > [data-description] { line-height: 1.55; margin: 1.25rem 0 0; white-space: pre-wrap; }
+			me > [data-description] { margin: 1.25rem 0 0; }
 			me > [data-repeating] {
 				margin-top: 1.25rem;
 			}
@@ -75,7 +76,9 @@ templ detailCard(t *Templater, chore choreapimodels.Representation, editHref str
 			@choreDeadline(t, chore.Deadline, today)
 		}
 		if chore.Description != "" {
-			<p data-description>{ chore.Description }</p>
+			<div data-description>
+				@markdownview.Description(chore.Description)
+			</div>
 		}
 		if chore.ScheduleId != nil {
 			<div data-repeating>

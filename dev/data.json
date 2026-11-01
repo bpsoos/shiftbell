@@ -1,9 +1,9 @@
 {
   "one_off_chores": [
-    {"name":"Clean kitchen counters","description":"Clear and wipe every work surface.","deadline_days":-10},
+    {"name":"Clean kitchen counters","description":"## Kitchen reset\n\n- Clear every work surface.\n- Wipe counters with a **clean, damp cloth**.\n- Dry around the sink.\n\n> Use a separate cloth for food preparation areas.","deadline_days":-10},
     {"name":"Take out rubbish","description":"Empty household bins and replace liners.","deadline_days":-4},
     {"name":"Water houseplants","description":"Check the soil before watering each plant.","deadline_days":-1},
-    {"name":"Feed sourdough starter","description":"Refresh the starter and leave it at room temperature.","deadline_days":0},
+    {"name":"Feed sourdough starter","description":"1. Keep **25 g** of starter.\n2. Add 50 g flour and 50 g water.\n3. Mix and loosely cover the jar.\n\nMark the starting level.\nLeave at *room temperature* until doubled.","deadline_days":0},
     {"name":"Wipe bathroom sink","description":"","deadline_days":0},
     {"name":"Replace kitchen towels","description":"Put out clean hand towels and tea towels.","deadline_days":1},
     {"name":"Vacuum living areas","description":"Vacuum rugs, floors, and beneath loose furniture.","deadline_days":2},
@@ -25,7 +25,7 @@
     {"name":"Sort recycling","description":"","deadline_days":90},
     {"name":"Clean entryway","description":"Sweep the floor and put away shoes and bags.","deadline_days":120},
     {"name":"Refresh pet bedding","description":"Wash bedding and clean the surrounding area.","deadline_days":150,"save_as_chore_template":true},
-    {"name":"Back up photos","description":"Copy recent photos to the household backup.","deadline_days":180,"save_as_chore_template":true},
+    {"name":"Back up photos","description":"## Photo backup\n\nCopy recent photos into `household-backup/photos`.\n\n1. Connect the backup drive.\n2. Copy new albums.\n3. Open a few copied photos to verify them.\n\n**Keep the originals** until verification is complete.\n\nSee the [3-2-1 backup strategy](https://www.backblaze.com/blog/the-3-2-1-backup-strategy/).","deadline_days":180,"save_as_chore_template":true},
     {"name":"Review first-aid kit","description":"Replace expired or missing supplies.","deadline_days":210,"save_as_chore_template":true},
     {"name":"Clean balcony","description":"Sweep the floor and wipe the outdoor furniture.","deadline_days":240},
     {"name":"Defrost freezer","description":"Use up loose food before defrosting and cleaning.","deadline_days":270},
@@ -38,7 +38,7 @@
     {"name":"Change bed linen","description":"Replace sheets, pillowcases, and duvet cover.","deadline_days":-25,"completed_days":-25}
   ],
   "scheduled_chores": [
-    {"name":"Water houseplants","description":"Check the soil before watering each plant.","deadline_days":1,"schedule_name":"Weekly plant care","interval_days":7},
+    {"name":"Water houseplants","description":"## Check before watering\n\n- Feel the top layer of soil.\n- Water **only if dry**.\n- Empty excess water from saucers.\n\n> Succulents need less water than leafy plants.\n\nRotate pots a little for *even growth*.","deadline_days":1,"schedule_name":"Weekly plant care","interval_days":7},
     {"name":"Clean kitchen counters","description":"Clear and wipe every work surface.","deadline_days":0,"schedule_name":"Daily kitchen reset","interval_days":1},
     {"name":"Take out rubbish","description":"Empty household bins and replace liners.","deadline_days":1,"schedule_name":"Rubbish collection","interval_days":3},
     {"name":"Vacuum living areas","description":"Vacuum rugs, floors, and beneath loose furniture.","deadline_days":2,"schedule_name":"Weekly vacuuming","interval_days":7},
