@@ -6,6 +6,14 @@ type HomeHandler interface {
 	Get(*echo.Context) error
 }
 
+type ProfileHandler interface {
+	List(*echo.Context) error
+	Create(*echo.Context) error
+	CreateForm(*echo.Context) error
+	Setup(*echo.Context) error
+	SetupStatus(*echo.Context) error
+}
+
 type ScheduleHandler interface {
 	Browse(*echo.Context) error
 	Get(*echo.Context) error
@@ -43,6 +51,7 @@ type ChoreHandler interface {
 }
 
 type RouterDeps struct {
+	ProfileHandler       ProfileHandler
 	ScheduleHandler      ScheduleHandler
 	HomeHandler          HomeHandler
 	ChoreTemplateHandler ChoreTemplateHandler
@@ -50,6 +59,7 @@ type RouterDeps struct {
 }
 
 type Router struct {
+	profileHandler       ProfileHandler
 	scheduleHandler      ScheduleHandler
 	homeHandler          HomeHandler
 	choreTemplateHandler ChoreTemplateHandler
@@ -58,6 +68,7 @@ type Router struct {
 
 func NewRouter(deps *RouterDeps) *Router {
 	return &Router{
+		profileHandler:       deps.ProfileHandler,
 		scheduleHandler:      deps.ScheduleHandler,
 		homeHandler:          deps.HomeHandler,
 		choreTemplateHandler: deps.ChoreTemplateHandler,

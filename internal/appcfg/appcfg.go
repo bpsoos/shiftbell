@@ -12,10 +12,11 @@ import (
 )
 
 type AppCfg struct {
-	DatabaseFilepath string
-	LogHandler       logging.Handler
-	AppTimezone      *time.Location
-	AppPort          int
+	DatabaseFilepath   string
+	LogHandler         logging.Handler
+	AppTimezone        *time.Location
+	AppPort            int
+	InitialProfileName string
 }
 
 func Load() (*AppCfg, error) {
@@ -38,10 +39,11 @@ func Load() (*AppCfg, error) {
 	}
 
 	return &AppCfg{
-		DatabaseFilepath: dbFilepath,
-		LogHandler:       logHandler,
-		AppTimezone:      appTimezone,
-		AppPort:          appPort,
+		DatabaseFilepath:   dbFilepath,
+		LogHandler:         logHandler,
+		AppTimezone:        appTimezone,
+		AppPort:            appPort,
+		InitialProfileName: os.Getenv("INITIAL_PROFILE_NAME"),
 	}, nil
 }
 

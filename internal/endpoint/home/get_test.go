@@ -32,7 +32,9 @@ var _ = Describe("Get home", func() {
 				{"rel": "self", "href": "/"},
 				{"rel": "chores", "href": "/chores"},
 				{"rel": "chore_templates", "href": "/chore-templates"},
-				{"rel": "schedules", "href": "/schedules"}
+				{"rel": "schedules", "href": "/schedules"},
+				{"rel": "profiles", "href": "/profiles"},
+				{"rel": "setup", "href": "/setup"}
 			]
 		}`))
 		},

@@ -24,6 +24,7 @@ services:
       DATABASE_FILEPATH: "/data/app.db"
       LOG_FORMAT: "text"
       APP_TIMEZONE: "${APP_TIMEZONE:-Europe/Budapest}"
+      INITIAL_PROFILE_NAME: "${INITIAL_PROFILE_NAME:-}"
       TZ: "${APP_TIMEZONE:-Europe/Budapest}"
     volumes:
       - "./:/src"

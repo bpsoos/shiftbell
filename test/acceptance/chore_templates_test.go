@@ -98,6 +98,8 @@ var _ = Describe("Chore template API", func() {
 			homeResult, err := client.GetHome(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(homeResult.Home.Links).To(ConsistOf(
+				shiftbellapi.Relation{Rel: "profiles", Href: "/profiles"},
+				shiftbellapi.Relation{Rel: "setup", Href: "/setup"},
 				shiftbellapi.Relation{Rel: shiftbellapi.RelationSelf, Href: "/"},
 				shiftbellapi.Relation{Rel: shiftbellapi.RelationChores, Href: "/chores"},
 				shiftbellapi.Relation{

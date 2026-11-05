@@ -21,6 +21,8 @@ func (h *Handler) Get(ctx *echo.Context) error {
 				{Rel: "chores", Href: "/chores"},
 				{Rel: "chore_templates", Href: "/chore-templates"},
 				{Rel: "schedules", Href: "/schedules"},
+				{Rel: "profiles", Href: "/profiles"},
+				{Rel: "setup", Href: "/setup"},
 			},
 		})
 	case hypermedia.RepresentationHTML:

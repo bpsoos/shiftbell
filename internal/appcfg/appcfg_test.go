@@ -25,6 +25,7 @@ var _ = Describe("Load", func() {
 		GinkgoT().Setenv("DATABASE_FILEPATH", databaseFilepath)
 		GinkgoT().Setenv("LOG_FORMAT", "")
 		GinkgoT().Setenv("APP_TIMEZONE", "")
+		GinkgoT().Setenv("INITIAL_PROFILE_NAME", "")
 	})
 
 	It("loads the database filepath", func() {
@@ -33,6 +34,19 @@ var _ = Describe("Load", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(cfg.DatabaseFilepath).To(Equal(databaseFilepath))
 		Expect(cfg.LogHandler).To(Equal(logging.HandlerJSON))
+	})
+
+	It("leaves initial profile creation optional", func() {
+		cfg, err := appcfg.Load()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cfg.InitialProfileName).To(BeEmpty())
+	})
+
+	It("passes the configured initial name to the profile service", func() {
+		GinkgoT().Setenv("INITIAL_PROFILE_NAME", " Alex ")
+		cfg, err := appcfg.Load()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cfg.InitialProfileName).To(Equal(" Alex "))
 	})
 
 	Context("without an app timezone", func() {

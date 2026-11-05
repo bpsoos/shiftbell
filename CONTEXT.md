@@ -1,5 +1,13 @@
 # Domain glossary
 
+## Account
+
+The single shared access boundary of a Shiftbell installation. Authentication is optional and applies to the account as a whole.
+
+## Profile
+
+A passwordless identity within the shared account, identified by a display name. Profiles do not have separate credentials or access permissions.
+
 ## Chore
 
 One executable instance of work with its own deadline and a snapshot of its name and description. A chore is either one-off or scheduled.

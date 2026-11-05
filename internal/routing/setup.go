@@ -15,6 +15,11 @@ func (r *Router) Setup(app *echo.Echo) error {
 	app.StaticFS("/assets", assetsFS)
 
 	app.GET("/", r.homeHandler.Get)
+	app.GET("/profiles", r.profileHandler.List)
+	app.POST("/profiles", r.profileHandler.Create)
+	app.GET("/profiles/new", r.profileHandler.CreateForm)
+	app.GET("/setup", r.profileHandler.SetupStatus)
+	app.POST("/setup", r.profileHandler.Setup)
 	app.GET("/schedules", r.scheduleHandler.Browse)
 	app.GET("/schedules/:id", r.scheduleHandler.Get)
 	app.GET("/schedules/:id/edit", r.scheduleHandler.EditForm)

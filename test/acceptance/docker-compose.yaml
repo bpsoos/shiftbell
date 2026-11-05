@@ -5,6 +5,7 @@ services:
       APP_TIMEZONE: UTC
       DATABASE_FILEPATH: /data/acceptance.db
       LOG_FORMAT: text
+      INITIAL_PROFILE_NAME: Developer
     tmpfs:
       - /data
     healthcheck:

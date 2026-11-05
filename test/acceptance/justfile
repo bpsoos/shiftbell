@@ -13,7 +13,7 @@ build-test-runner:
 build: build-application build-test-runner
 
 up: build
-    docker compose up --detach --wait application
+    docker compose up --detach --wait --force-recreate application
 
 down:
     docker compose down

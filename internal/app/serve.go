@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -8,15 +10,18 @@ import (
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	choretemplatesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/endpoint/home"
+	profilesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/profiles"
 	schedulesendpoint "github.com/bpsoos/shiftbell/internal/endpoint/schedules"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
 	choretemplatespersistence "github.com/bpsoos/shiftbell/internal/persistence/choretemplates"
+	profilespersistence "github.com/bpsoos/shiftbell/internal/persistence/profiles"
 	schedulespersistence "github.com/bpsoos/shiftbell/internal/persistence/schedules"
 	"github.com/bpsoos/shiftbell/internal/routing"
 	choresservice "github.com/bpsoos/shiftbell/internal/service/chores"
 	choretemplatesservice "github.com/bpsoos/shiftbell/internal/service/choretemplates"
 	"github.com/bpsoos/shiftbell/internal/service/normalization"
+	profilesservice "github.com/bpsoos/shiftbell/internal/service/profiles"
 	schedulesservice "github.com/bpsoos/shiftbell/internal/service/schedules"
 	choresview "github.com/bpsoos/shiftbell/internal/view/chores"
 	choretemplatesview "github.com/bpsoos/shiftbell/internal/view/choretemplates"
@@ -46,6 +51,16 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 		},
 		&choretemplatesservice.Config{},
 	)
+	profileService := profilesservice.NewService(&profilesservice.Deps{
+		Persister:  profilespersistence.NewPersister(&profilespersistence.Deps{Db: db}),
+		Normalizer: normalizer,
+	})
+	if err := profileService.Initialize(
+		context.Background(),
+		appConfig.InitialProfileName,
+	); err != nil {
+		return fmt.Errorf("initialize profiles from INITIAL_PROFILE_NAME: %w", err)
+	}
 	choreTemplatesTemplater := choretemplatesview.NewTemplater(
 		choretemplatesview.Config{AppTimezone: appConfig.AppTimezone},
 	)
@@ -78,6 +93,9 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 	})
 
 	router := routing.NewRouter(&routing.RouterDeps{
+		ProfileHandler: profilesendpoint.NewHandler(
+			&profilesendpoint.HandlerDeps{Service: profileService},
+		),
 		ScheduleHandler: schedulesendpoint.NewHandler(&schedulesendpoint.HandlerDeps{
 			View: schedulesview.NewTemplater(
 				schedulesview.Config{AppTimezone: appConfig.AppTimezone},
