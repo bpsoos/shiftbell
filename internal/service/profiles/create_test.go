@@ -45,12 +45,20 @@ var _ = Describe("Create", func() {
 		Expect(err).To(MatchError(validation.ErrInvalidName))
 	})
 
-	It("maps normalization failures to invalid name", func(ctx SpecContext) {
-		normalizer.On("NormalizeName", "").Return("", validation.ErrRequired).Once()
-		result, err := service.Create(ctx, &models.CreateParams{})
-		Expect(result).To(BeNil())
-		Expect(err).To(MatchError(validation.ErrInvalidName))
-	})
+	DescribeTable(
+		"preserves the reason for an invalid name",
+		func(ctx SpecContext, reason error) {
+			normalizer.On("NormalizeName", "").Return("", reason).Once()
+			result, err := service.Create(ctx, &models.CreateParams{})
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError(validation.ErrInvalidName))
+			Expect(err).To(MatchError(reason))
+		},
+		Entry("required", validation.ErrRequired),
+		Entry("too long", validation.ErrTooLong),
+		Entry("disallowed character", validation.ErrDisallowedCharacter),
+		Entry("invalid encoding", validation.ErrInvalidUTF8),
+	)
 
 	DescribeTable(
 		"rejects whitespace remaining after normalization",
@@ -59,6 +67,7 @@ var _ = Describe("Create", func() {
 			result, err := service.Create(ctx, &models.CreateParams{Name: name})
 			Expect(result).To(BeNil())
 			Expect(err).To(MatchError(validation.ErrInvalidName))
+			Expect(err).To(MatchError(models.ErrNameContainsSpaces))
 		},
 		Entry("space", "Alex Smith"),
 		Entry("tab", "Alex\tSmith"),

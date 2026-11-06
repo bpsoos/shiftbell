@@ -3,6 +3,7 @@ package profiles_test
 import (
 	"errors"
 	"net/http"
+	"net/http/httptest"
 
 	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
@@ -11,6 +12,7 @@ import (
 	apimodels "github.com/bpsoos/shiftbell/internal/models/api/profiles"
 	models "github.com/bpsoos/shiftbell/internal/models/profiles"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/profiles"
+	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -21,16 +23,12 @@ var _ = Describe("List", func() {
 		service.On("List", ctx).
 			Return([]models.Profile{{Id: 7, Name: "Alex"}}, nil).
 			Once()
-		response := perform(
-			ctx,
-			handler.List,
-			http.MethodGet,
-			"/profiles",
-			hypermedia.MediaType,
-			"",
-			"",
-			"",
-		)
+		e := echo.New()
+		e.GET("/profiles", handler.List)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/profiles", nil)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+		e.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(http.StatusOK))
 		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 		Expect(response.Header().Get("Vary")).To(Equal("Accept"))
@@ -44,16 +42,12 @@ var _ = Describe("List", func() {
 	It("returns an empty array for an empty installation", func(ctx SpecContext) {
 		handler, service, _ := newHandler()
 		service.On("List", ctx).Return(nil, nil).Once()
-		response := perform(
-			ctx,
-			handler.List,
-			http.MethodGet,
-			"/profiles",
-			hypermedia.MediaType,
-			"",
-			"",
-			"",
-		)
+		e := echo.New()
+		e.GET("/profiles", handler.List)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/profiles", nil)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+		e.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(http.StatusOK))
 		Expect(response.Body.String()).To(ContainSubstring(`"items":[]`))
 	})
@@ -75,16 +69,18 @@ var _ = Describe("List", func() {
 				},
 				CreateHref: "/profiles/new",
 			}, fullPage).Return(templ.Raw("profile list")).Once()
-			response := perform(
+			e := echo.New()
+			e.GET("/profiles", handler.List)
+			request := httptest.NewRequestWithContext(
 				ctx,
-				handler.List,
 				http.MethodGet,
 				"/profiles",
-				"text/html",
-				"",
-				"",
-				hx,
+				nil,
 			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", hx)
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusOK))
 			Expect(
 				response.Header().Get("Content-Type"),
@@ -99,16 +95,12 @@ var _ = Describe("List", func() {
 	It("hides storage errors in JSON", func(ctx SpecContext) {
 		handler, service, _ := newHandler()
 		service.On("List", ctx).Return(nil, errors.New("private database path")).Once()
-		response := perform(
-			ctx,
-			handler.List,
-			http.MethodGet,
-			"/profiles",
-			hypermedia.MediaType,
-			"",
-			"",
-			"",
-		)
+		e := echo.New()
+		e.GET("/profiles", handler.List)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/profiles", nil)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+		e.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(http.StatusInternalServerError))
 		Expect(response.Body.String()).NotTo(ContainSubstring("private database path"))
 	})
@@ -119,16 +111,12 @@ var _ = Describe("List", func() {
 		view.On("Error", viewmodels.Error{Message: "Something went wrong. Try again.", CollectionHref: "/profiles"}, true).
 			Return(templ.Raw("error")).
 			Once()
-		response := perform(
-			ctx,
-			handler.List,
-			http.MethodGet,
-			"/profiles",
-			"text/html",
-			"",
-			"",
-			"",
-		)
+		e := echo.New()
+		e.GET("/profiles", handler.List)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/profiles", nil)
+		request.Header.Set("Accept", "text/html")
+		response := httptest.NewRecorder()
+		e.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(http.StatusInternalServerError))
 		Expect(response.Body.String()).To(Equal("error"))
 	})
@@ -137,16 +125,17 @@ var _ = Describe("List", func() {
 		"rejects unsupported representations before accessing storage",
 		func(ctx SpecContext) {
 			handler, _, _ := newHandler()
-			response := perform(
+			e := echo.New()
+			e.GET("/profiles", handler.List)
+			request := httptest.NewRequestWithContext(
 				ctx,
-				handler.List,
 				http.MethodGet,
 				"/profiles",
-				"application/xml",
-				"",
-				"",
-				"",
+				nil,
 			)
+			request.Header.Set("Accept", "application/xml")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusNotAcceptable))
 		},
 	)
@@ -154,17 +143,21 @@ var _ = Describe("List", func() {
 	It(
 		"does not advertise HTML support until a renderer is supplied",
 		func(ctx SpecContext) {
-			handler := profiles.NewHandler(&profiles.HandlerDeps{Service: &MockService{}})
-			response := perform(
+			handler := profiles.NewHandler(
+				&profiles.HandlerDeps{Service: &MockService{}},
+				&profiles.HandlerConfig{SetupRequired: true, UIEnabled: true},
+			)
+			e := echo.New()
+			e.GET("/profiles", handler.List)
+			request := httptest.NewRequestWithContext(
 				ctx,
-				handler.List,
 				http.MethodGet,
 				"/profiles",
-				"text/html",
-				"",
-				"",
-				"",
+				nil,
 			)
+			request.Header.Set("Accept", "text/html")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusNotAcceptable))
 		},
 	)

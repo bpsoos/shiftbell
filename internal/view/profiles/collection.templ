@@ -1,0 +1,50 @@
+package profiles
+
+import (
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/profiles"
+	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
+)
+
+templ collection(model viewmodels.Collection) {
+	<section aria-labelledby="profiles-heading">
+		<style>
+			me { margin-block-start: -0.5rem; margin-inline: auto; max-width: 52rem; }
+			me > header { align-items: flex-end; display: flex; gap: 1rem; justify-content: space-between; margin-bottom: 1rem; }
+			me h1 { font-size: 1.875rem; letter-spacing: -0.035em; line-height: 1; margin: 0; }
+			me h1::after { background: var(--sb-accent); content: ""; display: block; height: 3px; margin-top: 0.5rem; width: 2rem; }
+			me > header .btn { flex-shrink: 0; gap: 0.375rem; }
+			me > ul { background: var(--sb-surface); border: 2px solid var(--sb-frame); list-style: none; margin: 0; padding: 0; }
+			me > ul > li { align-items: center; display: flex; gap: 0.875rem; min-height: 4.5rem; padding: 0.875rem 1rem; }
+			me > ul > li + li { border-top: 1px solid var(--sb-border); }
+			me [data-profile-icon] { align-items: center; background: var(--sb-subtle); border: 1px solid var(--sb-border); color: var(--sb-muted-strong); display: flex; flex: 0 0 2.5rem; font-size: 1.25rem; height: 2.5rem; justify-content: center; }
+			me [data-profile-name] { color: var(--sb-text); font-size: 1rem; font-weight: 650; min-width: 0; overflow-wrap: anywhere; }
+			me [data-empty] { background: var(--sb-surface); border: 2px solid var(--sb-frame); padding: 2rem 1rem; text-align: center; }
+			me [data-empty] h2 { font-size: 1.125rem; margin-bottom: 0.5rem; }
+			me [data-empty] p { color: var(--sb-muted); margin: 0; }
+			@media sm- { me h1 { font-size: 1.625rem; } me > ul > li { padding: 0.75rem; } }
+			@media xs- { me { margin-block-start: -0.75rem; } }
+		</style>
+		<header>
+			<h1 id="profiles-heading">Profiles</h1>
+			<a class="btn btn-primary" href={ model.CreateHref } hx-get={ model.CreateHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">
+				@viewicons.Plus()
+				<span>New profile</span>
+			</a>
+		</header>
+		if len(model.Profiles) == 0 {
+			<div data-empty>
+				<h2>No profiles yet</h2>
+				<p>Create a profile to get started.</p>
+			</div>
+		} else {
+			<ul aria-label="Profiles">
+				for _, profile := range model.Profiles {
+					<li>
+						<span data-profile-icon aria-hidden="true">@viewicons.User()</span>
+						<span data-profile-name>{ profile.Name }</span>
+					</li>
+				}
+			</ul>
+		}
+	</section>
+}

@@ -17,6 +17,7 @@ type AppCfg struct {
 	AppTimezone        *time.Location
 	AppPort            int
 	InitialProfileName string
+	ProfilesUIEnabled  bool
 }
 
 func Load() (*AppCfg, error) {
@@ -37,6 +38,10 @@ func Load() (*AppCfg, error) {
 	if err != nil {
 		return nil, err
 	}
+	profilesUIEnabled, err := loadProfilesUIEnabled()
+	if err != nil {
+		return nil, err
+	}
 
 	return &AppCfg{
 		DatabaseFilepath:   dbFilepath,
@@ -44,7 +49,23 @@ func Load() (*AppCfg, error) {
 		AppTimezone:        appTimezone,
 		AppPort:            appPort,
 		InitialProfileName: os.Getenv("INITIAL_PROFILE_NAME"),
+		ProfilesUIEnabled:  profilesUIEnabled,
 	}, nil
+}
+
+func loadProfilesUIEnabled() (bool, error) {
+	value := os.Getenv("PROFILES_UI_ENABLED")
+	if value == "" {
+		return false, nil
+	}
+	enabled, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf(
+			"invalid PROFILES_UI_ENABLED %q: expected a boolean",
+			value,
+		)
+	}
+	return enabled, nil
 }
 
 func loadAppPort() (int, error) {

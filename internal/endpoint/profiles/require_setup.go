@@ -9,14 +9,11 @@ import (
 
 func (h *Handler) RequireSetup(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx *echo.Context) error {
-		if hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationHTML {
+		if !h.uiEnabled ||
+			hypermedia.Negotiate(ctx.Request()) != hypermedia.RepresentationHTML {
 			return next(ctx)
 		}
-		required, err := h.service.SetupRequired(ctx.Request().Context())
-		if err != nil {
-			return h.internalError(ctx, "check profile setup", err)
-		}
-		if required {
+		if h.setupRequired.Load() {
 			return hypermedia.HTMLRedirect(ctx, http.StatusSeeOther, "/setup")
 		}
 		return next(ctx)

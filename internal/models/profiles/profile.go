@@ -4,6 +4,7 @@ import "errors"
 
 var (
 	ErrNameConflict       = errors.New("a profile already uses this name")
+	ErrNameContainsSpaces = errors.New("name contains spaces")
 	ErrAlreadyInitialized = errors.New("a profile already exists")
 )
 

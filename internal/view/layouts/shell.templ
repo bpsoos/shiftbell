@@ -1,14 +1,14 @@
 package layouts
 
-templ Frame(active string, fullPage bool, timezone string, content templ.Component) {
+templ Frame(active string, fullPage bool, timezone string, profilesUIEnabled bool, content templ.Component) {
 	if fullPage {
-		@page(active, timezone, content)
+		@page(active, timezone, profilesUIEnabled, content)
 	} else {
 		@main(content)
 	}
 }
 
-templ page(active string, timezone string, content templ.Component) {
+templ page(active string, timezone string, profilesUIEnabled bool, content templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -44,9 +44,11 @@ templ page(active string, timezone string, content templ.Component) {
 				}
 			</style>
 			<a class="shiftbell-skip-link" href="#main">Skip to content</a>
-			@nav(active)
+			@nav(active, profilesUIEnabled)
 			@main(content)
-			@applicationFooter(timezone)
+			if active != "setup" {
+				@applicationFooter(timezone)
+			}
 			<div id="dialog-root"></div>
 		</body>
 	</html>

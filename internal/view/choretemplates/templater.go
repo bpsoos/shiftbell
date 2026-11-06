@@ -13,15 +13,20 @@ import (
 )
 
 type Config struct {
-	AppTimezone *time.Location
+	AppTimezone       *time.Location
+	ProfilesUIEnabled bool
 }
 
 type Templater struct {
-	appTimezone *time.Location
+	appTimezone       *time.Location
+	profilesUIEnabled bool
 }
 
 func NewTemplater(config Config) *Templater {
-	return &Templater{appTimezone: config.AppTimezone}
+	return &Templater{
+		appTimezone:       config.AppTimezone,
+		profilesUIEnabled: config.ProfilesUIEnabled,
+	}
 }
 
 func (t *Templater) Collection(
@@ -35,6 +40,7 @@ func (t *Templater) Collection(
 		"chore-templates",
 		fullPage,
 		t.appTimezone.String(),
+		t.profilesUIEnabled,
 		collection(model),
 	)
 }
@@ -77,7 +83,13 @@ func (t *Templater) Picker(
 	model viewmodels.Picker,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chores", fullPage, t.appTimezone.String(), picker(model))
+	return layouts.Frame(
+		"chores",
+		fullPage,
+		t.appTimezone.String(),
+		t.profilesUIEnabled,
+		picker(model),
+	)
 }
 
 func (t *Templater) Detail(
@@ -88,6 +100,7 @@ func (t *Templater) Detail(
 		"chore-templates",
 		fullPage,
 		t.appTimezone.String(),
+		t.profilesUIEnabled,
 		detail(t, model),
 	)
 }
@@ -100,6 +113,7 @@ func (t *Templater) EditForm(
 		"chore-templates",
 		fullPage,
 		t.appTimezone.String(),
+		t.profilesUIEnabled,
 		editForm(model),
 	)
 }
@@ -112,6 +126,7 @@ func (t *Templater) CreateForm(
 		"chore-templates",
 		fullPage,
 		t.appTimezone.String(),
+		t.profilesUIEnabled,
 		createForm(model),
 	)
 }
@@ -133,6 +148,7 @@ func (t *Templater) ScheduleList(
 		"chore-templates",
 		fullPage,
 		t.appTimezone.String(),
+		t.profilesUIEnabled,
 		scheduleListPage(model),
 	)
 }
@@ -145,6 +161,7 @@ func (t *Templater) Error(
 		"chore-templates",
 		fullPage,
 		t.appTimezone.String(),
+		t.profilesUIEnabled,
 		errorContent(model),
 	)
 }

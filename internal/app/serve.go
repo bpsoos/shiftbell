@@ -25,6 +25,7 @@ import (
 	schedulesservice "github.com/bpsoos/shiftbell/internal/service/schedules"
 	choresview "github.com/bpsoos/shiftbell/internal/view/chores"
 	choretemplatesview "github.com/bpsoos/shiftbell/internal/view/choretemplates"
+	profilesview "github.com/bpsoos/shiftbell/internal/view/profiles"
 	schedulesview "github.com/bpsoos/shiftbell/internal/view/schedules"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
@@ -59,10 +60,17 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 		context.Background(),
 		appConfig.InitialProfileName,
 	); err != nil {
-		return fmt.Errorf("initialize profiles from INITIAL_PROFILE_NAME: %w", err)
+		return fmt.Errorf("initialize profiles: %w", err)
+	}
+	setupRequired, err := profileService.SetupRequired(context.Background())
+	if err != nil {
+		return fmt.Errorf("check profile setup at startup: %w", err)
 	}
 	choreTemplatesTemplater := choretemplatesview.NewTemplater(
-		choretemplatesview.Config{AppTimezone: appConfig.AppTimezone},
+		choretemplatesview.Config{
+			AppTimezone:       appConfig.AppTimezone,
+			ProfilesUIEnabled: appConfig.ProfilesUIEnabled,
+		},
 	)
 	choreTemplatesHandler := choretemplatesendpoint.NewHandler(
 		&choretemplatesendpoint.HandlerDeps{
@@ -75,8 +83,9 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 		&chorespersistence.PersisterDeps{Db: db},
 	)
 	choresTemplater := choresview.NewTemplater(choresview.Config{
-		AppTimezone: appConfig.AppTimezone,
-		Now:         time.Now,
+		AppTimezone:       appConfig.AppTimezone,
+		Now:               time.Now,
+		ProfilesUIEnabled: appConfig.ProfilesUIEnabled,
 	})
 	choresService := choresservice.NewService(
 		&choresservice.Deps{
@@ -94,11 +103,26 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 
 	router := routing.NewRouter(&routing.RouterDeps{
 		ProfileHandler: profilesendpoint.NewHandler(
-			&profilesendpoint.HandlerDeps{Service: profileService},
+			&profilesendpoint.HandlerDeps{
+				Service: profileService,
+				View: profilesview.NewTemplater(
+					profilesview.Config{
+						AppTimezone:       appConfig.AppTimezone,
+						ProfilesUIEnabled: appConfig.ProfilesUIEnabled,
+					},
+				),
+			},
+			&profilesendpoint.HandlerConfig{
+				SetupRequired: setupRequired,
+				UIEnabled:     appConfig.ProfilesUIEnabled,
+			},
 		),
 		ScheduleHandler: schedulesendpoint.NewHandler(&schedulesendpoint.HandlerDeps{
 			View: schedulesview.NewTemplater(
-				schedulesview.Config{AppTimezone: appConfig.AppTimezone},
+				schedulesview.Config{
+					AppTimezone:       appConfig.AppTimezone,
+					ProfilesUIEnabled: appConfig.ProfilesUIEnabled,
+				},
 			),
 			Service: schedulesservice.NewService(
 				&schedulesservice.Deps{
@@ -119,7 +143,7 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 	e.Logger = logging.Default()
 	e.Use(middleware.RequestLogger())
 
-	err := router.Setup(e)
+	err = router.Setup(e)
 	if err != nil {
 		return err
 	}

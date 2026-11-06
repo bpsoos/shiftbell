@@ -3,6 +3,8 @@ package profiles_test
 import (
 	"errors"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
@@ -10,6 +12,7 @@ import (
 	models "github.com/bpsoos/shiftbell/internal/models/profiles"
 	validation "github.com/bpsoos/shiftbell/internal/models/validation"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/profiles"
+	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -22,20 +25,29 @@ var _ = Describe("Create", func() {
 			service.On("Create", ctx, &models.CreateParams{Name: " Alex "}).
 				Return(&models.Profile{Id: 7, Name: "Alex"}, nil).
 				Once()
-			response := perform(
+			e := echo.New()
+			e.POST("/profiles", handler.Create)
+			e.GET("/setup", handler.SetupStatus)
+			request := httptest.NewRequestWithContext(
 				ctx,
-				handler.Create,
 				http.MethodPost,
 				"/profiles",
-				hypermedia.MediaType,
-				contentType,
-				body,
-				"",
+				strings.NewReader(body),
 			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			request.Header.Set("Content-Type", contentType)
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusCreated))
 			Expect(
 				response.Body.Bytes(),
 			).To(MatchJSON(`{"id":7,"name":"Alex","_links":[{"rel":"collection","href":"/profiles"}]}`))
+			request = httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response = httptest.NewRecorder()
+			e.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.String()).To(ContainSubstring(`"required":false`))
 		},
 		Entry("JSON", "application/json", `{"name":" Alex "}`),
 		Entry("vendor JSON", hypermedia.MediaType, `{"name":" Alex "}`),
@@ -49,16 +61,19 @@ var _ = Describe("Create", func() {
 			service.On("Create", ctx, &models.CreateParams{Name: "Alex"}).
 				Return(&models.Profile{Id: 7, Name: "Alex"}, nil).
 				Once()
-			response := perform(
+			e := echo.New()
+			e.POST("/profiles", handler.Create)
+			request := httptest.NewRequestWithContext(
 				ctx,
-				handler.Create,
 				http.MethodPost,
 				"/profiles",
-				"text/html",
-				"application/x-www-form-urlencoded",
-				"name=Alex",
-				hx,
+				strings.NewReader("name=Alex"),
 			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			request.Header.Set("HX-Request", hx)
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(status))
 			Expect(response.Header().Get(header)).To(Equal("/profiles"))
 		},
@@ -73,20 +88,29 @@ var _ = Describe("Create", func() {
 			service.On("Create", ctx, &models.CreateParams{Name: "Alex"}).
 				Return(nil, failure).
 				Once()
-			response := perform(
+			e := echo.New()
+			e.POST("/profiles", handler.Create)
+			e.GET("/setup", handler.SetupStatus)
+			request := httptest.NewRequestWithContext(
 				ctx,
-				handler.Create,
 				http.MethodPost,
 				"/profiles",
-				hypermedia.MediaType,
-				"application/json",
-				`{"name":"Alex"}`,
-				"",
+				strings.NewReader(`{"name":"Alex"}`),
 			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			request.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(status))
 			Expect(
 				response.Body.String(),
 			).To(ContainSubstring(`"error":"` + message + `"`))
+			request = httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response = httptest.NewRecorder()
+			e.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.String()).To(ContainSubstring(`"required":true`))
 		},
 		Entry(
 			"name",
@@ -124,16 +148,19 @@ var _ = Describe("Create", func() {
 				},
 				SummaryError: summary,
 			}, false).Return(templ.Raw("form error")).Once()
-			response := perform(
+			e := echo.New()
+			e.POST("/profiles", handler.Create)
+			request := httptest.NewRequestWithContext(
 				ctx,
-				handler.Create,
 				http.MethodPost,
 				"/profiles",
-				"text/html",
-				"application/x-www-form-urlencoded",
-				"name=+Alex+",
-				"true",
+				strings.NewReader("name=+Alex+"),
 			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(status))
 			Expect(response.Body.String()).To(Equal("form error"))
 		},
@@ -141,7 +168,42 @@ var _ = Describe("Create", func() {
 			"name",
 			validation.ErrInvalidName,
 			http.StatusUnprocessableEntity,
-			"Enter 1–200 printable characters with no whitespace.",
+			"Enter a valid name.",
+			"",
+		),
+		Entry(
+			"empty name",
+			errors.Join(validation.ErrInvalidName, validation.ErrRequired),
+			http.StatusUnprocessableEntity,
+			"Enter your name.",
+			"",
+		),
+		Entry(
+			"long name",
+			errors.Join(validation.ErrInvalidName, validation.ErrTooLong),
+			http.StatusUnprocessableEntity,
+			"Use 200 characters or fewer.",
+			"",
+		),
+		Entry(
+			"spaces",
+			errors.Join(validation.ErrInvalidName, models.ErrNameContainsSpaces),
+			http.StatusUnprocessableEntity,
+			"Spaces aren’t allowed.",
+			"",
+		),
+		Entry(
+			"unsupported character",
+			errors.Join(validation.ErrInvalidName, validation.ErrDisallowedCharacter),
+			http.StatusUnprocessableEntity,
+			"Your name contains a character we can’t use.",
+			"",
+		),
+		Entry(
+			"invalid encoding",
+			errors.Join(validation.ErrInvalidName, validation.ErrInvalidUTF8),
+			http.StatusUnprocessableEntity,
+			"Your name contains a character we can’t use.",
 			"",
 		),
 		Entry(
@@ -164,16 +226,18 @@ var _ = Describe("Create", func() {
 		"rejects malformed and unsupported requests without mutations",
 		func(ctx SpecContext, accept, contentType, body string, status int) {
 			handler, _, _ := newHandler()
-			response := perform(
+			e := echo.New()
+			e.POST("/profiles", handler.Create)
+			request := httptest.NewRequestWithContext(
 				ctx,
-				handler.Create,
 				http.MethodPost,
 				"/profiles",
-				accept,
-				contentType,
-				body,
-				"",
+				strings.NewReader(body),
 			)
+			request.Header.Set("Accept", accept)
+			request.Header.Set("Content-Type", contentType)
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(status))
 		},
 		Entry(
@@ -226,16 +290,18 @@ var _ = Describe("Create", func() {
 			ActionHref: "/profiles", CancelHref: "/profiles",
 			SummaryError: "The form could not be read. Try again.",
 		}, true).Return(templ.Raw("invalid body")).Once()
-		response := perform(
+		e := echo.New()
+		e.POST("/profiles", handler.Create)
+		request := httptest.NewRequestWithContext(
 			ctx,
-			handler.Create,
 			http.MethodPost,
 			"/profiles",
-			"text/html",
-			"application/json",
-			"{",
-			"",
+			strings.NewReader("{"),
 		)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+		e.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(http.StatusBadRequest))
 		Expect(response.Body.String()).To(Equal("invalid body"))
 	})
@@ -243,17 +309,22 @@ var _ = Describe("Create", func() {
 	It(
 		"does not mutate state for HTML requests without a renderer",
 		func(ctx SpecContext) {
-			handler := profiles.NewHandler(&profiles.HandlerDeps{Service: &MockService{}})
-			response := perform(
+			handler := profiles.NewHandler(
+				&profiles.HandlerDeps{Service: &MockService{}},
+				&profiles.HandlerConfig{SetupRequired: true, UIEnabled: true},
+			)
+			e := echo.New()
+			e.POST("/profiles", handler.Create)
+			request := httptest.NewRequestWithContext(
 				ctx,
-				handler.Create,
 				http.MethodPost,
 				"/profiles",
-				"text/html",
-				"application/json",
-				`{"name":"Alex"}`,
-				"",
+				strings.NewReader(`{"name":"Alex"}`),
 			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusNotAcceptable))
 		},
 	)

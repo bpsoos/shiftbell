@@ -2,6 +2,7 @@ package profiles
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -36,11 +37,22 @@ func NewService(deps *Deps) *Service {
 
 func (s *Service) normalize(params *models.CreateParams) (*models.CreateParams, error) {
 	if params == nil {
-		return nil, validation.ErrInvalidName
+		return nil, fmt.Errorf(
+			"%w: %w",
+			validation.ErrInvalidName,
+			validation.ErrRequired,
+		)
 	}
 	name, err := s.normalizer.NormalizeName(params.Name)
-	if err != nil || strings.ContainsFunc(name, unicode.IsSpace) {
-		return nil, validation.ErrInvalidName
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", validation.ErrInvalidName, err)
+	}
+	if strings.ContainsFunc(name, unicode.IsSpace) {
+		return nil, fmt.Errorf(
+			"%w: %w",
+			validation.ErrInvalidName,
+			models.ErrNameContainsSpaces,
+		)
 	}
 	return &models.CreateParams{Name: name}, nil
 }

@@ -14,15 +14,20 @@ import (
 )
 
 type Config struct {
-	AppTimezone *time.Location
+	AppTimezone       *time.Location
+	ProfilesUIEnabled bool
 }
 
 type Templater struct {
-	appTimezone *time.Location
+	appTimezone       *time.Location
+	profilesUIEnabled bool
 }
 
 func NewTemplater(config Config) *Templater {
-	return &Templater{appTimezone: config.AppTimezone}
+	return &Templater{
+		appTimezone:       config.AppTimezone,
+		profilesUIEnabled: config.ProfilesUIEnabled,
+	}
 }
 
 func (t *Templater) Collection(
@@ -32,11 +37,23 @@ func (t *Templater) Collection(
 	if fullPage && model.SearchOpen {
 		model.AutofocusSearch = true
 	}
-	return layouts.Frame("schedules", fullPage, t.appTimezone.String(), collection(model))
+	return layouts.Frame(
+		"schedules",
+		fullPage,
+		t.appTimezone.String(),
+		t.profilesUIEnabled,
+		collection(model),
+	)
 }
 
 func (t *Templater) Detail(model viewmodels.Detail, fullPage bool) templ.Component {
-	return layouts.Frame("schedules", fullPage, t.appTimezone.String(), detail(t, model))
+	return layouts.Frame(
+		"schedules",
+		fullPage,
+		t.appTimezone.String(),
+		t.profilesUIEnabled,
+		detail(t, model),
+	)
 }
 
 func (t *Templater) Error(model viewmodels.Error, fullPage bool) templ.Component {
@@ -44,12 +61,19 @@ func (t *Templater) Error(model viewmodels.Error, fullPage bool) templ.Component
 		"schedules",
 		fullPage,
 		t.appTimezone.String(),
+		t.profilesUIEnabled,
 		errorContent(model),
 	)
 }
 
 func (t *Templater) EditForm(model viewmodels.EditForm, fullPage bool) templ.Component {
-	return layouts.Frame("schedules", fullPage, t.appTimezone.String(), editForm(model))
+	return layouts.Frame(
+		"schedules",
+		fullPage,
+		t.appTimezone.String(),
+		t.profilesUIEnabled,
+		editForm(model),
+	)
 }
 
 func (t *Templater) ConfirmationDialog(model confirmationmodels.Dialog) templ.Component {

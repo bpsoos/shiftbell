@@ -165,6 +165,36 @@
 		window.setTimeout(() => message.removeAttribute("data-emphasized"), 600);
 	};
 
+	const validateProfileName = (field) => {
+		const name = field.value.replace(/^\p{White_Space}+|\p{White_Space}+$/gu, "").normalize("NFC");
+		let message = "";
+		if (!name) {
+			message = "Enter your name.";
+		} else if ([...name].length > 200) {
+			message = "Use 200 characters or fewer.";
+		} else if (/[^\p{L}\p{M}\p{N}\p{P}\p{S} ]/u.test(name)) {
+			message = "Your name contains a character we can’t use.";
+		} else if (/\p{White_Space}/u.test(name)) {
+			message = "Spaces aren’t allowed.";
+		}
+		field.setCustomValidity(message);
+	};
+
+	const validateProfileNames = () => {
+		document.querySelectorAll("[data-profile-name-input]").forEach(validateProfileName);
+	};
+
+	const validateProfileNameEvent = (event) => {
+		if (event.target.matches?.("[data-profile-name-input]")) {
+			validateProfileName(event.target);
+		}
+	};
+
+	document.addEventListener("input", validateProfileNameEvent);
+	document.addEventListener("change", validateProfileNameEvent);
+	document.addEventListener("htmx:validation:validate", validateProfileNameEvent);
+	document.addEventListener("htmx:load", validateProfileNames);
+
 	document.addEventListener("input", (event) => {
 		const form = event.target.closest?.("[data-manual-scheduled-form]");
 		if (!form) {
@@ -296,6 +326,7 @@
 	});
 
 	document.addEventListener("htmx:historyRestore", () => {
+		validateProfileNames();
 		closeDialog();
 		closeNavigation();
 		syncNavigation();
@@ -308,6 +339,7 @@
 	});
 
 	window.addEventListener("pageshow", (event) => {
+		validateProfileNames();
 		if (event.persisted && document.querySelector(".htmx-request")) {
 			window.location.reload();
 		}
@@ -316,10 +348,12 @@
 	window.addEventListener("popstate", syncNavigation);
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", () => {
+			validateProfileNames();
 			syncNavigation();
 			syncThemeControls(document.documentElement.getAttribute("data-bs-theme"));
 		}, { once: true });
 	} else {
+		validateProfileNames();
 		syncNavigation();
 		syncThemeControls(document.documentElement.getAttribute("data-bs-theme"));
 	}

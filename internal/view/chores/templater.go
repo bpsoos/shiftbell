@@ -19,17 +19,23 @@ type deadlineGroup struct {
 }
 
 type Config struct {
-	AppTimezone *time.Location
-	Now         func() time.Time
+	AppTimezone       *time.Location
+	Now               func() time.Time
+	ProfilesUIEnabled bool
 }
 
 type Templater struct {
-	timezone *time.Location
-	now      func() time.Time
+	timezone          *time.Location
+	now               func() time.Time
+	profilesUIEnabled bool
 }
 
 func NewTemplater(config Config) *Templater {
-	return &Templater{timezone: config.AppTimezone, now: config.Now}
+	return &Templater{
+		timezone:          config.AppTimezone,
+		now:               config.Now,
+		profilesUIEnabled: config.ProfilesUIEnabled,
+	}
 }
 
 func (t *Templater) Collection(
@@ -44,6 +50,7 @@ func (t *Templater) Collection(
 		"chores",
 		fullPage,
 		t.timezone.String(),
+		t.profilesUIEnabled,
 		collectionContent(t, model, today),
 	)
 }
@@ -78,6 +85,7 @@ func (t *Templater) Detail(
 		"chores",
 		fullPage,
 		t.timezone.String(),
+		t.profilesUIEnabled,
 		detailContent(t, model, today),
 	)
 }
@@ -86,7 +94,13 @@ func (t *Templater) Creation(
 	model choreviewmodels.Creation,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chores", fullPage, t.timezone.String(), creationContent(model))
+	return layouts.Frame(
+		"chores",
+		fullPage,
+		t.timezone.String(),
+		t.profilesUIEnabled,
+		creationContent(model),
+	)
 }
 
 func (t *Templater) ManualOneOffForm(
@@ -100,6 +114,7 @@ func (t *Templater) ManualOneOffForm(
 		"chores",
 		fullPage,
 		t.timezone.String(),
+		t.profilesUIEnabled,
 		manualOneOffFormContent(form),
 	)
 }
@@ -115,6 +130,7 @@ func (t *Templater) TemplateOneOffForm(
 		"chores",
 		fullPage,
 		t.timezone.String(),
+		t.profilesUIEnabled,
 		templateOneOffFormContent(form),
 	)
 }
@@ -130,6 +146,7 @@ func (t *Templater) ScheduledForm(
 		"chores",
 		fullPage,
 		t.timezone.String(),
+		t.profilesUIEnabled,
 		scheduledFormContent(form),
 	)
 }
@@ -138,14 +155,26 @@ func (t *Templater) EditForm(
 	form choreviewmodels.EditForm,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chores", fullPage, t.timezone.String(), editFormContent(form))
+	return layouts.Frame(
+		"chores",
+		fullPage,
+		t.timezone.String(),
+		t.profilesUIEnabled,
+		editFormContent(form),
+	)
 }
 
 func (t *Templater) Error(
 	model choreviewmodels.Error,
 	fullPage bool,
 ) templ.Component {
-	return layouts.Frame("chores", fullPage, t.timezone.String(), errorContent(model))
+	return layouts.Frame(
+		"chores",
+		fullPage,
+		t.timezone.String(),
+		t.profilesUIEnabled,
+		errorContent(model),
+	)
 }
 
 func (t *Templater) CompletionDialog(
@@ -168,6 +197,7 @@ func (t *Templater) CompletionCorrectionForm(
 		"chores",
 		fullPage,
 		t.timezone.String(),
+		t.profilesUIEnabled,
 		completionCorrectionForm(form),
 	)
 }

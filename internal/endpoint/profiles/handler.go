@@ -2,6 +2,7 @@ package profiles
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
@@ -16,7 +17,6 @@ type Service interface {
 	Create(context.Context, *models.CreateParams) (*models.Profile, error)
 	List(context.Context) ([]models.Profile, error)
 	Setup(context.Context, *models.CreateParams) (*models.Profile, error)
-	SetupRequired(context.Context) (bool, error)
 }
 
 type View interface {
@@ -30,13 +30,26 @@ type HandlerDeps struct {
 	View    View
 }
 
-type Handler struct {
-	service Service
-	view    View
+type HandlerConfig struct {
+	SetupRequired bool
+	UIEnabled     bool
 }
 
-func NewHandler(deps *HandlerDeps) *Handler {
-	return &Handler{service: deps.Service, view: deps.View}
+type Handler struct {
+	service       Service
+	view          View
+	setupRequired atomic.Bool
+	uiEnabled     bool
+}
+
+func NewHandler(deps *HandlerDeps, config *HandlerConfig) *Handler {
+	handler := &Handler{
+		service:   deps.Service,
+		view:      deps.View,
+		uiEnabled: config.UIEnabled,
+	}
+	handler.setupRequired.Store(config.SetupRequired)
+	return handler
 }
 
 func (h *Handler) supported(ctx *echo.Context) bool {

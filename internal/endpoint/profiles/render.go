@@ -27,7 +27,7 @@ func (h *Handler) creationFailure(
 		form.Name.Error = "A profile already uses this name."
 	case errors.Is(err, validation.ErrInvalidName):
 		message = validation.ErrInvalidName.Error()
-		form.Name.Error = "Enter 1–200 printable characters with no whitespace."
+		form.Name.Error = nameError(err)
 	case errors.Is(err, models.ErrAlreadyInitialized):
 		status = http.StatusConflict
 		message = models.ErrAlreadyInitialized.Error()
@@ -40,6 +40,22 @@ func (h *Handler) creationFailure(
 		form.SummaryError = message
 	}
 	return h.formFailure(ctx, status, form, message)
+}
+
+func nameError(err error) string {
+	switch {
+	case errors.Is(err, validation.ErrRequired):
+		return "Enter your name."
+	case errors.Is(err, validation.ErrTooLong):
+		return "Use 200 characters or fewer."
+	case errors.Is(err, models.ErrNameContainsSpaces):
+		return "Spaces aren’t allowed."
+	case errors.Is(err, validation.ErrDisallowedCharacter),
+		errors.Is(err, validation.ErrInvalidUTF8):
+		return "Your name contains a character we can’t use."
+	default:
+		return "Enter a valid name."
+	}
 }
 
 func (h *Handler) formFailure(

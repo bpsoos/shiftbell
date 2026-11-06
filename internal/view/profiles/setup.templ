@@ -1,0 +1,53 @@
+package profiles
+
+import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/profiles"
+
+templ setupForm(model viewmodels.Form) {
+	<section aria-labelledby="profile-form-heading">
+		<style>
+			me { align-content: center; display: grid; margin-inline: auto; max-width: 24rem; min-height: calc(100dvh - 8rem); padding-block: 2rem 6rem; }
+			me h1 { font-size: clamp(1.875rem, 5vw, 2.5rem); font-weight: 600; letter-spacing: -0.045em; margin: 0 0 2rem; text-align: center; }
+			me form { display: grid; gap: 1rem; }
+			me .form-control { background: var(--sb-input); border: 1px solid var(--sb-control-border); border-radius: var(--sb-radius-control); color: var(--sb-text); font-size: 1.125rem; padding: 0.875rem 1rem; }
+			me .form-control::placeholder { color: var(--sb-muted); }
+			me .form-control:focus { border-color: var(--sb-accent); box-shadow: none; outline: 2px solid var(--sb-focus); outline-offset: 2px; }
+			me .form-control[aria-invalid] { border-color: var(--sb-danger); }
+			me .btn { border-radius: var(--sb-radius-control); box-shadow: none; clip-path: none; font-size: 1rem; padding: 0.875rem 1rem; text-transform: none; }
+			me [role="alert"] { color: var(--sb-danger); font-size: 0.875rem; margin: 0; }
+			@media sm- { me { max-width: 22rem; padding-inline: 0.75rem; } }
+		</style>
+		<h1 id="profile-form-heading">What’s your name?</h1>
+		<form action={ model.ActionHref } method="post" hx-post={ model.ActionHref } hx-target="#main" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']">
+			if model.SummaryError != "" {
+				<p role="alert">{ model.SummaryError }</p>
+			}
+			<label class="visually-hidden" for="profile-name">Display name</label>
+			<input
+				class="form-control"
+				type="text"
+				id="profile-name"
+				name="name"
+				data-profile-name-input
+				value={ model.Name.Value }
+				placeholder="Your name"
+				autocomplete="nickname"
+				autocapitalize="off"
+				spellcheck="false"
+				required
+				autofocus
+				if model.Name.Error != "" {
+					aria-invalid="true"
+					aria-describedby="profile-name-error"
+				}
+			/>
+			if model.Name.Error != "" {
+				<p id="profile-name-error" role="alert">{ model.Name.Error }</p>
+			}
+			if model.CancelHref != "" {
+				<a class="btn btn-primary" href={ model.CancelHref }>Continue to chores</a>
+			} else {
+				<button class="btn btn-primary" type="submit">Continue</button>
+			}
+		</form>
+	</section>
+}

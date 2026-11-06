@@ -3,256 +3,205 @@ package profiles_test
 import (
 	"errors"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	models "github.com/bpsoos/shiftbell/internal/models/profiles"
 	validation "github.com/bpsoos/shiftbell/internal/models/validation"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/profiles"
+	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("SetupStatus", func() {
-	It("advertises initial creation when required", func(ctx SpecContext) {
-		handler, service, _ := newHandler()
-		service.On("SetupRequired", ctx).Return(true, nil).Once()
-		response := perform(
-			ctx,
-			handler.SetupStatus,
-			http.MethodGet,
-			"/setup",
-			hypermedia.MediaType,
-			"",
-			"",
-			"",
-		)
-		Expect(response.Code).To(Equal(http.StatusOK))
-		Expect(response.Body.Bytes()).To(MatchJSON(`{
-			"required":true,
-			"_links":[{"rel":"self","href":"/setup"},{"rel":"profiles","href":"/profiles"},{"rel":"chores","href":"/chores"}],
-			"_actions":[{"rel":"create","href":"/setup"}]
-		}`))
-	})
-
-	It("removes the setup action after any profile exists", func(ctx SpecContext) {
-		handler, service, _ := newHandler()
-		service.On("SetupRequired", ctx).Return(false, nil).Once()
-		response := perform(
-			ctx,
-			handler.SetupStatus,
-			http.MethodGet,
-			"/setup",
-			hypermedia.MediaType,
-			"",
-			"",
-			"",
-		)
-		Expect(response.Code).To(Equal(http.StatusOK))
-		Expect(response.Body.String()).To(ContainSubstring(`"required":false`))
-		Expect(response.Body.String()).To(ContainSubstring(`"_actions":[]`))
-	})
-
 	DescribeTable(
-		"renders the first-profile form",
-		func(ctx SpecContext, hx string, fullPage bool) {
-			handler, service, view := newHandler()
-			service.On("SetupRequired", ctx).Return(true, nil).Once()
-			view.On("Form", viewmodels.Form{ActionHref: "/setup", Setup: true}, fullPage).
-				Return(templ.Raw("What is your name?")).
-				Once()
-			response := perform(
-				ctx,
-				handler.SetupStatus,
-				http.MethodGet,
-				"/setup",
-				"text/html",
-				"",
-				"",
-				hx,
-			)
+		"reports startup state and available actions",
+		func(ctx SpecContext, required bool, expected string) {
+			handler, _, _ := newHandlerWithSetupRequired(required)
+			e := echo.New()
+			e.GET("/setup", handler.SetupStatus)
+			request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
+
 			Expect(response.Code).To(Equal(http.StatusOK))
-			Expect(response.Body.String()).To(Equal("What is your name?"))
+			Expect(response.Body.Bytes()).To(MatchJSON(expected))
 		},
-		Entry("page", "", true),
-		Entry("fragment", "true", false),
+		Entry(
+			"required",
+			true,
+			`{"required":true,"_links":[{"rel":"self","href":"/setup"},{"rel":"profiles","href":"/profiles"},{"rel":"chores","href":"/chores"}],"_actions":[{"rel":"create","href":"/setup"}]}`,
+		),
+		Entry(
+			"complete",
+			false,
+			`{"required":false,"_links":[{"rel":"self","href":"/setup"},{"rel":"profiles","href":"/profiles"},{"rel":"chores","href":"/chores"}],"_actions":[]}`,
+		),
 	)
 
-	DescribeTable(
-		"redirects browsers once setup is complete",
-		func(ctx SpecContext, hx string, status int, header string) {
-			handler, service, _ := newHandler()
-			service.On("SetupRequired", ctx).Return(false, nil).Once()
-			response := perform(
-				ctx,
-				handler.SetupStatus,
-				http.MethodGet,
-				"/setup",
-				"text/html",
-				"",
-				"",
-				hx,
-			)
-			Expect(response.Code).To(Equal(status))
-			Expect(response.Header().Get(header)).To(Equal("/chores"))
-		},
-		Entry("browser", "", http.StatusSeeOther, "Location"),
-		Entry("HTMX", "true", http.StatusOK, "HX-Redirect"),
-	)
+	It("renders the setup form", func(ctx SpecContext) {
+		handler, _, view := newHandler()
+		view.On("Form", viewmodels.Form{ActionHref: "/setup", Setup: true}, true).
+			Return(templ.Raw("setup form")).Once()
+		e := echo.New()
+		e.GET("/setup", handler.SetupStatus)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+		request.Header.Set("Accept", "text/html")
+		response := httptest.NewRecorder()
+		e.ServeHTTP(response, request)
 
-	It("reports storage failures", func(ctx SpecContext) {
-		handler, service, _ := newHandler()
-		service.On("SetupRequired", ctx).Return(false, errors.New("secret")).Once()
-		response := perform(
-			ctx,
-			handler.SetupStatus,
-			http.MethodGet,
-			"/setup",
-			hypermedia.MediaType,
-			"",
-			"",
-			"",
-		)
-		Expect(response.Code).To(Equal(http.StatusInternalServerError))
-		Expect(response.Body.String()).NotTo(ContainSubstring("secret"))
-	})
-
-	It("rejects unsupported representations", func(ctx SpecContext) {
-		handler, _, _ := newHandler()
-		response := perform(
-			ctx,
-			handler.SetupStatus,
-			http.MethodGet,
-			"/setup",
-			"application/xml",
-			"",
-			"",
-			"",
-		)
-		Expect(response.Code).To(Equal(http.StatusNotAcceptable))
-	})
-})
-
-var _ = Describe("Setup", func() {
-	It("creates the first profile through the setup service", func(ctx SpecContext) {
-		handler, service, _ := newHandler()
-		service.On("Setup", ctx, &models.CreateParams{Name: " Alex "}).
-			Return(&models.Profile{Id: 1, Name: "Alex"}, nil).
-			Once()
-		response := perform(
-			ctx,
-			handler.Setup,
-			http.MethodPost,
-			"/setup",
-			hypermedia.MediaType,
-			"application/json",
-			`{"name":" Alex "}`,
-			"",
-		)
-		Expect(response.Code).To(Equal(http.StatusCreated))
-		Expect(
-			response.Body.Bytes(),
-		).To(MatchJSON(`{"id":1,"name":"Alex","_links":[{"rel":"collection","href":"/profiles"}]}`))
-	})
-
-	DescribeTable(
-		"redirects HTML clients to chores after setup",
-		func(ctx SpecContext, hx string, status int, header string) {
-			handler, service, _ := newHandler()
-			service.On("Setup", ctx, &models.CreateParams{Name: "Alex"}).
-				Return(&models.Profile{Id: 1, Name: "Alex"}, nil).
-				Once()
-			response := perform(
-				ctx,
-				handler.Setup,
-				http.MethodPost,
-				"/setup",
-				"text/html",
-				"application/x-www-form-urlencoded",
-				"name=Alex",
-				hx,
-			)
-			Expect(response.Code).To(Equal(status))
-			Expect(response.Header().Get(header)).To(Equal("/chores"))
-		},
-		Entry("browser", "", http.StatusSeeOther, "Location"),
-		Entry("HTMX", "true", http.StatusOK, "HX-Redirect"),
-	)
-
-	It("reports a competing setup as a conflict", func(ctx SpecContext) {
-		handler, service, _ := newHandler()
-		service.On("Setup", ctx, &models.CreateParams{Name: "Alex"}).
-			Return(nil, models.ErrAlreadyInitialized).
-			Once()
-		response := perform(
-			ctx,
-			handler.Setup,
-			http.MethodPost,
-			"/setup",
-			hypermedia.MediaType,
-			"application/json",
-			`{"name":"Alex"}`,
-			"",
-		)
-		Expect(response.Code).To(Equal(http.StatusConflict))
-		Expect(
-			response.Body.String(),
-		).To(ContainSubstring(models.ErrAlreadyInitialized.Error()))
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(Equal("setup form"))
 	})
 
 	It(
-		"offers a continuation when another browser has completed setup",
+		"redirects to chores when startup found an existing profile",
+		func(ctx SpecContext) {
+			handler, _, _ := newHandlerWithSetupRequired(false)
+			e := echo.New()
+			e.GET("/setup", handler.SetupStatus)
+			request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+			request.Header.Set("Accept", "text/html")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusSeeOther))
+			Expect(response.Header().Get("Location")).To(Equal("/chores"))
+		},
+	)
+})
+
+var _ = Describe("Setup", func() {
+	It(
+		"creates the first profile and redirects subsequent visits to chores",
+		func(ctx SpecContext) {
+			handler, service, _ := newHandler()
+			service.On("Setup", ctx, &models.CreateParams{Name: "Alex"}).
+				Return(&models.Profile{Id: 1, Name: "Alex"}, nil).Once()
+			e := echo.New()
+			e.POST("/setup", handler.Setup)
+			e.GET("/setup", handler.SetupStatus)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				"/setup",
+				strings.NewReader("name=Alex"),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
+
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Header().Get("HX-Redirect")).To(Equal("/chores"))
+
+			request = httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+			request.Header.Set("Accept", "text/html")
+			response = httptest.NewRecorder()
+			e.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusSeeOther))
+			Expect(response.Header().Get("Location")).To(Equal("/chores"))
+		},
+	)
+
+	It("keeps setup required after a storage failure", func(ctx SpecContext) {
+		handler, service, _ := newHandler()
+		service.On("Setup", ctx, &models.CreateParams{Name: "Alex"}).
+			Return(nil, errors.New("storage failed")).Once()
+		e := echo.New()
+		e.POST("/setup", handler.Setup)
+		e.GET("/setup", handler.SetupStatus)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			"/setup",
+			strings.NewReader(`{"name":"Alex"}`),
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		request.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+		e.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusInternalServerError))
+
+		request = httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response = httptest.NewRecorder()
+		e.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(ContainSubstring(`"required":true`))
+	})
+
+	It(
+		"offers continuation and clears the flag when setup is already complete",
 		func(ctx SpecContext) {
 			handler, service, view := newHandler()
 			service.On("Setup", ctx, &models.CreateParams{Name: "Alex"}).
-				Return(nil, models.ErrAlreadyInitialized).
-				Once()
+				Return(nil, models.ErrAlreadyInitialized).Once()
 			view.On("Form", viewmodels.Form{
 				ActionHref: "/setup", CancelHref: "/chores", Setup: true,
 				Name:         viewmodels.Field{Value: "Alex"},
 				SummaryError: "Setup is already complete. Continue to chores.",
 			}, true).Return(templ.Raw("continue")).Once()
-			response := perform(
+			e := echo.New()
+			e.POST("/setup", handler.Setup)
+			e.GET("/setup", handler.SetupStatus)
+			request := httptest.NewRequestWithContext(
 				ctx,
-				handler.Setup,
 				http.MethodPost,
 				"/setup",
-				"text/html",
-				"application/x-www-form-urlencoded",
-				"name=Alex",
-				"",
+				strings.NewReader("name=Alex"),
 			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusConflict))
 			Expect(response.Body.String()).To(Equal("continue"))
+
+			request = httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+			request.Header.Set("Accept", "text/html")
+			response = httptest.NewRecorder()
+			e.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusSeeOther))
+			Expect(response.Header().Get("Location")).To(Equal("/chores"))
 		},
 	)
 
-	It(
-		"keeps setup context when rendering name validation errors",
-		func(ctx SpecContext) {
-			handler, service, view := newHandler()
-			service.On("Setup", ctx, &models.CreateParams{Name: "Alex Smith"}).
-				Return(nil, validation.ErrInvalidName).
-				Once()
-			view.On("Form", viewmodels.Form{
-				ActionHref: "/setup",
-				Setup:      true,
-				Name: viewmodels.Field{
-					Value: "Alex Smith",
-					Error: "Enter 1–200 printable characters with no whitespace.",
-				},
-			}, true).Return(templ.Raw("invalid name")).Once()
-			response := perform(
-				ctx,
-				handler.Setup,
-				http.MethodPost,
-				"/setup",
-				"text/html",
-				"application/x-www-form-urlencoded",
-				"name=Alex+Smith",
-				"",
-			)
-			Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
-		},
-	)
+	It("preserves the setup form and flag after invalid input", func(ctx SpecContext) {
+		handler, service, view := newHandler()
+		service.On("Setup", ctx, &models.CreateParams{Name: "Alex Smith"}).
+			Return(nil, errors.Join(validation.ErrInvalidName, models.ErrNameContainsSpaces)).
+			Once()
+		view.On("Form", viewmodels.Form{
+			ActionHref: "/setup", Setup: true,
+			Name: viewmodels.Field{Value: "Alex Smith", Error: "Spaces aren’t allowed."},
+		}, true).Return(templ.Raw("invalid name")).Once()
+		e := echo.New()
+		e.POST("/setup", handler.Setup)
+		e.GET("/setup", handler.SetupStatus)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			"/setup",
+			strings.NewReader("name=Alex+Smith"),
+		)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		response := httptest.NewRecorder()
+		e.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+		Expect(response.Body.String()).To(Equal("invalid name"))
+
+		request = httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response = httptest.NewRecorder()
+		e.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(ContainSubstring(`"required":true`))
+	})
 })

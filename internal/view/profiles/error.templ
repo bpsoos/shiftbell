@@ -1,0 +1,16 @@
+package profiles
+
+import viewmodels "github.com/bpsoos/shiftbell/internal/models/view/profiles"
+
+templ errorContent(model viewmodels.Error) {
+	<section aria-labelledby="profile-error-heading">
+		<style>
+			me { background: var(--sb-surface); border: 2px solid var(--sb-frame); border-left: 3px solid var(--sb-danger); margin-inline: auto; max-width: 34rem; padding: 1.5rem; }
+			me h1 { font-size: 1.5rem; letter-spacing: -0.025em; margin: 0; }
+			me p { border-block: 1px solid var(--sb-border); margin: 1rem 0; padding-block: 0.75rem; }
+		</style>
+		<h1 id="profile-error-heading">Unable to load profiles</h1>
+		<p role="alert">{ model.Message }</p>
+		<a class="btn btn-secondary" href={ model.CollectionHref } hx-get={ model.CollectionHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true">Try again</a>
+	</section>
+}

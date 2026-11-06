@@ -2,10 +2,11 @@ package layouts
 
 import viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
 
-templ nav(active string) {
-	<nav class="navbar navbar-expand-md" aria-label="Primary navigation">
+templ nav(active string, profilesUIEnabled bool) {
+	<nav class="navbar navbar-expand-md" aria-label="Primary navigation" data-setup?={ active == "setup" }>
 		<style>
 			me { background: var(--sb-surface); border-bottom: 2px solid var(--sb-frame); padding-block: 0; }
+			me[data-setup] { background: transparent; border-bottom: 0; }
 			me > .container-fluid { max-width: 64rem; min-height: 4rem; padding-inline: 1.25rem; }
 			me .navbar-collapse { order: 2; }
 			@media sm- {
@@ -14,24 +15,30 @@ templ nav(active string) {
 			}
 		</style>
 		<div class="container-fluid">
-			@navBrand()
-			@navActions()
-			<div class="collapse navbar-collapse" id="primary-navigation">
-				@navLinks(active)
-			</div>
+			@navBrand(active == "setup")
+			@navActions(active != "setup")
+			if active != "setup" {
+				<div class="collapse navbar-collapse" id="primary-navigation">
+					@navLinks(active, profilesUIEnabled)
+				</div>
+			}
 		</div>
 	</nav>
 }
 
-templ navBrand() {
+templ navBrand(setup bool) {
 	<a
 		class="navbar-brand"
 		aria-label="ShiftBell home"
-		hx-get="/chores"
-		hx-target="#main"
-		hx-swap="outerHTML"
-		hx-push-url="true"
-		href="/chores"
+		if setup {
+			href="/setup"
+		} else {
+			hx-get="/chores"
+			hx-target="#main"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			href="/chores"
+		}
 	>
 		<style>
 			me { align-items: center; color: var(--sb-text); display: inline-flex; font-weight: 750; gap: 0.6875rem; letter-spacing: -0.03em; }
@@ -48,7 +55,7 @@ templ navBrand() {
 	</a>
 }
 
-templ navActions() {
+templ navActions(showNavigation bool) {
 	<div data-nav-actions>
 		<style>
 			me { align-items: center; display: flex; gap: 0.375rem; margin-left: auto; order: 3; }
@@ -70,14 +77,16 @@ templ navActions() {
 			<span data-theme-icon="dark">@viewicons.Moon()</span>
 			<span class="visually-hidden" data-theme-label>Toggle color theme</span>
 		</button>
-		<button class="navbar-toggler" type="button" data-header-button data-bs-toggle="collapse" data-bs-target="#primary-navigation" aria-controls="primary-navigation" aria-expanded="false" aria-label="Toggle navigation">
-			@viewicons.List()
-			<span class="visually-hidden">Toggle navigation</span>
-		</button>
+		if showNavigation {
+			<button class="navbar-toggler" type="button" data-header-button data-bs-toggle="collapse" data-bs-target="#primary-navigation" aria-controls="primary-navigation" aria-expanded="false" aria-label="Toggle navigation">
+				@viewicons.List()
+				<span class="visually-hidden">Toggle navigation</span>
+			</button>
+		}
 	</div>
 }
 
-templ navLinks(active string) {
+templ navLinks(active string, profilesUIEnabled bool) {
 	<ul class="navbar-nav">
 		<style>
 			me { gap: 0.125rem; }
@@ -139,6 +148,24 @@ templ navLinks(active string) {
 				href="/chore-templates"
 			>Templates</a>
 		</li>
+		if profilesUIEnabled {
+			<li class="nav-item">
+				<a
+					if active == "profiles" {
+						class="nav-link active"
+						aria-current="page"
+					} else {
+						class="nav-link"
+					}
+					data-shiftbell-nav="profiles"
+					hx-get="/profiles"
+					hx-target="#main"
+					hx-swap="outerHTML"
+					hx-push-url="true"
+					href="/profiles"
+				>Profiles</a>
+			</li>
+		}
 	</ul>
 }
 

@@ -1,37 +1,51 @@
 package profiles_test
 
 import (
-	"errors"
 	"net/http"
+	"net/http/httptest"
 
-	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
-	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/profiles"
+	"github.com/bpsoos/shiftbell/internal/endpoint/profiles"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("RequireSetup", func() {
+	It(
+		"allows browser navigation before setup when the UI is disabled",
+		func(ctx SpecContext) {
+			handler := profiles.NewHandler(
+				&profiles.HandlerDeps{Service: &MockService{}},
+				&profiles.HandlerConfig{SetupRequired: true},
+			)
+			e := echo.New()
+			e.GET("/chores", handler.RequireSetup(func(c *echo.Context) error {
+				return c.String(http.StatusOK, "chores")
+			}))
+			request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/chores", nil)
+			request.Header.Set("Accept", "text/html")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.String()).To(Equal("chores"))
+		},
+	)
 	DescribeTable(
 		"redirects HTML navigation when setup is required",
 		func(ctx SpecContext, hx string, status int, header string) {
-			handler, service, _ := newHandler()
-			service.On("SetupRequired", ctx).Return(true, nil).Once()
+			handler, _, _ := newHandler()
 			next := handler.RequireSetup(func(*echo.Context) error {
 				Fail("the protected page must not run before setup")
 				return nil
 			})
-			response := perform(
-				ctx,
-				next,
-				http.MethodGet,
-				"/chores",
-				"text/html",
-				"",
-				"",
-				hx,
-			)
+			e := echo.New()
+			e.GET("/chores", next)
+			request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/chores", nil)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", hx)
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(status))
 			Expect(response.Header().Get(header)).To(Equal("/setup"))
 		},
@@ -40,23 +54,18 @@ var _ = Describe("RequireSetup", func() {
 	)
 
 	It(
-		"allows HTML navigation once any browser has created a profile",
+		"allows HTML navigation when startup found an existing profile",
 		func(ctx SpecContext) {
-			handler, service, _ := newHandler()
-			service.On("SetupRequired", ctx).Return(false, nil).Once()
+			handler, _, _ := newHandlerWithSetupRequired(false)
 			next := handler.RequireSetup(func(c *echo.Context) error {
 				return c.String(http.StatusOK, "chores")
 			})
-			response := perform(
-				ctx,
-				next,
-				http.MethodGet,
-				"/chores",
-				"text/html",
-				"",
-				"",
-				"",
-			)
+			e := echo.New()
+			e.GET("/chores", next)
+			request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/chores", nil)
+			request.Header.Set("Accept", "text/html")
+			response := httptest.NewRecorder()
+			e.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusOK))
 			Expect(response.Body.String()).To(Equal("chores"))
 		},
@@ -67,31 +76,12 @@ var _ = Describe("RequireSetup", func() {
 		next := handler.RequireSetup(func(c *echo.Context) error {
 			return hypermedia.JSON(c, http.StatusOK, struct{}{})
 		})
-		response := perform(
-			ctx,
-			next,
-			http.MethodGet,
-			"/chores",
-			hypermedia.MediaType,
-			"",
-			"",
-			"",
-		)
+		e := echo.New()
+		e.GET("/chores", next)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/chores", nil)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+		e.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(http.StatusOK))
-	})
-
-	It("renders lookup failures instead of redirecting", func(ctx SpecContext) {
-		handler, service, view := newHandler()
-		service.On("SetupRequired", ctx).Return(false, errors.New("secret")).Once()
-		view.On("Error", viewmodels.Error{Message: "Something went wrong. Try again.", CollectionHref: "/profiles"}, true).
-			Return(templ.Raw("error")).
-			Once()
-		next := handler.RequireSetup(func(*echo.Context) error {
-			Fail("the protected page must not run after a lookup failure")
-			return nil
-		})
-		response := perform(ctx, next, http.MethodGet, "/chores", "text/html", "", "", "")
-		Expect(response.Code).To(Equal(http.StatusInternalServerError))
-		Expect(response.Body.String()).To(Equal("error"))
 	})
 })

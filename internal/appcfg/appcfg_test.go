@@ -26,6 +26,7 @@ var _ = Describe("Load", func() {
 		GinkgoT().Setenv("LOG_FORMAT", "")
 		GinkgoT().Setenv("APP_TIMEZONE", "")
 		GinkgoT().Setenv("INITIAL_PROFILE_NAME", "")
+		GinkgoT().Setenv("PROFILES_UI_ENABLED", "")
 	})
 
 	It("loads the database filepath", func() {
@@ -47,6 +48,29 @@ var _ = Describe("Load", func() {
 		cfg, err := appcfg.Load()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(cfg.InitialProfileName).To(Equal(" Alex "))
+	})
+
+	It("disables the profiles UI when the flag is unset", func() {
+		Expect(os.Unsetenv("PROFILES_UI_ENABLED")).To(Succeed())
+		cfg, err := appcfg.Load()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cfg.ProfilesUIEnabled).To(BeFalse())
+	})
+
+	DescribeTable("loads the profiles UI flag", func(value string, enabled bool) {
+		GinkgoT().Setenv("PROFILES_UI_ENABLED", value)
+		cfg, err := appcfg.Load()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cfg.ProfilesUIEnabled).To(Equal(enabled))
+	}, Entry("empty", "", false), Entry("disabled", "false", false), Entry("enabled", "true", true))
+
+	It("rejects an invalid profiles UI flag", func() {
+		GinkgoT().Setenv("PROFILES_UI_ENABLED", "invalid")
+		cfg, err := appcfg.Load()
+		Expect(cfg).To(BeNil())
+		Expect(
+			err,
+		).To(MatchError(`invalid PROFILES_UI_ENABLED "invalid": expected a boolean`))
 	})
 
 	Context("without an app timezone", func() {
