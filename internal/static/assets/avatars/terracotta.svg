@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 100 100" fill="#fffef9">
+  <title>Terracotta waves avatar</title>
+  <desc>Adapted from DiceBear Waves, licensed under CC0 1.0. https://www.dicebear.com/styles/waves/</desc>
+  <rect width="100" height="100" fill="#b9674d"/>
+  <g transform="rotate(113.7426, 50, 50)">
+    <g opacity=".2" transform="translate(-50 8) translate(-16.978, -1.06847)">
+      <path d="M0 12c6 0 12 10 18 10s12-10 18-10 12 10 18 10 12-10 18-10 12 10 18 10 12-10 18-10 12 10 18 10 12-10 18-10 12 10 18 10 12-10 18-10 12 6 20 5v113H0Z"/>
+    </g>
+    <g opacity=".35" transform="translate(-50 32) translate(0.2218, 2.18556)">
+      <path d="M0 24C25 24 35 0 62 0c22 0 34 20 56 22 18 1 30-10 48-10 12 0 24 6 34 8v110H0Z"/>
+    </g>
+    <g opacity=".5" transform="translate(-50 56) translate(7.6062, 4.35058)">
+      <path d="M0 6c24 0 44 4 62 14 16 8 34 8 52 2 20-7 38-12 54-12 12 0 24 4 32 6v114H0Z"/>
+    </g>
+  </g>
+</svg>

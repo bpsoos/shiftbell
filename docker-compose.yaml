@@ -25,6 +25,7 @@ services:
       LOG_FORMAT: "text"
       APP_TIMEZONE: "${APP_TIMEZONE:-Europe/Budapest}"
       INITIAL_PROFILE_NAME: "${INITIAL_PROFILE_NAME:-}"
+      PROFILES_UI_ENABLED: "${PROFILES_UI_ENABLED:-false}"
       TZ: "${APP_TIMEZONE:-Europe/Budapest}"
     volumes:
       - "./:/src"

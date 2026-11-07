@@ -20,6 +20,8 @@ type Service interface {
 }
 
 type View interface {
+	SelectedProfile(viewmodels.Navigation) templ.Component
+	Selection(viewmodels.Selection, bool) templ.Component
 	Collection(viewmodels.Collection, bool) templ.Component
 	Form(viewmodels.Form, bool) templ.Component
 	Error(viewmodels.Error, bool) templ.Component

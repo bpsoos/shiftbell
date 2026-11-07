@@ -16,7 +16,10 @@ func (r *Router) Setup(app *echo.Echo) error {
 
 	app.GET("/setup", r.profileHandler.SetupStatus)
 	app.POST("/setup", r.profileHandler.Setup)
-	pages := app.Group("", r.profileHandler.RequireSetup)
+	app.GET("/profiles/selection/status", r.profileHandler.SelectionStatus)
+	app.GET("/profiles/selection", r.profileHandler.Selection)
+	app.POST("/profiles/selection", r.profileHandler.Select)
+	pages := app.Group("")
 	pages.GET("/", r.homeHandler.Get)
 	pages.GET("/profiles", r.profileHandler.List)
 	pages.POST("/profiles", r.profileHandler.Create)

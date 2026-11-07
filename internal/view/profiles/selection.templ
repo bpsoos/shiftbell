@@ -1,0 +1,42 @@
+package profiles
+
+import (
+	"strconv"
+
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/profiles"
+)
+
+templ selection(model viewmodels.Selection) {
+	<section aria-labelledby="profile-selection-heading" data-profile-picker>
+		<style>
+			me { margin: clamp(2rem, 8vh, 6rem) auto; max-width: 64rem; text-align: center; }
+			me > h1 { font-size: 1.875rem; font-weight: 750; letter-spacing: -0.035em; margin: 0 0 2.5rem; }
+			me > form { align-items: flex-start; display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center; }
+			me button { align-items: center; background: transparent; border: 0; border-radius: 0; color: var(--sb-text); display: flex; flex: 0 0 11rem; flex-direction: column; gap: 0.875rem; padding: 0; width: 11rem; }
+			me button > img { aspect-ratio: 1; border: 2px solid var(--sb-frame); display: block; height: auto; object-fit: cover; width: 100%; }
+			me button:hover > img, me button[aria-pressed="true"] > img { border-color: var(--sb-accent); }
+			me button:focus-visible { box-shadow: none; outline: none; }
+			me button:focus-visible > img { outline: 2px solid var(--sb-focus); outline-offset: 4px; }
+			me button > span { font-size: 1rem; font-weight: 650; overflow-wrap: anywhere; width: 100%; }
+			me > [role="alert"] { color: var(--sb-danger); margin-bottom: 1.5rem; }
+			@media xs- {
+				me > h1 { font-size: 1.625rem; margin-bottom: 2rem; }
+				me > form { column-gap: 1.25rem; }
+				me button { flex-basis: 8rem; width: 8rem; }
+			}
+		</style>
+		<h1 id="profile-selection-heading">Choose your profile</h1>
+		if model.Error != "" {
+			<p role="alert">{ model.Error }</p>
+		}
+		<form action="/profiles/selection" method="post">
+			<input type="hidden" name="return_to" value={ model.ReturnTo }/>
+			for _, profile := range model.Profiles {
+				<button type="submit" name="profile_id" value={ strconv.Itoa(profile.Id) } aria-pressed={ strconv.FormatBool(profile.Id == model.SelectedProfileId) }>
+					<img src={ profileAvatarHref(profile.Id) } alt="" width="176" height="176"/>
+					<span>{ profile.Name }</span>
+				</button>
+			}
+		</form>
+	</section>
+}

@@ -38,6 +38,20 @@ func (t *Templater) Collection(
 	)
 }
 
+func (t *Templater) Selection(model viewmodels.Selection, fullPage bool) templ.Component {
+	return layouts.Frame(
+		"profile-selection",
+		fullPage,
+		t.appTimezone.String(),
+		t.profilesUIEnabled,
+		selection(model),
+	)
+}
+
+func (t *Templater) SelectedProfile(model viewmodels.Navigation) templ.Component {
+	return selectedProfile(model)
+}
+
 func (t *Templater) Form(model viewmodels.Form, fullPage bool) templ.Component {
 	if model.Setup {
 		return layouts.Frame(

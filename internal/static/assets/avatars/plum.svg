@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 100 100" fill="#fffef9">
+  <title>Plum waves avatar</title>
+  <desc>Adapted from DiceBear Waves, licensed under CC0 1.0. https://www.dicebear.com/styles/waves/</desc>
+  <rect width="100" height="100" fill="#775978"/>
+  <g transform="rotate(-161.2236, 50, 50)">
+    <g opacity=".2" transform="translate(-50 8) translate(9.7072, -3.8584)">
+      <path d="M0 6c24 0 44 4 62 14 16 8 34 8 52 2 20-7 38-12 54-12 12 0 24 4 32 6v114H0Z"/>
+    </g>
+    <g opacity=".35" transform="translate(-50 32) translate(-23.11, 3.55225)">
+      <path d="M0 12c6 0 12 10 18 10s12-10 18-10 12 10 18 10 12-10 18-10 12 10 18 10 12-10 18-10 12 10 18 10 12-10 18-10 12 10 18 10 12-10 18-10 12 6 20 5v113H0Z"/>
+    </g>
+    <g opacity=".5" transform="translate(-50 56) translate(1.1518, 2.70725)">
+      <path d="M0 24C25 24 35 0 62 0c22 0 34 20 56 22 18 1 30-10 48-10 12 0 24 6 34 8v110H0Z"/>
+    </g>
+  </g>
+</svg>

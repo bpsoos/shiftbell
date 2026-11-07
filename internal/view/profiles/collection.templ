@@ -16,7 +16,7 @@ templ collection(model viewmodels.Collection) {
 			me > ul { background: var(--sb-surface); border: 2px solid var(--sb-frame); list-style: none; margin: 0; padding: 0; }
 			me > ul > li { align-items: center; display: flex; gap: 0.875rem; min-height: 4.5rem; padding: 0.875rem 1rem; }
 			me > ul > li + li { border-top: 1px solid var(--sb-border); }
-			me [data-profile-icon] { align-items: center; background: var(--sb-subtle); border: 1px solid var(--sb-border); color: var(--sb-muted-strong); display: flex; flex: 0 0 2.5rem; font-size: 1.25rem; height: 2.5rem; justify-content: center; }
+			me [data-profile-icon] { border: 1px solid var(--sb-border); flex: 0 0 2.5rem; height: 2.5rem; object-fit: cover; width: 2.5rem; }
 			me [data-profile-name] { color: var(--sb-text); font-size: 1rem; font-weight: 650; min-width: 0; overflow-wrap: anywhere; }
 			me [data-empty] { background: var(--sb-surface); border: 2px solid var(--sb-frame); padding: 2rem 1rem; text-align: center; }
 			me [data-empty] h2 { font-size: 1.125rem; margin-bottom: 0.5rem; }
@@ -40,7 +40,7 @@ templ collection(model viewmodels.Collection) {
 			<ul aria-label="Profiles">
 				for _, profile := range model.Profiles {
 					<li>
-						<span data-profile-icon aria-hidden="true">@viewicons.User()</span>
+						<img data-profile-icon src={ profileAvatarHref(profile.Id) } alt="" width="40" height="40"/>
 						<span data-profile-name>{ profile.Name }</span>
 					</li>
 				}

@@ -46,7 +46,7 @@ templ page(active string, timezone string, profilesUIEnabled bool, content templ
 			<a class="shiftbell-skip-link" href="#main">Skip to content</a>
 			@nav(active, profilesUIEnabled)
 			@main(content)
-			if active != "setup" {
+			if active != "setup" && active != "profile-selection" {
 				@applicationFooter(timezone)
 			}
 			<div id="dialog-root"></div>

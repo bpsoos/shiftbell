@@ -7,7 +7,9 @@ type HomeHandler interface {
 }
 
 type ProfileHandler interface {
-	RequireSetup(echo.HandlerFunc) echo.HandlerFunc
+	SelectionStatus(*echo.Context) error
+	Selection(*echo.Context) error
+	Select(*echo.Context) error
 	List(*echo.Context) error
 	Create(*echo.Context) error
 	CreateForm(*echo.Context) error
