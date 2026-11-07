@@ -30,6 +30,8 @@ const (
 	RelationCreate            = "create"
 	RelationEdit              = "edit"
 	RelationComplete          = "complete"
+	RelationSetAssignment     = "set_assignment"
+	RelationClearAssignment   = "clear_assignment"
 	RelationCorrectCompletion = "correct_completion"
 	RelationDelete            = "delete"
 	RelationDeactivate        = "deactivate"

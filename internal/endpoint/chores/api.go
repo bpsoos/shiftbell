@@ -27,13 +27,14 @@ func newChoreResponse(chore *choremodels.Chore) choreResponse {
 	}
 
 	return choreResponse{
-		Id:          chore.Id,
-		ScheduleId:  chore.ScheduleId,
-		Status:      chore.Status,
-		Name:        chore.Name,
-		Description: chore.Description,
-		Deadline:    chore.Deadline.Format(time.DateOnly),
-		CompletedOn: completedOn,
+		OwnerProfileId: chore.OwnerProfileId,
+		Id:             chore.Id,
+		ScheduleId:     chore.ScheduleId,
+		Status:         chore.Status,
+		Name:           chore.Name,
+		Description:    chore.Description,
+		Deadline:       chore.Deadline.Format(time.DateOnly),
+		CompletedOn:    completedOn,
 		Links: api.Relations{
 			{Rel: "self", Href: choreHref(chore.Id)},
 			{Rel: "collection", Href: choreCollectionHref},
@@ -58,6 +59,7 @@ func createChoreSubmissionAction() api.Relation {
 
 func activeOneOffActions(selfHref string) api.Relations {
 	return api.Relations{
+		{Rel: "set_assignment", Href: selfHref + "/assignment"},
 		{Rel: "edit", Href: selfHref},
 		{Rel: "complete", Href: selfHref + "/completion"},
 		{Rel: "delete", Href: selfHref},
@@ -66,6 +68,7 @@ func activeOneOffActions(selfHref string) api.Relations {
 
 func activeScheduledActions(selfHref string) api.Relations {
 	return api.Relations{
+		{Rel: "set_assignment", Href: selfHref + "/assignment"},
 		{Rel: "edit", Href: selfHref},
 		{Rel: "complete", Href: selfHref + "/completion"},
 	}
@@ -73,6 +76,7 @@ func activeScheduledActions(selfHref string) api.Relations {
 
 func completedChoreActions(selfHref string) api.Relations {
 	return api.Relations{
+		{Rel: "set_assignment", Href: selfHref + "/assignment"},
 		{Rel: "correct_completion", Href: selfHref + "/completion"},
 		{Rel: "delete", Href: selfHref},
 	}
@@ -80,17 +84,26 @@ func completedChoreActions(selfHref string) api.Relations {
 
 func actionsForChore(chore *choremodels.Chore) api.Relations {
 	selfHref := choreHref(chore.Id)
+	var actions api.Relations
 	switch chore.Status {
 	case choremodels.ChoreStatusActive:
 		if chore.ScheduleId != nil {
-			return activeScheduledActions(selfHref)
+			actions = activeScheduledActions(selfHref)
+		} else {
+			actions = activeOneOffActions(selfHref)
 		}
-		return activeOneOffActions(selfHref)
 	case choremodels.ChoreStatusCompleted:
-		return completedChoreActions(selfHref)
+		actions = completedChoreActions(selfHref)
 	default:
 		return api.Relations{}
 	}
+	if chore.OwnerProfileId != nil {
+		actions = append(
+			actions,
+			api.Relation{Rel: "clear_assignment", Href: selfHref + "/assignment"},
+		)
+	}
+	return actions
 }
 
 func choreHref(id int) string {

@@ -55,6 +55,7 @@ var _ = Describe("Edit", func() {
 			Deadline        time.Time
 			ScheduleID      int           `db:"schedule_id"`
 			PredecessorID   sql.NullInt64 `db:"predecessor_id"`
+			OwnerProfileID  sql.NullInt64 `db:"owner_profile_id"`
 		}
 		var originalChores []choreSnapshot
 		Expect(

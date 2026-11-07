@@ -82,6 +82,7 @@ var _ = Describe("Complete chore", func() {
 		Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"id": 42,
 			"schedule_id": null,
+			"owner_profile_id": null,
 			"status": "completed",
 			"name": "Kitchen",
 			"description": "Clean counters",
@@ -92,6 +93,7 @@ var _ = Describe("Complete chore", func() {
 				{"rel": "collection", "href": "/chores"}
 			],
 			"_actions": [
+				{"rel": "set_assignment", "href": "/chores/42/assignment"},
 				{"rel": "correct_completion", "href": "/chores/42/completion"},
 				{"rel": "delete", "href": "/chores/42"}
 			]
@@ -229,10 +231,10 @@ var _ = Describe("Complete chore", func() {
 			app.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusOK))
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
-			"id":42,"schedule_id":7,"status":"completed","name":"Kitchen","description":"Clean counters",
+			"id":42,"schedule_id":7,"owner_profile_id":null,"status":"completed","name":"Kitchen","description":"Clean counters",
 			"deadline":"2020-02-03","completed_on":"2020-03-26",
 			"_links":[{"rel":"self","href":"/chores/42"},{"rel":"collection","href":"/chores"}],
-			"_actions":[{"rel":"correct_completion","href":"/chores/42/completion"},{"rel":"delete","href":"/chores/42"}]
+			"_actions":[{"rel":"set_assignment","href":"/chores/42/assignment"},{"rel":"correct_completion","href":"/chores/42/completion"},{"rel":"delete","href":"/chores/42"}]
 		}`))
 		},
 	)

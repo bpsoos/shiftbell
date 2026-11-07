@@ -50,7 +50,7 @@ var _ = Describe("Correct chore completion", func() {
 						{Rel: "self", Href: "/chores/42"},
 						{Rel: "collection", Href: "/chores"},
 					},
-				}, Actions: api.Relations{{Rel: "correct_completion", Href: "/chores/42/completion"}, {Rel: "delete", Href: "/chores/42"}}},
+				}, Actions: api.Relations{{Rel: "set_assignment", Href: "/chores/42/assignment"}, {Rel: "correct_completion", Href: "/chores/42/completion"}, {Rel: "delete", Href: "/chores/42"}}},
 				BackHref:   "/chores",
 				DeleteHref: "/chores/42/deletion",
 				Notice:     "Completion date corrected.",
@@ -290,6 +290,7 @@ var _ = Describe("Correct chore completion", func() {
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"id": 42,
 			"schedule_id": null,
+			"owner_profile_id": null,
 			"status": "completed",
 			"name": "Kitchen",
 			"description": "Clean counters",
@@ -300,6 +301,7 @@ var _ = Describe("Correct chore completion", func() {
 				{"rel": "collection", "href": "/chores"}
 			],
 			"_actions": [
+				{"rel": "set_assignment", "href": "/chores/42/assignment"},
 				{"rel": "correct_completion", "href": "/chores/42/completion"},
 				{"rel": "delete", "href": "/chores/42"}
 			]

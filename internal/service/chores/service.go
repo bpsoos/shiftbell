@@ -34,6 +34,11 @@ func NewService(deps *Deps, config *Config) *Service {
 }
 
 type Persister interface {
+	ClearAssignment(context.Context, int) (*models.ChoreDetails, error)
+	SetAssignment(
+		context.Context,
+		*models.SetAssignmentParams,
+	) (*models.ChoreDetails, error)
 	Browse(context.Context, *models.BrowseChoresParams) (*models.ChorePage, error)
 	Get(context.Context, int) (*models.ChoreDetails, error)
 	CreateManualOneOff(

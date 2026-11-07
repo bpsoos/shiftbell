@@ -129,6 +129,7 @@ var _ = Describe("Browse chores", func() {
 			"items": [{
 				"id": 42,
 				"schedule_id": null,
+				"owner_profile_id": null,
 				"status": "active",
 				"name": "Kitchen",
 				"description": "Clean counters",

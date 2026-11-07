@@ -65,10 +65,10 @@ var _ = Describe("Edit chore", func() {
 
 			Expect(response.Code).To(Equal(http.StatusOK))
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
-			"id":42,"schedule_id":7,"status":"active","name":"Kitchen edited","description":"Edited steps.",
+			"id":42,"schedule_id":7,"owner_profile_id":null,"status":"active","name":"Kitchen edited","description":"Edited steps.",
 			"deadline":"2020-02-03","completed_on":null,
 			"_links":[{"rel":"self","href":"/chores/42"},{"rel":"collection","href":"/chores"}],
-			"_actions":[{"rel":"edit","href":"/chores/42"},{"rel":"complete","href":"/chores/42/completion"}]
+			"_actions":[{"rel":"set_assignment","href":"/chores/42/assignment"},{"rel":"edit","href":"/chores/42"},{"rel":"complete","href":"/chores/42/completion"}]
 		}`))
 		},
 		Entry(
@@ -318,6 +318,7 @@ var _ = Describe("Edit chore", func() {
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"id": 42,
 			"schedule_id": null,
+			"owner_profile_id": null,
 			"status": "active",
 			"name": "Kitchen edited",
 			"description": "Clean all counters.",
@@ -328,6 +329,7 @@ var _ = Describe("Edit chore", func() {
 				{"rel": "collection", "href": "/chores"}
 			],
 			"_actions": [
+				{"rel": "set_assignment", "href": "/chores/42/assignment"},
 				{"rel": "edit", "href": "/chores/42"},
 				{"rel": "complete", "href": "/chores/42/completion"},
 				{"rel": "delete", "href": "/chores/42"}
@@ -368,6 +370,7 @@ var _ = Describe("Edit chore", func() {
 				{Rel: "collection", Href: "/chores"},
 			},
 			Actions: api.Relations{
+				{Rel: "set_assignment", Href: "/chores/42/assignment"},
 				{Rel: "edit", Href: "/chores/42"},
 				{Rel: "complete", Href: "/chores/42/completion"},
 				{Rel: "delete", Href: "/chores/42"},
@@ -448,6 +451,7 @@ var _ = Describe("Edit chore", func() {
 						{Rel: "collection", Href: "/chores"},
 					},
 					Actions: api.Relations{
+						{Rel: "set_assignment", Href: "/chores/42/assignment"},
 						{Rel: "edit", Href: "/chores/42"},
 						{Rel: "complete", Href: "/chores/42/completion"},
 					},

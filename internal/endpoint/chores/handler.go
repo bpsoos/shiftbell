@@ -18,6 +18,11 @@ type ChoreTemplateService interface {
 }
 
 type Service interface {
+	ClearAssignment(context.Context, int) (*choremodels.ChoreDetails, error)
+	SetAssignment(
+		context.Context,
+		*choremodels.SetAssignmentParams,
+	) (*choremodels.ChoreDetails, error)
 	Browse(
 		context.Context,
 		*choremodels.BrowseChoresParams,
@@ -51,6 +56,7 @@ type formFeedback struct {
 }
 
 type View interface {
+	Assignment(choreviewmodels.Assignment) templ.Component
 	Collection(choreviewmodels.Collection, bool) templ.Component
 	CompletionDialog(choreviewmodels.CompletionDialog) templ.Component
 	CompletionCorrectionForm(

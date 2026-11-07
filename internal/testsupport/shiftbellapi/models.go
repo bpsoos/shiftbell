@@ -25,14 +25,15 @@ type GetHomeResult struct {
 }
 
 type Chore struct {
-	Id          int       `json:"id"`
-	ScheduleId  *int      `json:"schedule_id"`
-	Status      string    `json:"status"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Deadline    string    `json:"deadline"`
-	CompletedOn *string   `json:"completed_on"`
-	Links       Relations `json:"_links"`
+	OwnerProfileId *int      `json:"owner_profile_id"`
+	Id             int       `json:"id"`
+	ScheduleId     *int      `json:"schedule_id"`
+	Status         string    `json:"status"`
+	Name           string    `json:"name"`
+	Description    string    `json:"description"`
+	Deadline       string    `json:"deadline"`
+	CompletedOn    *string   `json:"completed_on"`
+	Links          Relations `json:"_links"`
 }
 
 type ChoreCollection struct {

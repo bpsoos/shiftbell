@@ -15,7 +15,8 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 				id,
 				name,
 				description,
-				deadline
+				deadline,
+				owner_profile_id
 			from chores
 			where is_complete = false
 			order by deadline asc, id asc
@@ -29,23 +30,25 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 		return nil, fmt.Errorf("db query selecting chores: %w", err)
 	}
 	var (
-		id          int
-		name        string
-		description sql.NullString
-		deadline    time.Time
+		id             int
+		name           string
+		description    sql.NullString
+		deadline       time.Time
+		ownerProfileId *int
 	)
 	results := make([]models.Chore, 0)
 	for rows.Next() {
-		err := rows.Scan(&id, &name, &description, &deadline)
+		err := rows.Scan(&id, &name, &description, &deadline, &ownerProfileId)
 		if err != nil {
 			return nil, fmt.Errorf("reading fetched rows: %w", err)
 		}
 		results = append(results, models.Chore{
-			Id:          id,
-			Name:        name,
-			Status:      models.ChoreStatusActive,
-			Description: description.String,
-			Deadline:    deadline,
+			OwnerProfileId: ownerProfileId,
+			Id:             id,
+			Name:           name,
+			Status:         models.ChoreStatusActive,
+			Description:    description.String,
+			Deadline:       deadline,
 		})
 	}
 	more := len(results) > limit

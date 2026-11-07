@@ -469,10 +469,10 @@ var _ = Describe("Create chore", func() {
 			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 			Expect(response.Header().Get("Location")).To(Equal("/chores/42"))
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
-			"id":42,"schedule_id":3,"status":"active","name":"Kitchen","description":"Reusable steps.",
+			"id":42,"schedule_id":3,"owner_profile_id":null,"status":"active","name":"Kitchen","description":"Reusable steps.",
 			"deadline":"2020-02-03","completed_on":null,
 			"_links":[{"rel":"self","href":"/chores/42"},{"rel":"collection","href":"/chores"}],
-			"_actions":[{"rel":"edit","href":"/chores/42"},{"rel":"complete","href":"/chores/42/completion"}]
+			"_actions":[{"rel":"set_assignment","href":"/chores/42/assignment"},{"rel":"edit","href":"/chores/42"},{"rel":"complete","href":"/chores/42/completion"}]
 		}`))
 		},
 	)
@@ -574,6 +574,7 @@ var _ = Describe("Create chore", func() {
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"id": 42,
 			"schedule_id": null,
+			"owner_profile_id": null,
 			"status": "active",
 			"name": "Kitchen",
 			"description": "Wash and fold.",
@@ -584,6 +585,7 @@ var _ = Describe("Create chore", func() {
 				{"rel": "collection", "href": "/chores"}
 			],
 			"_actions": [
+				{"rel": "set_assignment", "href": "/chores/42/assignment"},
 				{"rel": "edit", "href": "/chores/42"},
 				{"rel": "complete", "href": "/chores/42/completion"},
 				{"rel": "delete", "href": "/chores/42"}
@@ -728,10 +730,10 @@ var _ = Describe("Create chore", func() {
 			Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 			Expect(response.Header().Get("Location")).To(Equal("/chores/42"))
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
-			"id":42,"schedule_id":3,"status":"active","name":"Kitchen","description":"Reusable steps.",
+			"id":42,"schedule_id":3,"owner_profile_id":null,"status":"active","name":"Kitchen","description":"Reusable steps.",
 			"deadline":"2020-02-03","completed_on":null,
 			"_links":[{"rel":"self","href":"/chores/42"},{"rel":"collection","href":"/chores"}],
-			"_actions":[{"rel":"edit","href":"/chores/42"},{"rel":"complete","href":"/chores/42/completion"}]
+			"_actions":[{"rel":"set_assignment","href":"/chores/42/assignment"},{"rel":"edit","href":"/chores/42"},{"rel":"complete","href":"/chores/42/completion"}]
 		}`))
 		},
 	)

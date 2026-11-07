@@ -37,6 +37,8 @@ type ChoreTemplateHandler interface {
 }
 
 type ChoreHandler interface {
+	SetAssignment(*echo.Context) error
+	ClearAssignment(*echo.Context) error
 	Get(*echo.Context) error
 	GetBatch(*echo.Context) error
 	Edit(*echo.Context) error

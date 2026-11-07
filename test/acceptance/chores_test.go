@@ -65,13 +65,14 @@ var _ = Describe("Chore API", func() {
 			created := result.SuccessResponse
 			Expect(created.Location).NotTo(BeEmpty())
 			Expect(created.Chore).To(gstruct.MatchAllFields(gstruct.Fields{
-				"Id":          BeNumerically(">", 0),
-				"ScheduleId":  BeNil(),
-				"Status":      Equal("active"),
-				"Name":        Equal(name),
-				"Description": Equal("Wash and fold."),
-				"Deadline":    Equal("2020-02-03"),
-				"CompletedOn": BeNil(),
+				"Id":             BeNumerically(">", 0),
+				"ScheduleId":     BeNil(),
+				"OwnerProfileId": BeNil(),
+				"Status":         Equal("active"),
+				"Name":           Equal(name),
+				"Description":    Equal("Wash and fold."),
+				"Deadline":       Equal("2020-02-03"),
+				"CompletedOn":    BeNil(),
 				"Links": ConsistOf(
 					shiftbellapi.Relation{
 						Rel:  shiftbellapi.RelationSelf,
@@ -84,6 +85,10 @@ var _ = Describe("Chore API", func() {
 				),
 			}))
 			Expect(created.Actions).To(ConsistOf(
+				shiftbellapi.Relation{
+					Rel:  shiftbellapi.RelationSetAssignment,
+					Href: created.Location + "/assignment",
+				},
 				shiftbellapi.Relation{
 					Rel:  shiftbellapi.RelationEdit,
 					Href: created.Location,
@@ -136,13 +141,14 @@ var _ = Describe("Chore API", func() {
 				created := result.SuccessResponse
 				Expect(created.Location).NotTo(BeEmpty())
 				Expect(created.Chore).To(gstruct.MatchAllFields(gstruct.Fields{
-					"Id":          BeNumerically(">", 0),
-					"ScheduleId":  BeNil(),
-					"Status":      Equal("active"),
-					"Name":        Equal(name),
-					"Description": Equal("Reusable kitchen steps."),
-					"Deadline":    Equal("2020-02-04"),
-					"CompletedOn": BeNil(),
+					"Id":             BeNumerically(">", 0),
+					"ScheduleId":     BeNil(),
+					"OwnerProfileId": BeNil(),
+					"Status":         Equal("active"),
+					"Name":           Equal(name),
+					"Description":    Equal("Reusable kitchen steps."),
+					"Deadline":       Equal("2020-02-04"),
+					"CompletedOn":    BeNil(),
 					"Links": ConsistOf(
 						shiftbellapi.Relation{
 							Rel:  shiftbellapi.RelationSelf,
@@ -234,13 +240,14 @@ var _ = Describe("Chore API", func() {
 			created := result.SuccessResponse
 			Expect(created.Location).NotTo(BeEmpty())
 			Expect(created.Chore).To(gstruct.MatchAllFields(gstruct.Fields{
-				"Id":          BeNumerically(">", 0),
-				"ScheduleId":  BeNil(),
-				"Status":      Equal("active"),
-				"Name":        Equal(template.Name),
-				"Description": Equal(template.Description),
-				"Deadline":    Equal("2020-02-05"),
-				"CompletedOn": BeNil(),
+				"Id":             BeNumerically(">", 0),
+				"ScheduleId":     BeNil(),
+				"OwnerProfileId": BeNil(),
+				"Status":         Equal("active"),
+				"Name":           Equal(template.Name),
+				"Description":    Equal(template.Description),
+				"Deadline":       Equal("2020-02-05"),
+				"CompletedOn":    BeNil(),
 				"Links": ConsistOf(
 					shiftbellapi.Relation{
 						Rel:  shiftbellapi.RelationSelf,
@@ -698,14 +705,15 @@ var _ = Describe("Chore API", func() {
 				Expect(result.SuccessResponse).NotTo(BeNil())
 				edited := result.SuccessResponse
 				Expect(edited.Chore).To(gstruct.MatchAllFields(gstruct.Fields{
-					"Id":          Equal(created.Chore.Id),
-					"ScheduleId":  BeNil(),
-					"Status":      Equal("active"),
-					"Name":        Equal(scope + " Caf\u00e9"),
-					"Description": Equal("First line\nCaf\u00e9"),
-					"Deadline":    Equal("2020-05-03"),
-					"CompletedOn": BeNil(),
-					"Links":       ConsistOf(created.Chore.Links),
+					"Id":             Equal(created.Chore.Id),
+					"ScheduleId":     BeNil(),
+					"OwnerProfileId": BeNil(),
+					"Status":         Equal("active"),
+					"Name":           Equal(scope + " Caf\u00e9"),
+					"Description":    Equal("First line\nCaf\u00e9"),
+					"Deadline":       Equal("2020-05-03"),
+					"CompletedOn":    BeNil(),
+					"Links":          ConsistOf(created.Chore.Links),
 				}))
 				Expect(edited.Actions).To(ConsistOf(created.Actions))
 
@@ -1044,14 +1052,15 @@ var _ = Describe("Chore API", func() {
 			corrected := result.SuccessResponse
 			correctedOn := "2020-07-03"
 			Expect(corrected.Chore).To(gstruct.MatchAllFields(gstruct.Fields{
-				"Id":          Equal(completed.Chore.Id),
-				"ScheduleId":  Equal(completed.Chore.ScheduleId),
-				"Status":      Equal(completed.Chore.Status),
-				"Name":        Equal(completed.Chore.Name),
-				"Description": Equal(completed.Chore.Description),
-				"Deadline":    Equal(completed.Chore.Deadline),
-				"CompletedOn": Equal(&correctedOn),
-				"Links":       ConsistOf(completed.Chore.Links),
+				"Id":             Equal(completed.Chore.Id),
+				"ScheduleId":     Equal(completed.Chore.ScheduleId),
+				"OwnerProfileId": Equal(completed.Chore.OwnerProfileId),
+				"Status":         Equal(completed.Chore.Status),
+				"Name":           Equal(completed.Chore.Name),
+				"Description":    Equal(completed.Chore.Description),
+				"Deadline":       Equal(completed.Chore.Deadline),
+				"CompletedOn":    Equal(&correctedOn),
+				"Links":          ConsistOf(completed.Chore.Links),
 			}))
 			Expect(corrected.Actions).To(ConsistOf(completed.Actions))
 
@@ -1350,14 +1359,15 @@ func completeOneOffChore(
 	Expect(result.SuccessResponse).NotTo(BeNil())
 	completed := result.SuccessResponse
 	Expect(completed.Chore).To(gstruct.MatchAllFields(gstruct.Fields{
-		"Id":          Equal(created.Chore.Id),
-		"ScheduleId":  BeNil(),
-		"Status":      Equal("completed"),
-		"Name":        Equal(created.Chore.Name),
-		"Description": Equal(created.Chore.Description),
-		"Deadline":    Equal(created.Chore.Deadline),
-		"CompletedOn": Equal(&completedOn),
-		"Links":       ConsistOf(created.Chore.Links),
+		"Id":             Equal(created.Chore.Id),
+		"ScheduleId":     BeNil(),
+		"OwnerProfileId": Equal(created.Chore.OwnerProfileId),
+		"Status":         Equal("completed"),
+		"Name":           Equal(created.Chore.Name),
+		"Description":    Equal(created.Chore.Description),
+		"Deadline":       Equal(created.Chore.Deadline),
+		"CompletedOn":    Equal(&completedOn),
+		"Links":          ConsistOf(created.Chore.Links),
 	}))
 	return completed
 }
@@ -1365,6 +1375,10 @@ func completeOneOffChore(
 func expectCompletedOneOffActions(actions shiftbellapi.Relations, selfHref string) {
 	GinkgoHelper()
 	Expect(actions).To(ConsistOf(
+		shiftbellapi.Relation{
+			Rel:  shiftbellapi.RelationSetAssignment,
+			Href: selfHref + "/assignment",
+		},
 		shiftbellapi.Relation{
 			Rel:  shiftbellapi.RelationCorrectCompletion,
 			Href: selfHref + "/completion",
@@ -1561,13 +1575,14 @@ func getChoreCreationSource(
 
 func matchChore(expected shiftbellapi.Chore) types.GomegaMatcher {
 	return gstruct.MatchAllFields(gstruct.Fields{
-		"Id":          Equal(expected.Id),
-		"ScheduleId":  Equal(expected.ScheduleId),
-		"Status":      Equal(expected.Status),
-		"Name":        Equal(expected.Name),
-		"Description": Equal(expected.Description),
-		"Deadline":    Equal(expected.Deadline),
-		"CompletedOn": Equal(expected.CompletedOn),
-		"Links":       ConsistOf(expected.Links),
+		"Id":             Equal(expected.Id),
+		"ScheduleId":     Equal(expected.ScheduleId),
+		"OwnerProfileId": Equal(expected.OwnerProfileId),
+		"Status":         Equal(expected.Status),
+		"Name":           Equal(expected.Name),
+		"Description":    Equal(expected.Description),
+		"Deadline":       Equal(expected.Deadline),
+		"CompletedOn":    Equal(expected.CompletedOn),
+		"Links":          ConsistOf(expected.Links),
 	})
 }

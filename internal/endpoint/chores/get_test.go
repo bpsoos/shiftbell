@@ -120,6 +120,7 @@ var _ = Describe("Get chore", func() {
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"id": 42,
 			"schedule_id": null,
+			"owner_profile_id": null,
 			"status": "active",
 			"name": "Kitchen",
 			"description": "Wash and fold.",
@@ -130,6 +131,7 @@ var _ = Describe("Get chore", func() {
 				{"rel": "collection", "href": "/chores"}
 			],
 			"_actions": [
+				{"rel": "set_assignment", "href": "/chores/42/assignment"},
 				{"rel": "edit", "href": "/chores/42"},
 				{"rel": "complete", "href": "/chores/42/completion"},
 				{"rel": "delete", "href": "/chores/42"}
@@ -169,6 +171,7 @@ var _ = Describe("Get chore", func() {
 		Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"id": 42,
 			"schedule_id": null,
+			"owner_profile_id": null,
 			"status": "completed",
 			"name": "Kitchen",
 			"description": "Wash and fold.",
@@ -179,6 +182,7 @@ var _ = Describe("Get chore", func() {
 				{"rel": "collection", "href": "/chores"}
 			],
 			"_actions": [
+				{"rel": "set_assignment", "href": "/chores/42/assignment"},
 				{"rel": "correct_completion", "href": "/chores/42/completion"},
 				{"rel": "delete", "href": "/chores/42"}
 			]
@@ -218,6 +222,7 @@ var _ = Describe("Get chore", func() {
 			Expect(response.Body.Bytes()).To(MatchJSON(`{
 			"id": 42,
 			"schedule_id": 7,
+			"owner_profile_id": null,
 			"status": "active",
 			"name": "Kitchen",
 			"description": "Wash and fold.",
@@ -228,6 +233,7 @@ var _ = Describe("Get chore", func() {
 				{"rel": "collection", "href": "/chores"}
 			],
 			"_actions": [
+				{"rel": "set_assignment", "href": "/chores/42/assignment"},
 				{"rel": "edit", "href": "/chores/42"},
 				{"rel": "complete", "href": "/chores/42/completion"}
 			]
@@ -256,6 +262,7 @@ var _ = Describe("Get chore", func() {
 				{Rel: "collection", Href: "/chores"},
 			},
 			Actions: api.Relations{
+				{Rel: "set_assignment", Href: "/chores/42/assignment"},
 				{Rel: "edit", Href: "/chores/42"},
 				{Rel: "complete", Href: "/chores/42/completion"},
 				{Rel: "delete", Href: "/chores/42"},

@@ -45,6 +45,21 @@ func (h *Handler) renderCollection(
 	}
 }
 
+func (h *Handler) renderAssignment(ctx *echo.Context, chore choreRepresentation) error {
+	switch hypermedia.Negotiate(ctx.Request()) {
+	case hypermedia.RepresentationJSON:
+		return hypermedia.JSON(ctx, http.StatusOK, chore)
+	case hypermedia.RepresentationHTML:
+		return hypermedia.HTML(
+			ctx,
+			http.StatusOK,
+			h.view.Assignment(choreviewmodels.Assignment{Chore: chore}),
+		)
+	default:
+		return hypermedia.NotAcceptable(ctx)
+	}
+}
+
 func (h *Handler) renderDetail(
 	ctx *echo.Context,
 	status int,
