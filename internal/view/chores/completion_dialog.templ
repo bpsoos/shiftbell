@@ -20,15 +20,45 @@ templ completionDialog(model choreviewmodels.CompletionDialog) {
 			@confirmationview.Header("completion-dialog-heading", "Complete chore", false)
 			@confirmationview.Body() {
 				<style>
-					me > [data-dialog-prompt] { color: var(--sb-muted); line-height: 1.35; margin: 0 0 0.625rem; }
-					me [data-dialog-prompt] strong { color: var(--sb-text); }
-					me [data-field] { margin: 0; }
-					me .form-label { font-size: 0.875rem; font-weight: 650; margin-bottom: 0.25rem; }
-					me .form-control { background-color: var(--sb-input); border-color: var(--sb-control-border); border-radius: var(--sb-radius-control); color: var(--sb-text); }
-					me .form-control:focus { background-color: var(--sb-input); border-color: var(--sb-accent); box-shadow: none; color: var(--sb-text); }
-					me .form-control.is-invalid, me .form-control.is-invalid:focus { border-color: var(--sb-danger); box-shadow: none; }
-					me .invalid-feedback { color: var(--sb-danger); }
-					me .invalid-feedback[data-visible] { display: block; }
+					me > [data-dialog-prompt] {
+						color: var(--sb-muted);
+						line-height: 1.35;
+						margin: 0 0 0.625rem;
+					}
+					me [data-dialog-prompt] strong {
+						color: var(--sb-text);
+					}
+					me [data-field] {
+						margin: 0;
+					}
+					me .form-label {
+						font-size: 0.875rem;
+						font-weight: 650;
+						margin-bottom: 0.25rem;
+					}
+					me .form-control {
+						background-color: var(--sb-input);
+						border-color: var(--sb-control-border);
+						border-radius: var(--sb-radius-control);
+						color: var(--sb-text);
+					}
+					me .form-control:focus {
+						background-color: var(--sb-input);
+						border-color: var(--sb-accent);
+						box-shadow: none;
+						color: var(--sb-text);
+					}
+					me .form-control.is-invalid,
+					me .form-control.is-invalid:focus {
+						border-color: var(--sb-danger);
+						box-shadow: none;
+					}
+					me .invalid-feedback {
+						color: var(--sb-danger);
+					}
+					me .invalid-feedback[data-visible] {
+						display: block;
+					}
 				</style>
 				<p data-dialog-prompt>Complete <strong>{ model.Name }</strong>?</p>
 				<div data-field>

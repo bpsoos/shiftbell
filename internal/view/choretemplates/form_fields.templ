@@ -48,7 +48,15 @@ templ templateFormFields() {
 templ templateNameField(field viewmodels.Field) {
 	<div data-field>
 		<label class="form-label" for="chore-template-name">Name</label>
-		<input class={ formControlClass("form-control", field.Error) } type="text" id="chore-template-name" name="name" value={ field.Value } maxlength="200" required autofocus
+		<input
+			class={ formControlClass("form-control", field.Error) }
+			type="text"
+			id="chore-template-name"
+			name="name"
+			value={ field.Value }
+			maxlength="200"
+			required
+			autofocus
 			if field.Error != "" {
 				aria-describedby="chore-template-name-error"
 				aria-invalid="true"
@@ -61,7 +69,12 @@ templ templateNameField(field viewmodels.Field) {
 templ templateDescriptionField(field viewmodels.Field) {
 	<div data-field>
 		<label class="form-label" for="chore-template-description">Description</label>
-		<textarea class={ formControlClass("form-control", field.Error) } id="chore-template-description" name="description" rows="4" maxlength="2000"
+		<textarea
+			class={ formControlClass("form-control", field.Error) }
+			id="chore-template-description"
+			name="description"
+			rows="4"
+			maxlength="2000"
 			if field.Error != "" {
 				aria-describedby="chore-template-description-error"
 				aria-invalid="true"

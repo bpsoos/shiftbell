@@ -5,12 +5,37 @@ import choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 templ errorContent(model choreviewmodels.Error) {
 	<section aria-labelledby="error-heading">
 		<style>
-			me { margin-inline: auto; max-width: 42rem; }
-			me [data-error-frame] { background: var(--sb-surface); border: 2px solid var(--sb-frame); border-left: 3px solid var(--sb-danger); padding: 1.5rem; }
-			me h1 { font-size: 1.5rem; letter-spacing: -0.025em; margin: 0; }
-			me [data-error-message] { border-bottom: 1px solid var(--sb-border); border-top: 1px solid var(--sb-border); margin: 1rem 0; padding: 0.75rem 0; }
-			me [data-actions] { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-			@media sm- { me [data-error-frame] { padding: 1.25rem 1rem; } }
+			me {
+				margin-inline: auto;
+				max-width: 42rem;
+			}
+			me [data-error-frame] {
+				background: var(--sb-surface);
+				border: 2px solid var(--sb-frame);
+				border-left: 3px solid var(--sb-danger);
+				padding: 1.5rem;
+			}
+			me h1 {
+				font-size: 1.5rem;
+				letter-spacing: -0.025em;
+				margin: 0;
+			}
+			me [data-error-message] {
+				border-bottom: 1px solid var(--sb-border);
+				border-top: 1px solid var(--sb-border);
+				margin: 1rem 0;
+				padding: 0.75rem 0;
+			}
+			me [data-actions] {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+			}
+			@media sm- {
+				me [data-error-frame] {
+					padding: 1.25rem 1rem;
+				}
+			}
 		</style>
 		<div data-error-frame>
 			<h1 id="error-heading">Unable to continue</h1>

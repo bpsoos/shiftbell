@@ -25,17 +25,41 @@ templ page(active string, timezone string, profilesUIEnabled bool, content templ
 					flex-direction: column;
 					min-height: 100dvh;
 				}
-				me .shiftbell-skip-link { background: var(--sb-surface); border: 1px solid var(--sb-frame); border-radius: var(--sb-radius-overlay); box-shadow: 3px 3px 0 var(--sb-depth); color: var(--sb-text); left: 0.5rem; padding: 0.5rem 0.75rem; position: fixed; top: 0.5rem; transform: translateY(calc(-100% - 1rem)); z-index: 1100; }
-				me .shiftbell-skip-link:focus { box-shadow: 3px 3px 0 var(--sb-depth); transform: translateY(0); }
+				me .shiftbell-skip-link {
+					background: var(--sb-surface);
+					border: 1px solid var(--sb-frame);
+					border-radius: var(--sb-radius-overlay);
+					box-shadow: 3px 3px 0 var(--sb-depth);
+					color: var(--sb-text);
+					left: 0.5rem;
+					padding: 0.5rem 0.75rem;
+					position: fixed;
+					top: 0.5rem;
+					transform: translateY(calc(-100% - 1rem));
+					z-index: 1100;
+				}
+				me .shiftbell-skip-link:focus {
+					box-shadow: 3px 3px 0 var(--sb-depth);
+					transform: translateY(0);
+				}
 				me #main {
 					flex: 1;
 					padding-bottom: 1rem;
 					padding-top: 1.75rem;
 				}
-				me #main:focus { outline: none; }
-				me #main.htmx-swapping { opacity: 0.45; }
+				me #main:focus {
+					outline: none;
+				}
+				me #main.htmx-swapping {
+					opacity: 0.45;
+				}
 				@media (prefers-reduced-motion: no-preference) {
-					me .shiftbell-skip-link, me #main { transition: opacity 150ms ease, transform 150ms ease; }
+					me .shiftbell-skip-link,
+					me #main {
+						transition:
+							opacity 150ms ease,
+							transform 150ms ease;
+					}
 				}
 				@media xs- {
 					me #main {
@@ -71,31 +95,46 @@ templ dependencies() {
 
 templ cssScopeInline() {
 	<script>
-		window.cssScopeCount ??= 1
+		window.cssScopeCount ??= 1;
 		window.cssScope ??= new MutationObserver(() => {
-			document?.body?.querySelectorAll('style:not([ready])').forEach(node => {
-				var scope = 'me__' + window.cssScopeCount++
-				node.parentNode.classList.add(scope)
+			document?.body?.querySelectorAll("style:not([ready])").forEach((node) => {
+				var scope = "me__" + window.cssScopeCount++;
+				node.parentNode.classList.add(scope);
 				node.textContent = node.textContent
-					.replace(/(?:^|\.|(\s|[^a-zA-Z0-9\-\_]))(me|this|self)(?![a-zA-Z\/])/g, '$1.' + scope)
-					.replace(/((@keyframes|animation:|animation-name:)[^{};]*)\.me__/g, '$1me__')
-					.replace(/(?:@media)\s(xs-|sm-|md-|lg-|xl-|sm|md|lg|xl|xx)/g, (match, breakpoint) => {
-						return '@media ' + {
-							sm: '(min-width: 640px)',
-							md: '(min-width: 768px)',
-							lg: '(min-width: 1024px)',
-							xl: '(min-width: 1280px)',
-							xx: '(min-width: 1536px)',
-							'xs-': '(max-width: 639px)',
-							'sm-': '(max-width: 767px)',
-							'md-': '(max-width: 1023px)',
-							'lg-': '(max-width: 1279px)',
-							'xl-': '(max-width: 1535px)',
-						}[breakpoint]
-					})
-				node.setAttribute('ready', '')
-			})
-		})
-		window.cssScope.observe(document.documentElement, { childList: true, subtree: true })
+					.replace(
+						/(?:^|\.|(\s|[^a-zA-Z0-9\-\_]))(me|this|self)(?![a-zA-Z\/])/g,
+						"$1." + scope,
+					)
+					.replace(
+						/((@keyframes|animation:|animation-name:)[^{};]*)\.me__/g,
+						"$1me__",
+					)
+					.replace(
+						/(?:@media)\s(xs-|sm-|md-|lg-|xl-|sm|md|lg|xl|xx)/g,
+						(match, breakpoint) => {
+							return (
+								"@media " +
+								{
+									sm: "(min-width: 640px)",
+									md: "(min-width: 768px)",
+									lg: "(min-width: 1024px)",
+									xl: "(min-width: 1280px)",
+									xx: "(min-width: 1536px)",
+									"xs-": "(max-width: 639px)",
+									"sm-": "(max-width: 767px)",
+									"md-": "(max-width: 1023px)",
+									"lg-": "(max-width: 1279px)",
+									"xl-": "(max-width: 1535px)",
+								}[breakpoint]
+							);
+						},
+					);
+				node.setAttribute("ready", "");
+			});
+		});
+		window.cssScope.observe(document.documentElement, {
+			childList: true,
+			subtree: true,
+		});
 	</script>
 }

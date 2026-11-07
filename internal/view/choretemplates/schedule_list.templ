@@ -1,10 +1,10 @@
 package choretemplates
 
 import (
-	"strconv"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/choretemplates"
 	viewicons "github.com/bpsoos/shiftbell/internal/view/icons"
 	"github.com/bpsoos/shiftbell/internal/view/resourcenavigation"
+	"strconv"
 )
 
 templ scheduleList(model viewmodels.ScheduleList) {
@@ -53,7 +53,8 @@ templ deactivationBlockedNotice(notice string) {
 			me {
 				align-items: flex-start;
 				background: var(--sb-subtle);
-				border-left: 3px solid color-mix(in srgb, var(--sb-warning) 55%, var(--sb-border));
+				border-left: 3px solid
+					color-mix(in srgb, var(--sb-warning) 55%, var(--sb-border));
 				color: var(--sb-text);
 				display: flex;
 				font-size: 0.875rem;
@@ -80,12 +81,21 @@ templ deactivationBlockedNotice(notice string) {
 				}
 			}
 			@keyframes me-emphasis {
-				0%, 100% {
+				0%,
+				100% {
 					background: var(--sb-subtle);
-					border-left-color: color-mix(in srgb, var(--sb-warning) 55%, var(--sb-border));
+					border-left-color: color-mix(
+						in srgb,
+						var(--sb-warning) 55%,
+						var(--sb-border)
+					);
 				}
 				40% {
-					background: color-mix(in srgb, var(--sb-accent) 18%, var(--sb-surface));
+					background: color-mix(
+						in srgb,
+						var(--sb-accent) 18%,
+						var(--sb-surface)
+					);
 					border-left-color: var(--sb-warning);
 				}
 			}

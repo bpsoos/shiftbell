@@ -23,10 +23,27 @@ templ Dialog(model confirmationviewmodels.Dialog) {
 			@Header("confirmation-dialog-heading", model.Heading, true)
 			@Body() {
 				<style>
-					me > [data-dialog-prompt] { line-height: 1.35; margin: 0 0 0.625rem; }
-					me > [data-dialog-supporting] { color: var(--sb-muted); font-size: 0.875rem; line-height: 1.4; margin: 0; }
-					me > [data-dialog-supporting] + [data-dialog-supporting] { margin-top: 0.25rem; }
-					me > [data-dialog-error] { border: 1px solid var(--sb-danger); border-left-width: 3px; color: var(--sb-text); font-size: 0.875rem; margin: 0 0 0.75rem; padding: 0.625rem 0.75rem; }
+					me > [data-dialog-prompt] {
+						line-height: 1.35;
+						margin: 0 0 0.625rem;
+					}
+					me > [data-dialog-supporting] {
+						color: var(--sb-muted);
+						font-size: 0.875rem;
+						line-height: 1.4;
+						margin: 0;
+					}
+					me > [data-dialog-supporting] + [data-dialog-supporting] {
+						margin-top: 0.25rem;
+					}
+					me > [data-dialog-error] {
+						border: 1px solid var(--sb-danger);
+						border-left-width: 3px;
+						color: var(--sb-text);
+						font-size: 0.875rem;
+						margin: 0 0 0.75rem;
+						padding: 0.625rem 0.75rem;
+					}
 				</style>
 				if model.Error != "" {
 					<div data-dialog-error role="alert">{ model.Error }</div>
@@ -76,9 +93,20 @@ templ FrameStyles() {
 			padding: 0;
 			width: 30rem;
 		}
-		me::backdrop { background: rgb(0 0 0 / 0.58); }
+		me::backdrop {
+			background: rgb(0 0 0 / 0.58);
+		}
 		@media xs- {
-			me { border: 0; border-radius: var(--sb-radius-overlay) var(--sb-radius-overlay) 0 0; border-top: 3px solid var(--sb-frame); box-shadow: 0 -3px 0 var(--sb-depth); margin: auto 0 0; max-height: calc(100dvh - 1rem); max-width: none; width: 100%; }
+			me {
+				border: 0;
+				border-radius: var(--sb-radius-overlay) var(--sb-radius-overlay) 0 0;
+				border-top: 3px solid var(--sb-frame);
+				box-shadow: 0 -3px 0 var(--sb-depth);
+				margin: auto 0 0;
+				max-height: calc(100dvh - 1rem);
+				max-width: none;
+				width: 100%;
+			}
 		}
 	</style>
 }
@@ -91,9 +119,20 @@ templ Header(headingId string, heading string, destructive bool) {
 		}
 	>
 		<style>
-			me { background: var(--sb-subtle); border-bottom: 1px solid var(--sb-border); border-left: 3px solid var(--sb-accent); padding: 0.6875rem 1rem; }
-			me[data-dialog-destructive] { border-left-color: var(--sb-danger); }
-			me > h2 { font-size: 1.125rem; letter-spacing: -0.015em; margin: 0; }
+			me {
+				background: var(--sb-subtle);
+				border-bottom: 1px solid var(--sb-border);
+				border-left: 3px solid var(--sb-accent);
+				padding: 0.6875rem 1rem;
+			}
+			me[data-dialog-destructive] {
+				border-left-color: var(--sb-danger);
+			}
+			me > h2 {
+				font-size: 1.125rem;
+				letter-spacing: -0.015em;
+				margin: 0;
+			}
 		</style>
 		<h2 id={ headingId }>{ heading }</h2>
 	</header>
@@ -102,7 +141,9 @@ templ Header(headingId string, heading string, destructive bool) {
 templ Body() {
 	<div data-dialog-body>
 		<style>
-			me { padding: 0.75rem 1rem; }
+			me {
+				padding: 0.75rem 1rem;
+			}
 		</style>
 		{ children... }
 	</div>
@@ -111,16 +152,54 @@ templ Body() {
 templ Actions() {
 	<footer data-dialog-actions>
 		<style>
-			me { border-top: 1px solid var(--sb-border); display: flex; gap: 0.5rem; justify-content: flex-end; padding: 0.625rem 1rem 0.75rem; }
-			me > .btn { min-height: 44px; }
-			me > [data-dialog-cancel] { background: transparent; border-color: transparent; color: var(--sb-muted-strong); padding-inline: 0.75rem; }
-			me > [data-dialog-cancel]:hover, me > [data-dialog-cancel]:focus-visible, me > [data-dialog-cancel]:active { background: var(--sb-hover); border-color: transparent; color: var(--sb-text); }
-			me > .btn-primary { gap: 0.375rem; }
-			me > [data-destructive-action] { --bs-btn-active-color: var(--sb-surface); --bs-btn-color: var(--sb-surface); --bs-btn-hover-color: var(--sb-surface); --sb-button-face: var(--sb-danger); }
-			me > [data-destructive-action]:hover, me > [data-destructive-action]:active, me > [data-destructive-action]:first-child:active { --sb-button-face: color-mix(in srgb, var(--sb-danger) 82%, var(--sb-text)); }
+			me {
+				border-top: 1px solid var(--sb-border);
+				display: flex;
+				gap: 0.5rem;
+				justify-content: flex-end;
+				padding: 0.625rem 1rem 0.75rem;
+			}
+			me > .btn {
+				min-height: 44px;
+			}
+			me > [data-dialog-cancel] {
+				background: transparent;
+				border-color: transparent;
+				color: var(--sb-muted-strong);
+				padding-inline: 0.75rem;
+			}
+			me > [data-dialog-cancel]:hover,
+			me > [data-dialog-cancel]:focus-visible,
+			me > [data-dialog-cancel]:active {
+				background: var(--sb-hover);
+				border-color: transparent;
+				color: var(--sb-text);
+			}
+			me > .btn-primary {
+				gap: 0.375rem;
+			}
+			me > [data-destructive-action] {
+				--bs-btn-active-color: var(--sb-surface);
+				--bs-btn-color: var(--sb-surface);
+				--bs-btn-hover-color: var(--sb-surface);
+				--sb-button-face: var(--sb-danger);
+			}
+			me > [data-destructive-action]:hover,
+			me > [data-destructive-action]:active,
+			me > [data-destructive-action]:first-child:active {
+				--sb-button-face: color-mix(
+					in srgb,
+					var(--sb-danger) 82%,
+					var(--sb-text)
+				);
+			}
 			@media xs- {
-				me { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
-				me > .btn-primary { flex: 1 1 auto; }
+				me {
+					padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+				}
+				me > .btn-primary {
+					flex: 1 1 auto;
+				}
 			}
 		</style>
 		{ children... }

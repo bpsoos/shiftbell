@@ -91,7 +91,9 @@ templ editDeadlineField(field choreviewmodels.Field, scheduled bool) {
 			if scheduled {
 				readonly
 				aria-describedby="edit-chore-deadline-help"
-			} else if field.Error != "" {
+			}
+			else
+			if field.Error != "" {
 				aria-describedby="edit-chore-deadline-error"
 				aria-invalid="true"
 			}

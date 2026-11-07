@@ -57,14 +57,43 @@ templ creationRecurrence(model choreviewmodels.Creation) {
 templ creationOptions() {
 	<div data-options>
 		<style>
-			me { border: 2px solid var(--sb-frame); }
-			me > [data-option] { align-items: center; color: var(--sb-text); display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr) auto; padding: 0.8125rem 0.875rem; text-decoration: none; }
-			me > [data-option] + [data-option] { border-top: 1px solid var(--sb-border); }
-			me > [data-option]:hover { background: var(--sb-hover); color: var(--sb-text); }
-			me [data-option-title] { display: block; font-size: 0.9375rem; font-weight: 650; }
-			me [data-option-description] { color: var(--sb-muted); display: block; font-size: 0.8125rem; line-height: 1.35; margin-top: 0.125rem; }
-			me [data-option-caret] { color: var(--sb-muted); }
-			me > [data-option]:hover [data-option-caret] { color: var(--sb-text); }
+			me {
+				border: 2px solid var(--sb-frame);
+			}
+			me > [data-option] {
+				align-items: center;
+				color: var(--sb-text);
+				display: grid;
+				gap: 0.75rem;
+				grid-template-columns: minmax(0, 1fr) auto;
+				padding: 0.8125rem 0.875rem;
+				text-decoration: none;
+			}
+			me > [data-option] + [data-option] {
+				border-top: 1px solid var(--sb-border);
+			}
+			me > [data-option]:hover {
+				background: var(--sb-hover);
+				color: var(--sb-text);
+			}
+			me [data-option-title] {
+				display: block;
+				font-size: 0.9375rem;
+				font-weight: 650;
+			}
+			me [data-option-description] {
+				color: var(--sb-muted);
+				display: block;
+				font-size: 0.8125rem;
+				line-height: 1.35;
+				margin-top: 0.125rem;
+			}
+			me [data-option-caret] {
+				color: var(--sb-muted);
+			}
+			me > [data-option]:hover [data-option-caret] {
+				color: var(--sb-text);
+			}
 		</style>
 		{ children... }
 	</div>
@@ -80,8 +109,21 @@ templ selectedTemplate(caption string) {
 				overflow-wrap: anywhere;
 				padding: 0.75rem;
 			}
-			me > [data-caption] { background: var(--sb-accent); color: var(--sb-accent-text); display: block; font-size: 0.6875rem; font-weight: 750; letter-spacing: 0.08em; margin-bottom: 0.5rem; padding: 0.125rem 0.375rem; text-transform: uppercase; width: max-content; }
-			me > p { margin-bottom: 0; }
+			me > [data-caption] {
+				background: var(--sb-accent);
+				color: var(--sb-accent-text);
+				display: block;
+				font-size: 0.6875rem;
+				font-weight: 750;
+				letter-spacing: 0.08em;
+				margin-bottom: 0.5rem;
+				padding: 0.125rem 0.375rem;
+				text-transform: uppercase;
+				width: max-content;
+			}
+			me > p {
+				margin-bottom: 0;
+			}
 		</style>
 		<div data-caption>{ caption }</div>
 		{ children... }

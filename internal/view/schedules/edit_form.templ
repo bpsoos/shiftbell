@@ -40,7 +40,14 @@ templ editForm(model viewmodels.EditForm) {
 			}
 			<div data-field>
 				<label class="form-label" for="edit-schedule-name">Name</label>
-				<input class="form-control" type="text" id="edit-schedule-name" name="name" value={ model.Name } maxlength="200" required
+				<input
+					class="form-control"
+					type="text"
+					id="edit-schedule-name"
+					name="name"
+					value={ model.Name }
+					maxlength="200"
+					required
 					if model.IntervalDaysError == "" {
 						autofocus
 					}
@@ -53,7 +60,17 @@ templ editForm(model viewmodels.EditForm) {
 			</div>
 			<div data-field>
 				<label class="form-label" for="edit-schedule-interval">Interval (days)</label>
-				<input class="form-control" type="number" id="edit-schedule-interval" name="interval_days" value={ model.IntervalDays } min="1" max="3650" step="1" required aria-describedby="edit-schedule-interval-help edit-schedule-interval-error"
+				<input
+					class="form-control"
+					type="number"
+					id="edit-schedule-interval"
+					name="interval_days"
+					value={ model.IntervalDays }
+					min="1"
+					max="3650"
+					step="1"
+					required
+					aria-describedby="edit-schedule-interval-help edit-schedule-interval-error"
 					if model.IntervalDaysError != "" {
 						aria-invalid="true"
 						autofocus

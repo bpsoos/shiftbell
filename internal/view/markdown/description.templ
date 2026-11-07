@@ -5,19 +5,70 @@ import markdownrenderer "github.com/bpsoos/shiftbell/internal/markdown"
 templ Description(source string) {
 	<div data-markdown>
 		<style>
-			me { line-height: 1.55; overflow-wrap: anywhere; }
-			me > :first-child { margin-top: 0; }
-			me > :last-child { margin-bottom: 0; }
-			me p, me ul, me ol, me blockquote, me pre { margin-bottom: 1rem; }
-			me ul, me ol { padding-left: 1.5rem; }
-			me h1, me h2, me h3, me h4, me h5, me h6 { font-size: 1.125rem; font-weight: 650; margin: 1.25rem 0 0.625rem; }
-			me a { color: var(--sb-focus); text-decoration: underline; }
-			me blockquote { border-left: 3px solid var(--sb-border); color: var(--sb-muted); padding-left: 1rem; }
-			me code { background: var(--sb-input); border-radius: var(--sb-radius-control); color: inherit; padding: 0.125rem 0.25rem; }
-			me pre { background: var(--sb-input); padding: 0.75rem; overflow-x: auto; }
-			me pre code { padding: 0; }
-			me img { height: auto; max-width: 100%; }
-			me hr { border: 0; border-top: 1px solid var(--sb-border); margin: 1.25rem 0; opacity: 1; }
+			me {
+				line-height: 1.55;
+				overflow-wrap: anywhere;
+			}
+			me > :first-child {
+				margin-top: 0;
+			}
+			me > :last-child {
+				margin-bottom: 0;
+			}
+			me p,
+			me ul,
+			me ol,
+			me blockquote,
+			me pre {
+				margin-bottom: 1rem;
+			}
+			me ul,
+			me ol {
+				padding-left: 1.5rem;
+			}
+			me h1,
+			me h2,
+			me h3,
+			me h4,
+			me h5,
+			me h6 {
+				font-size: 1.125rem;
+				font-weight: 650;
+				margin: 1.25rem 0 0.625rem;
+			}
+			me a {
+				color: var(--sb-focus);
+				text-decoration: underline;
+			}
+			me blockquote {
+				border-left: 3px solid var(--sb-border);
+				color: var(--sb-muted);
+				padding-left: 1rem;
+			}
+			me code {
+				background: var(--sb-input);
+				border-radius: var(--sb-radius-control);
+				color: inherit;
+				padding: 0.125rem 0.25rem;
+			}
+			me pre {
+				background: var(--sb-input);
+				padding: 0.75rem;
+				overflow-x: auto;
+			}
+			me pre code {
+				padding: 0;
+			}
+			me img {
+				height: auto;
+				max-width: 100%;
+			}
+			me hr {
+				border: 0;
+				border-top: 1px solid var(--sb-border);
+				margin: 1.25rem 0;
+				opacity: 1;
+			}
 		</style>
 		@templ.Raw(markdownrenderer.Render(source))
 	</div>

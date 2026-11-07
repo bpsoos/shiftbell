@@ -13,9 +13,15 @@ templ collection(model viewmodels.Collection) {
 		hx-sync="this:replace"
 	>
 		<style>
-			me { margin-block-start: -0.5rem; margin-inline: auto; max-width: 52rem; }
+			me {
+				margin-block-start: -0.5rem;
+				margin-inline: auto;
+				max-width: 52rem;
+			}
 			@media xs- {
-				me { margin-block-start: -0.75rem; }
+				me {
+					margin-block-start: -0.75rem;
+				}
 			}
 		</style>
 		@collectionHeader(model)
@@ -34,20 +40,41 @@ templ collection(model viewmodels.Collection) {
 templ collectionHeader(model viewmodels.Collection) {
 	<header>
 		<style>
-			me { align-items: flex-end; display: flex; justify-content: space-between; margin-bottom: 0.75rem; }
-			me > h1 { font-size: 1.875rem; letter-spacing: -0.035em; line-height: 1; margin: 0; }
-			me > h1::after { background: var(--sb-accent); content: ""; display: block; height: 3px; margin-top: 0.5rem; width: 2rem; }
+			me {
+				align-items: flex-end;
+				display: flex;
+				justify-content: space-between;
+				margin-bottom: 0.75rem;
+			}
+			me > h1 {
+				font-size: 1.875rem;
+				letter-spacing: -0.035em;
+				line-height: 1;
+				margin: 0;
+			}
+			me > h1::after {
+				background: var(--sb-accent);
+				content: "";
+				display: block;
+				height: 3px;
+				margin-top: 0.5rem;
+				width: 2rem;
+			}
 			me > .btn {
 				gap: 0.375rem;
 				margin-left: 0.75rem;
 			}
 			@media sm- {
-				me > h1 { font-size: 1.625rem; }
+				me > h1 {
+					font-size: 1.625rem;
+				}
 			}
 		</style>
 		if model.Filter == choretemplatemodels.ChoreTemplateFilterDeactivated {
 			<style>
-				me { margin-bottom: 1.25rem; }
+				me {
+					margin-bottom: 1.25rem;
+				}
 			</style>
 		}
 		<h1 id="chore-templates-heading">
@@ -69,8 +96,22 @@ templ collectionHeader(model viewmodels.Collection) {
 templ collectionNotice(notice string) {
 	<div role="status">
 		<style>
-			me { align-items: center; background: var(--sb-surface); border: 1px solid var(--sb-border); border-left: 3px solid var(--sb-accent); color: var(--sb-text); display: flex; font-size: 0.875rem; gap: 0.5rem; margin-bottom: 0.875rem; padding: 0.625rem 0.75rem; }
-			me > svg { color: var(--sb-muted); flex: 0 0 auto; }
+			me {
+				align-items: center;
+				background: var(--sb-surface);
+				border: 1px solid var(--sb-border);
+				border-left: 3px solid var(--sb-accent);
+				color: var(--sb-text);
+				display: flex;
+				font-size: 0.875rem;
+				gap: 0.5rem;
+				margin-bottom: 0.875rem;
+				padding: 0.625rem 0.75rem;
+			}
+			me > svg {
+				color: var(--sb-muted);
+				flex: 0 0 auto;
+			}
 		</style>
 		@viewicons.CheckCircle()
 		<span>{ notice }</span>
@@ -80,11 +121,43 @@ templ collectionNotice(notice string) {
 templ templateCollectionUtilities(model viewmodels.Collection) {
 	<nav aria-label="Template collection">
 		<style>
-			me { align-items: center; display: flex; gap: 0.75rem; justify-content: flex-end; line-height: 1; margin: 0 0 0.5rem; min-height: 1.5rem; }
-			me > [data-utility-link] { color: var(--sb-muted); font-size: 0.75rem; font-weight: 500; text-decoration: none; }
-			me > [data-utility-link]:hover, me > [data-utility-link]:focus-visible { color: var(--sb-text); text-decoration: underline; text-underline-offset: 0.15em; }
-			me > [data-search-toggle] { align-items: center; background: transparent; border: 0; color: var(--sb-muted); display: inline-flex; height: 1.5rem; justify-content: center; padding: 0.125rem; text-decoration: none; width: 1.5rem; }
-			me > [data-search-toggle]:hover, me > [data-search-toggle]:focus-visible { color: var(--sb-text); }
+			me {
+				align-items: center;
+				display: flex;
+				gap: 0.75rem;
+				justify-content: flex-end;
+				line-height: 1;
+				margin: 0 0 0.5rem;
+				min-height: 1.5rem;
+			}
+			me > [data-utility-link] {
+				color: var(--sb-muted);
+				font-size: 0.75rem;
+				font-weight: 500;
+				text-decoration: none;
+			}
+			me > [data-utility-link]:hover,
+			me > [data-utility-link]:focus-visible {
+				color: var(--sb-text);
+				text-decoration: underline;
+				text-underline-offset: 0.15em;
+			}
+			me > [data-search-toggle] {
+				align-items: center;
+				background: transparent;
+				border: 0;
+				color: var(--sb-muted);
+				display: inline-flex;
+				height: 1.5rem;
+				justify-content: center;
+				padding: 0.125rem;
+				text-decoration: none;
+				width: 1.5rem;
+			}
+			me > [data-search-toggle]:hover,
+			me > [data-search-toggle]:focus-visible {
+				color: var(--sb-text);
+			}
 		</style>
 		if model.Filter == choretemplatemodels.ChoreTemplateFilterDeactivated {
 			<a
@@ -132,9 +205,23 @@ templ templateSearch(model viewmodels.Collection) {
 		hx-push-url="true"
 	>
 		<style>
-			me { align-items: center; display: flex; gap: 0.75rem; margin: 0 0 0.5rem; }
-			me > a { color: var(--sb-muted); flex: 0 0 auto; font-size: 0.8125rem; font-weight: 600; line-height: 1; }
-			me > a:hover, me > a:focus-visible { color: var(--sb-text); }
+			me {
+				align-items: center;
+				display: flex;
+				gap: 0.75rem;
+				margin: 0 0 0.5rem;
+			}
+			me > a {
+				color: var(--sb-muted);
+				flex: 0 0 auto;
+				font-size: 0.8125rem;
+				font-weight: 600;
+				line-height: 1;
+			}
+			me > a:hover,
+			me > a:focus-visible {
+				color: var(--sb-text);
+			}
 		</style>
 		if model.Filter == choretemplatemodels.ChoreTemplateFilterDeactivated {
 			<input type="hidden" name="state" value="deactivated"/>
@@ -167,9 +254,21 @@ templ collectionResults(model viewmodels.Collection) {
 templ collectionEmptyState(model viewmodels.Collection) {
 	<div>
 		<style>
-			me { background: var(--sb-surface); border: 2px solid var(--sb-frame); padding: 2rem 1rem; text-align: center; }
-			me > h2 { font-size: 1rem; margin-bottom: 0.25rem; }
-			me > p { color: var(--sb-muted); font-size: 0.875rem; margin: 0; }
+			me {
+				background: var(--sb-surface);
+				border: 2px solid var(--sb-frame);
+				padding: 2rem 1rem;
+				text-align: center;
+			}
+			me > h2 {
+				font-size: 1rem;
+				margin-bottom: 0.25rem;
+			}
+			me > p {
+				color: var(--sb-muted);
+				font-size: 0.875rem;
+				margin: 0;
+			}
 		</style>
 		if model.Search != "" {
 			<h2>No matching templates</h2>
@@ -187,18 +286,70 @@ templ collectionEmptyState(model viewmodels.Collection) {
 templ templateList(items []viewmodels.CollectionItem) {
 	<ul>
 		<style>
-			me { background: var(--sb-surface); border: 2px solid var(--sb-frame); list-style: none; margin: 0; padding: 0; }
-			me > li + li { border-top: 1px solid var(--sb-border); }
-			me [data-template-link] { align-items: center; color: var(--sb-text); display: flex; gap: 0.75rem; min-height: 4rem; min-width: 0; padding: 0.6875rem 0.875rem; text-decoration: none; }
-			me a[data-template-link]:hover { background: var(--sb-hover); color: var(--sb-text); }
-			me [data-template-copy] { flex: 1 1 auto; min-width: 0; }
-			me [data-template-name] { display: block; font-size: 0.9375rem; font-weight: 650; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-			me [data-template-description] { color: var(--sb-muted); display: block; font-size: 0.8125rem; line-height: 1.3; margin-top: 0.125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-			me [data-template-caret] { color: var(--sb-muted); flex: 0 0 auto; opacity: 0.5; }
-			me a[data-template-link]:hover [data-template-caret] { color: var(--sb-text); opacity: 1; }
+			me {
+				background: var(--sb-surface);
+				border: 2px solid var(--sb-frame);
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			me > li + li {
+				border-top: 1px solid var(--sb-border);
+			}
+			me [data-template-link] {
+				align-items: center;
+				color: var(--sb-text);
+				display: flex;
+				gap: 0.75rem;
+				min-height: 4rem;
+				min-width: 0;
+				padding: 0.6875rem 0.875rem;
+				text-decoration: none;
+			}
+			me a[data-template-link]:hover {
+				background: var(--sb-hover);
+				color: var(--sb-text);
+			}
+			me [data-template-copy] {
+				flex: 1 1 auto;
+				min-width: 0;
+			}
+			me [data-template-name] {
+				display: block;
+				font-size: 0.9375rem;
+				font-weight: 650;
+				line-height: 1.25;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			me [data-template-description] {
+				color: var(--sb-muted);
+				display: block;
+				font-size: 0.8125rem;
+				line-height: 1.3;
+				margin-top: 0.125rem;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			me [data-template-caret] {
+				color: var(--sb-muted);
+				flex: 0 0 auto;
+				opacity: 0.5;
+			}
+			me a[data-template-link]:hover [data-template-caret] {
+				color: var(--sb-text);
+				opacity: 1;
+			}
 			@media sm- {
-				me [data-template-description] { display: none; }
-				me [data-template-link] { min-height: 3.625rem; padding-inline: 0.75rem; }
+				me [data-template-description] {
+					display: none;
+				}
+				me [data-template-link] {
+					min-height: 3.625rem;
+					padding-inline: 0.75rem;
+				}
 			}
 		</style>
 		for _, item := range items {
@@ -225,9 +376,17 @@ templ collectionPagination(model viewmodels.Collection) {
 	if model.HasPagination() {
 		<nav aria-label="Chore template pages">
 			<style>
-				me { display: flex; gap: 0.75rem; margin-top: 1rem; }
-				me > a { gap: 0.375rem; }
-				me > a[rel="next"] { margin-left: auto; }
+				me {
+					display: flex;
+					gap: 0.75rem;
+					margin-top: 1rem;
+				}
+				me > a {
+					gap: 0.375rem;
+				}
+				me > a[rel="next"] {
+					margin-left: auto;
+				}
 			</style>
 			if model.PreviousHref != "" {
 				<a class="btn btn-outline-secondary" href={ model.PreviousHref } hx-get={ model.PreviousHref } hx-target="#main" hx-swap="outerHTML" hx-push-url="true" rel="prev">

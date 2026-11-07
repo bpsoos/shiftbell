@@ -12,7 +12,15 @@ templ completionCorrectionForm(form viewmodels.CompletionCorrectionForm) {
 					}
 					<div data-field>
 						<label class="form-label" for="correct-completed-on">Completed on</label>
-						<input class={ formControlClass("form-control", form.CompletedOn.Error) } id="correct-completed-on" type="date" name="completed_on" value={ form.CompletedOn.Value } max={ form.CompletedOnMax } required autofocus
+						<input
+							class={ formControlClass("form-control", form.CompletedOn.Error) }
+							id="correct-completed-on"
+							type="date"
+							name="completed_on"
+							value={ form.CompletedOn.Value }
+							max={ form.CompletedOnMax }
+							required
+							autofocus
 							if form.CompletedOn.Error != "" {
 								aria-invalid="true"
 								aria-describedby="correct-completed-on-error"
