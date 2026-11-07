@@ -2,6 +2,8 @@ package chores
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
@@ -31,13 +33,14 @@ func setChoreAssignment(
 	if err != nil {
 		return nil, err
 	}
-	var exists bool
-	if err := tx.QueryRowContext(ctx, `select exists(select 1 from profiles where id = ?)`, params.OwnerProfileId).
-		Scan(&exists); err != nil {
-		return nil, fmt.Errorf("find owner profile: %w", err)
-	}
-	if !exists {
+	var ownerName string
+	err = tx.QueryRowContext(ctx, `select name from profiles where id = ?`, params.OwnerProfileId).
+		Scan(&ownerName)
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrInvalidOwnerProfile
+	}
+	if err != nil {
+		return nil, fmt.Errorf("find owner profile: %w", err)
 	}
 	if _, err := tx.ExecContext(
 		ctx,
@@ -48,5 +51,6 @@ func setChoreAssignment(
 		return nil, fmt.Errorf("set chore assignment: %w", err)
 	}
 	chore.OwnerProfileId = &params.OwnerProfileId
+	chore.OwnerProfileName = ownerName
 	return chore, nil
 }

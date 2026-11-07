@@ -29,6 +29,7 @@ func (p *Persister) ClearAssignment(
 				return nil, fmt.Errorf("clear chore assignment: %w", err)
 			}
 			chore.OwnerProfileId = nil
+			chore.OwnerProfileName = ""
 			return chore, nil
 		},
 	)

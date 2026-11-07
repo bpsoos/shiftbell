@@ -43,6 +43,7 @@ var _ = Describe("Clear chore assignment", func() {
 			Expect(err).NotTo(HaveOccurred())
 			expected := *original
 			expected.OwnerProfileId = nil
+			expected.OwnerProfileName = ""
 			Expect(updated).To(Equal(&expected))
 			persisted, err := persister.Get(ctx, 42)
 			Expect(err).NotTo(HaveOccurred())

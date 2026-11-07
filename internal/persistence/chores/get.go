@@ -21,20 +21,22 @@ func getChore(
 	id int,
 ) (*models.Chore, error) {
 	var (
-		name           string
-		description    sql.NullString
-		isComplete     bool
-		completedOn    sql.NullTime
-		deadline       time.Time
-		scheduleId     *int
-		predecessorId  *int
-		ownerProfileId *int
+		name             string
+		description      sql.NullString
+		isComplete       bool
+		completedOn      sql.NullTime
+		deadline         time.Time
+		scheduleId       *int
+		predecessorId    *int
+		ownerProfileId   *int
+		ownerProfileName string
 	)
 	err := queryer.QueryRowxContext(ctx, `
-		select name, description, is_complete, completed_on, deadline, schedule_id, predecessor_id, owner_profile_id
-		from chores
-		where id = ?
-	`, id).Scan(&name, &description, &isComplete, &completedOn, &deadline, &scheduleId, &predecessorId, &ownerProfileId)
+		select c.name, c.description, c.is_complete, c.completed_on, c.deadline, c.schedule_id, c.predecessor_id, c.owner_profile_id, coalesce(p.name, '')
+		from chores c
+		left join profiles p on p.id = c.owner_profile_id
+		where c.id = ?
+	`, id).Scan(&name, &description, &isComplete, &completedOn, &deadline, &scheduleId, &predecessorId, &ownerProfileId, &ownerProfileName)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrNotFound
 	}
@@ -47,14 +49,15 @@ func getChore(
 		status = models.ChoreStatusCompleted
 	}
 	chore := &models.Chore{
-		OwnerProfileId: ownerProfileId,
-		Id:             id,
-		ScheduleId:     scheduleId,
-		PredecessorId:  predecessorId,
-		Status:         status,
-		Name:           name,
-		Description:    description.String,
-		Deadline:       deadline,
+		OwnerProfileId:   ownerProfileId,
+		OwnerProfileName: ownerProfileName,
+		Id:               id,
+		ScheduleId:       scheduleId,
+		PredecessorId:    predecessorId,
+		Status:           status,
+		Name:             name,
+		Description:      description.String,
+		Deadline:         deadline,
 	}
 	if completedOn.Valid {
 		chore.CompletedOn = completedOn.Time

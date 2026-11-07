@@ -113,7 +113,7 @@ templ collection(model viewmodels.Collection) {
 			<ul aria-label="Profiles">
 				for _, profile := range model.Profiles {
 					<li>
-						<img data-profile-icon src={ profileAvatarHref(profile.Id) } alt="" width="40" height="40"/>
+						<img data-profile-icon src={ AvatarHref(profile.Id) } alt="" width="40" height="40"/>
 						<span data-profile-name>{ profile.Name }</span>
 					</li>
 				}

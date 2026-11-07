@@ -5,6 +5,8 @@ import (
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 )
 
-func (t *Templater) Assignment(viewmodels.Assignment) templ.Component {
-	return templ.Raw(`<span data-assignment-placeholder></span>`)
+func (t *Templater) Assignment(
+	model viewmodels.Assignment,
+) templ.Component {
+	return assignmentForm(model)
 }

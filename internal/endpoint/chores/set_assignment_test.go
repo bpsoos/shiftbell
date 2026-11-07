@@ -27,7 +27,7 @@ var _ = Describe("Set chore assignment", func() {
 		service = NewMockService(GinkgoT())
 		view = NewMockView(GinkgoT())
 		handler := endpoint.NewHandler(
-			&endpoint.HandlerDeps{Service: service, View: view},
+			&endpoint.HandlerDeps{Service: service, View: view, ProfilesUIEnabled: true},
 		)
 		app = echo.New()
 		app.PUT("/chores/:id/assignment", handler.SetAssignment)
@@ -64,19 +64,24 @@ var _ = Describe("Set chore assignment", func() {
 		Entry("assign", `{"owner_profile_id":7}`, 7),
 	)
 
-	It(
-		"renders the HTML assignment placeholder",
-		func(ctx SpecContext) {
+	DescribeTable(
+		"renders the updated chore after assigning through HTMX",
+		func(ctx SpecContext, status models.ChoreStatus) {
 			owner := 7
 			service.EXPECT().
 				SetAssignment(ctx, &models.SetAssignmentParams{Id: 42, OwnerProfileId: owner}).
-				Return(&models.Chore{Id: 42, OwnerProfileId: &owner}, nil).
+				Return(&models.Chore{Id: 42, Status: status, OwnerProfileId: &owner, OwnerProfileName: "Alex"}, nil).
 				Once()
 			view.EXPECT().
-				Assignment(mock.Anything).
-				Run(func(model viewmodels.Assignment) {
+				Detail(mock.Anything, false).
+				Run(func(model viewmodels.Detail, fullPage bool) {
 					Expect(model.Chore.Id).To(Equal(42))
 					Expect(model.Chore.OwnerProfileId).To(Equal(&owner))
+					Expect(model.Chore.OwnerProfileName).To(Equal("Alex"))
+					Expect(model.Chore.Status).To(Equal(status))
+					Expect(
+						model.Chore.Actions.Href("clear_assignment"),
+					).To(Equal("/chores/42/assignment"))
 				}).
 				Return(templ.Raw("assignment sentinel")).
 				Once()
@@ -87,13 +92,36 @@ var _ = Describe("Set chore assignment", func() {
 				strings.NewReader("owner_profile_id=7"),
 			)
 			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
 			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			response := httptest.NewRecorder()
 			app.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Header().Get("HX-Push-Url")).To(Equal("/chores/42"))
 			Expect(response.Body.String()).To(Equal("assignment sentinel"))
 		},
+		Entry("active chore", models.ChoreStatusActive),
+		Entry("completed chore", models.ChoreStatusCompleted),
 	)
+
+	It("hides HTML assignment when profiles UI is disabled", func(ctx SpecContext) {
+		handler := endpoint.NewHandler(
+			&endpoint.HandlerDeps{Service: service, View: view},
+		)
+		app := echo.New()
+		app.PUT("/chores/:id/assignment", handler.SetAssignment)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodPut,
+			"/chores/42/assignment",
+			strings.NewReader("owner_profile_id=7"),
+		)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusNotFound))
+	})
 
 	DescribeTable(
 		"rejects invalid requests without mutating",

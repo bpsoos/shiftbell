@@ -15,20 +15,21 @@ func (p *Persister) Browse(
 	params *choremodels.BrowseChoresParams,
 ) (_ *choremodels.ChorePage, returnErr error) {
 	query := `
-		select id, name, description, is_complete, completed_on, deadline, schedule_id, predecessor_id, owner_profile_id
-		from chores
-		where is_complete = ?
+		select c.id, c.name, c.description, c.is_complete, c.completed_on, c.deadline, c.schedule_id, c.predecessor_id, c.owner_profile_id, coalesce(p.name, '')
+		from chores c
+		left join profiles p on p.id = c.owner_profile_id
+		where c.is_complete = ?
 			and (
 				? = ''
-				or instr(lower(name), lower(?)) > 0
-				or instr(lower(coalesce(description, '')), lower(?)) > 0
+				or instr(lower(c.name), lower(?)) > 0
+				or instr(lower(coalesce(c.description, '')), lower(?)) > 0
 			)
 	`
 	isComplete := params.Status == choremodels.ChoreStatusCompleted
 	if isComplete {
-		query += "order by completed_on desc, id desc\n"
+		query += "order by c.completed_on desc, c.id desc\n"
 	} else {
-		query += "order by deadline asc, id asc\n"
+		query += "order by c.deadline asc, c.id asc\n"
 	}
 	query += "limit ? offset ?"
 
@@ -68,6 +69,7 @@ func (p *Persister) Browse(
 			&chore.ScheduleId,
 			&chore.PredecessorId,
 			&chore.OwnerProfileId,
+			&chore.OwnerProfileName,
 		); err != nil {
 			return nil, fmt.Errorf("scan chore: %w", err)
 		}

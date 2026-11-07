@@ -3,13 +3,15 @@ package chores
 import choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 
 type CollectionItem struct {
-	Status       choremodels.ChoreStatus
-	Name         string
-	Description  string
-	Deadline     string
-	CompletedOn  *string
-	DetailHref   string
-	CompleteHref string
+	OwnerProfileId   *int
+	OwnerProfileName string
+	Status           choremodels.ChoreStatus
+	Name             string
+	Description      string
+	Deadline         string
+	CompletedOn      *string
+	DetailHref       string
+	CompleteHref     string
 }
 
 type Collection struct {

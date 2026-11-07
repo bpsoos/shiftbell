@@ -92,7 +92,7 @@ templ selection(model viewmodels.Selection) {
 			<input type="hidden" name="return_to" value={ model.ReturnTo }/>
 			for _, profile := range model.Profiles {
 				<button type="submit" name="profile_id" value={ strconv.Itoa(profile.Id) } aria-pressed={ strconv.FormatBool(profile.Id == model.SelectedProfileId) }>
-					<img src={ profileAvatarHref(profile.Id) } alt="" width="176" height="176"/>
+					<img src={ AvatarHref(profile.Id) } alt="" width="176" height="176"/>
 					<span>{ profile.Name }</span>
 				</button>
 			}

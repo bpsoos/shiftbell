@@ -15,6 +15,9 @@ func (h *Handler) SetAssignment(ctx *echo.Context) error {
 	if !supported(ctx) {
 		return hypermedia.NotAcceptable(ctx)
 	}
+	if acceptsHTML(ctx) && !h.profilesUIEnabled {
+		return ctx.NoContent(http.StatusNotFound)
+	}
 	id, err := parseChoreID(ctx)
 	if err != nil {
 		return h.renderError(

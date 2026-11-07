@@ -35,6 +35,7 @@ func (r *Router) Setup(app *echo.Echo) error {
 	pages.POST("/chores", r.choreHandler.Create)
 	pages.GET("/chores/:id", r.choreHandler.Get)
 	pages.PUT("/chores/:id/assignment", r.choreHandler.SetAssignment)
+	pages.GET("/chores/:id/assignment", r.choreHandler.AssignmentForm)
 	pages.DELETE("/chores/:id/assignment", r.choreHandler.ClearAssignment)
 	pages.GET("/chores/:id/edit", r.choreHandler.Edit)
 	pages.PATCH("/chores/:id", r.choreHandler.Patch)

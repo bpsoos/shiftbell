@@ -96,6 +96,8 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 		&choresservice.Config{AppTimezone: appConfig.AppTimezone},
 	)
 	choresHandler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+		ProfileService:       profileService,
+		ProfilesUIEnabled:    appConfig.ProfilesUIEnabled,
 		View:                 choresTemplater,
 		Service:              choresService,
 		ChoreTemplateService: choreTemplateService,

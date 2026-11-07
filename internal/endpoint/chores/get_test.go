@@ -16,9 +16,56 @@ import (
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 )
 
 var _ = Describe("Get chore", func() {
+	DescribeTable(
+		"includes the owner in HTML details without listing profiles",
+		func(ctx SpecContext, status choremodels.ChoreStatus) {
+			service := NewMockService(GinkgoT())
+			view := NewMockView(GinkgoT())
+			service.EXPECT().
+				Get(ctx, 42).
+				Return(&choremodels.Chore{Id: 42, Status: status, OwnerProfileId: new(7), OwnerProfileName: "Alex"}, nil).
+				Once()
+			view.EXPECT().
+				Detail(mock.Anything, true).
+				Run(func(model choreviewmodels.Detail, fullPage bool) {
+					Expect(model.Chore.OwnerProfileId).To(Equal(new(7)))
+					Expect(model.Chore.OwnerProfileName).To(Equal("Alex"))
+					Expect(
+						model.Chore.Actions.Href("set_assignment"),
+					).To(Equal("/chores/42/assignment"))
+				}).
+				Return(templ.Raw("owned chore")).
+				Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{
+					Service:           service,
+					View:              view,
+					ProfileService:    NewMockProfileService(GinkgoT()),
+					ProfilesUIEnabled: true,
+				},
+			)
+			app := echo.New()
+			app.GET("/chores/:id", handler.Get)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores/42",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.String()).To(Equal("owned chore"))
+		},
+		Entry("active", choremodels.ChoreStatusActive),
+		Entry("completed", choremodels.ChoreStatusCompleted),
+	)
+
 	It("rejects a non-numeric chore id", func(ctx SpecContext) {
 		handler := choresendpoint.NewHandler(
 			&choresendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},

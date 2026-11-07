@@ -23,13 +23,15 @@ func collectionViewModel(
 	items := make([]choreviewmodels.CollectionItem, len(collection.Items))
 	for i, chore := range collection.Items {
 		items[i] = choreviewmodels.CollectionItem{
-			Status:       chore.Status,
-			Name:         chore.Name,
-			Description:  chore.Description,
-			Deadline:     chore.Deadline,
-			CompletedOn:  chore.CompletedOn,
-			DetailHref:   chore.Links.Href("self"),
-			CompleteHref: completionHref(chore),
+			OwnerProfileId:   chore.OwnerProfileId,
+			OwnerProfileName: chore.OwnerProfileName,
+			Status:           chore.Status,
+			Name:             chore.Name,
+			Description:      chore.Description,
+			Deadline:         chore.Deadline,
+			CompletedOn:      chore.CompletedOn,
+			DetailHref:       chore.Links.Href("self"),
+			CompleteHref:     completionHref(chore),
 		}
 	}
 	return choreviewmodels.Collection{

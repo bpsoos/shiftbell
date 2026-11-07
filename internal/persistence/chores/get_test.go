@@ -54,6 +54,38 @@ var _ = Describe("Get", func() {
 		})
 	})
 
+	DescribeTable(
+		"returns the owner's current name",
+		func(ctx SpecContext, completed bool) {
+			_, err := db.ExecContext(
+				ctx,
+				`insert into profiles (id, name, name_key) values (7, 'Alex', 'alex')`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = db.ExecContext(
+				ctx,
+				`insert into chores (id, name, deadline, is_complete, completed_on, owner_profile_id) values (42, 'Kitchen', '2026-01-01', ?, case when ? then '2026-01-02' else null end, 7)`,
+				completed,
+				completed,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			chore, err := persister.Get(ctx, 42)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chore.OwnerProfileId).To(Equal(new(7)))
+			Expect(chore.OwnerProfileName).To(Equal("Alex"))
+			_, err = db.ExecContext(
+				ctx,
+				`update profiles set name = 'Alexandra', name_key = 'alexandra' where id = 7`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			chore, err = persister.Get(ctx, 42)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chore.OwnerProfileName).To(Equal("Alexandra"))
+		},
+		Entry("active", false),
+		Entry("completed", true),
+	)
+
 	Context("with a completed chore", func() {
 		var (
 			completedOn time.Time

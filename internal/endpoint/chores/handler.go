@@ -8,6 +8,7 @@ import (
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choretemplatemodels "github.com/bpsoos/shiftbell/internal/models/choretemplates"
+	profilemodels "github.com/bpsoos/shiftbell/internal/models/profiles"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
 	"github.com/labstack/echo/v5"
@@ -15,6 +16,10 @@ import (
 
 type ChoreTemplateService interface {
 	Get(context.Context, int) (*choretemplatemodels.ChoreTemplateDetails, error)
+}
+
+type ProfileService interface {
+	List(context.Context) ([]profilemodels.Profile, error)
 }
 
 type Service interface {
@@ -74,12 +79,16 @@ type View interface {
 }
 
 type HandlerDeps struct {
+	ProfileService       ProfileService
+	ProfilesUIEnabled    bool
 	View                 View
 	Service              Service
 	ChoreTemplateService ChoreTemplateService
 }
 
 type Handler struct {
+	profileService       ProfileService
+	profilesUIEnabled    bool
 	view                 View
 	service              Service
 	choreTemplateService ChoreTemplateService
@@ -87,6 +96,8 @@ type Handler struct {
 
 func NewHandler(deps *HandlerDeps) *Handler {
 	return &Handler{
+		profileService:       deps.ProfileService,
+		profilesUIEnabled:    deps.ProfilesUIEnabled,
 		view:                 deps.View,
 		service:              deps.Service,
 		choreTemplateService: deps.ChoreTemplateService,

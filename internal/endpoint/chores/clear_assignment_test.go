@@ -27,7 +27,7 @@ var _ = Describe("Clear chore assignment", func() {
 		service = NewMockService(GinkgoT())
 		view = NewMockView(GinkgoT())
 		handler := endpoint.NewHandler(
-			&endpoint.HandlerDeps{Service: service, View: view},
+			&endpoint.HandlerDeps{Service: service, View: view, ProfilesUIEnabled: true},
 		)
 		app = echo.New()
 		app.DELETE("/chores/:id/assignment", handler.ClearAssignment)
@@ -64,15 +64,48 @@ var _ = Describe("Clear chore assignment", func() {
 		Entry("completed chore", models.ChoreStatusCompleted),
 	)
 
-	DescribeTable("renders the HTML placeholder", func(ctx SpecContext, htmx string) {
-		service.EXPECT().
-			ClearAssignment(ctx, 42).
-			Return(&models.Chore{Id: 42}, nil).
-			Once()
-		view.EXPECT().Assignment(mock.Anything).Run(func(model viewmodels.Assignment) {
-			Expect(model.Chore.Id).To(Equal(42))
-			Expect(model.Chore.OwnerProfileId).To(BeNil())
-		}).Return(templ.Raw("assignment sentinel")).Once()
+	DescribeTable(
+		"renders the updated chore after clearing ownership",
+		func(ctx SpecContext, htmx string, fullPage bool, status models.ChoreStatus) {
+			service.EXPECT().
+				ClearAssignment(ctx, 42).
+				Return(&models.Chore{Id: 42, Status: status}, nil).
+				Once()
+			view.EXPECT().
+				Detail(mock.Anything, fullPage).
+				Run(func(model viewmodels.Detail, fullPage bool) {
+					Expect(model.Chore.Id).To(Equal(42))
+					Expect(model.Chore.OwnerProfileId).To(BeNil())
+					Expect(model.Chore.OwnerProfileName).To(BeEmpty())
+					Expect(model.Chore.Actions.Href("clear_assignment")).To(BeEmpty())
+				}).
+				Return(templ.Raw("assignment sentinel")).
+				Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodDelete,
+				"/chores/42/assignment",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", htmx)
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Header().Get("HX-Push-Url")).To(Equal("/chores/42"))
+			Expect(response.Body.String()).To(Equal("assignment sentinel"))
+		},
+		Entry("ordinary HTML", "", true, models.ChoreStatusActive),
+		Entry("HTMX active", "true", false, models.ChoreStatusActive),
+		Entry("HTMX completed", "true", false, models.ChoreStatusCompleted),
+	)
+
+	It("hides HTML clearing when profiles UI is disabled", func(ctx SpecContext) {
+		handler := endpoint.NewHandler(
+			&endpoint.HandlerDeps{Service: service, View: view},
+		)
+		app := echo.New()
+		app.DELETE("/chores/:id/assignment", handler.ClearAssignment)
 		request := httptest.NewRequestWithContext(
 			ctx,
 			http.MethodDelete,
@@ -80,12 +113,10 @@ var _ = Describe("Clear chore assignment", func() {
 			nil,
 		)
 		request.Header.Set("Accept", "text/html")
-		request.Header.Set("HX-Request", htmx)
 		response := httptest.NewRecorder()
 		app.ServeHTTP(response, request)
-		Expect(response.Code).To(Equal(http.StatusOK))
-		Expect(response.Body.String()).To(Equal("assignment sentinel"))
-	}, Entry("ordinary HTML", ""), Entry("HTMX", "true"))
+		Expect(response.Code).To(Equal(http.StatusNotFound))
+	})
 
 	DescribeTable(
 		"maps service errors",

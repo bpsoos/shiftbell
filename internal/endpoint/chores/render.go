@@ -50,11 +50,8 @@ func (h *Handler) renderAssignment(ctx *echo.Context, chore choreRepresentation)
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, http.StatusOK, chore)
 	case hypermedia.RepresentationHTML:
-		return hypermedia.HTML(
-			ctx,
-			http.StatusOK,
-			h.view.Assignment(choreviewmodels.Assignment{Chore: chore}),
-		)
+		ctx.Response().Header().Set("HX-Push-Url", chore.Links.Href("self"))
+		return h.renderDetail(ctx, http.StatusOK, chore, "")
 	default:
 		return hypermedia.NotAcceptable(ctx)
 	}

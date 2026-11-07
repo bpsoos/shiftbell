@@ -33,7 +33,7 @@ var _ = Describe("Set chore assignment", func() {
 
 	DescribeTable(
 		"replaces ownership without changing chore details",
-		func(ctx SpecContext, completed bool, previous *int, owner int) {
+		func(ctx SpecContext, completed bool, previous *int, owner int, ownerName string) {
 			_, err := db.ExecContext(
 				ctx,
 				`update chores set is_complete = ?, completed_on = ?, owner_profile_id = ? where id = 42`,
@@ -51,6 +51,7 @@ var _ = Describe("Set chore assignment", func() {
 			Expect(err).NotTo(HaveOccurred())
 			expected := *original
 			expected.OwnerProfileId = &owner
+			expected.OwnerProfileName = ownerName
 			Expect(updated).To(Equal(&expected))
 			persisted, err := persister.Get(ctx, 42)
 			Expect(err).NotTo(HaveOccurred())
@@ -62,12 +63,12 @@ var _ = Describe("Set chore assignment", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(page.Chores).To(ConsistOf(expected))
 		},
-		Entry("assigns active", false, nil, 1),
-		Entry("reassigns active", false, new(1), 2),
-		Entry("retains active assignment", false, new(1), 1),
-		Entry("assigns completed", true, nil, 1),
-		Entry("reassigns completed", true, new(1), 2),
-		Entry("retains completed assignment", true, new(1), 1),
+		Entry("assigns active", false, nil, 1, "Alex"),
+		Entry("reassigns active", false, new(1), 2, "Sam"),
+		Entry("retains active assignment", false, new(1), 1, "Alex"),
+		Entry("assigns completed", true, nil, 1, "Alex"),
+		Entry("reassigns completed", true, new(1), 2, "Sam"),
+		Entry("retains completed assignment", true, new(1), 1, "Alex"),
 	)
 
 	It(

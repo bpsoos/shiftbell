@@ -12,14 +12,16 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 	rows, err := p.db.Query(
 		`
 			select
-				id,
-				name,
-				description,
-				deadline,
-				owner_profile_id
-			from chores
-			where is_complete = false
-			order by deadline asc, id asc
+				c.id,
+				c.name,
+				c.description,
+				c.deadline,
+				c.owner_profile_id,
+				coalesce(p.name, '')
+			from chores c
+			left join profiles p on p.id = c.owner_profile_id
+			where c.is_complete = false
+			order by c.deadline asc, c.id asc
 			limit ?
 			offset ?
 		`,
@@ -30,25 +32,34 @@ func (p *Persister) GetBatch(offset int, limit int) (*models.GetChoreBatchResult
 		return nil, fmt.Errorf("db query selecting chores: %w", err)
 	}
 	var (
-		id             int
-		name           string
-		description    sql.NullString
-		deadline       time.Time
-		ownerProfileId *int
+		id               int
+		name             string
+		description      sql.NullString
+		deadline         time.Time
+		ownerProfileId   *int
+		ownerProfileName string
 	)
 	results := make([]models.Chore, 0)
 	for rows.Next() {
-		err := rows.Scan(&id, &name, &description, &deadline, &ownerProfileId)
+		err := rows.Scan(
+			&id,
+			&name,
+			&description,
+			&deadline,
+			&ownerProfileId,
+			&ownerProfileName,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("reading fetched rows: %w", err)
 		}
 		results = append(results, models.Chore{
-			OwnerProfileId: ownerProfileId,
-			Id:             id,
-			Name:           name,
-			Status:         models.ChoreStatusActive,
-			Description:    description.String,
-			Deadline:       deadline,
+			OwnerProfileId:   ownerProfileId,
+			OwnerProfileName: ownerProfileName,
+			Id:               id,
+			Name:             name,
+			Status:           models.ChoreStatusActive,
+			Description:      description.String,
+			Deadline:         deadline,
 		})
 	}
 	more := len(results) > limit

@@ -27,14 +27,15 @@ func newChoreResponse(chore *choremodels.Chore) choreResponse {
 	}
 
 	return choreResponse{
-		OwnerProfileId: chore.OwnerProfileId,
-		Id:             chore.Id,
-		ScheduleId:     chore.ScheduleId,
-		Status:         chore.Status,
-		Name:           chore.Name,
-		Description:    chore.Description,
-		Deadline:       chore.Deadline.Format(time.DateOnly),
-		CompletedOn:    completedOn,
+		OwnerProfileId:   chore.OwnerProfileId,
+		OwnerProfileName: chore.OwnerProfileName,
+		Id:               chore.Id,
+		ScheduleId:       chore.ScheduleId,
+		Status:           chore.Status,
+		Name:             chore.Name,
+		Description:      chore.Description,
+		Deadline:         chore.Deadline.Format(time.DateOnly),
+		CompletedOn:      completedOn,
 		Links: api.Relations{
 			{Rel: "self", Href: choreHref(chore.Id)},
 			{Rel: "collection", Href: choreCollectionHref},

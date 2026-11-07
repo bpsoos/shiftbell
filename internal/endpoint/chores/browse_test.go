@@ -13,9 +13,65 @@ import (
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 )
 
 var _ = Describe("Browse chores", func() {
+	DescribeTable(
+		"includes owners and unassigned chores without listing profiles",
+		func(ctx SpecContext, status choremodels.ChoreStatus) {
+			service := NewMockService(GinkgoT())
+			view := NewMockView(GinkgoT())
+			service.EXPECT().
+				Browse(ctx, &choremodels.BrowseChoresParams{Status: status, Limit: 20}).
+				Return(&choremodels.ChorePage{Chores: []choremodels.Chore{
+					{
+						Id:               42,
+						Status:           status,
+						OwnerProfileId:   new(7),
+						OwnerProfileName: "Alex",
+					},
+					{Id: 43, Status: status},
+				}}, nil).
+				Once()
+			view.EXPECT().
+				Collection(mock.Anything, false).
+				Run(func(model choreviewmodels.Collection, fullPage bool) {
+					Expect(model.Items).To(HaveLen(2))
+					Expect(model.Items[0].OwnerProfileId).To(Equal(new(7)))
+					Expect(model.Items[0].OwnerProfileName).To(Equal("Alex"))
+					Expect(model.Items[1].OwnerProfileId).To(BeNil())
+					Expect(model.Items[1].OwnerProfileName).To(BeEmpty())
+				}).
+				Return(templ.Raw("owned collection")).
+				Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{
+					Service:           service,
+					View:              view,
+					ProfileService:    NewMockProfileService(GinkgoT()),
+					ProfilesUIEnabled: true,
+				},
+			)
+			app := echo.New()
+			app.GET("/chores", handler.GetBatch)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores?status="+string(status),
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.String()).To(Equal("owned collection"))
+		},
+		Entry("active", choremodels.ChoreStatusActive),
+		Entry("completed", choremodels.ChoreStatusCompleted),
+	)
+
 	It("rejects a non-numeric offset", func(ctx SpecContext) {
 		handler := choresendpoint.NewHandler(
 			&choresendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},

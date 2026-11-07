@@ -63,6 +63,46 @@ var _ = Describe("Browse service chores", func() {
 		}))
 	})
 
+	DescribeTable(
+		"returns owner names alongside unassigned chores",
+		func(ctx SpecContext, completed bool, status choremodels.ChoreStatus) {
+			_, err := db.ExecContext(
+				ctx,
+				`insert into profiles (id, name, name_key) values (7, 'Alex', 'alex')`,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = db.ExecContext(
+				ctx,
+				`insert into chores (id, name, deadline, is_complete, completed_on, owner_profile_id) values
+			(42, 'Kitchen assigned', '2026-01-01', ?, case when ? then '2026-01-02' else null end, 7),
+			(43, 'Kitchen unassigned', '2026-01-01', ?, case when ? then '2026-01-02' else null end, null)`,
+				completed,
+				completed,
+				completed,
+				completed,
+			)
+			Expect(err).NotTo(HaveOccurred())
+			page, err := persister.Browse(
+				ctx,
+				&choremodels.BrowseChoresParams{
+					Status: status,
+					Search: "Kitchen",
+					Limit:  20,
+				},
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(page.Chores).To(HaveLen(2))
+			Expect(
+				page.Chores,
+			).To(ContainElement(And(HaveField("Id", 42), HaveField("OwnerProfileId", new(7)), HaveField("OwnerProfileName", "Alex"))))
+			Expect(
+				page.Chores,
+			).To(ContainElement(And(HaveField("Id", 43), HaveField("OwnerProfileId", BeNil()), HaveField("OwnerProfileName", ""))))
+		},
+		Entry("active", false, choremodels.ChoreStatusActive),
+		Entry("completed", true, choremodels.ChoreStatusCompleted),
+	)
+
 	It(
 		"includes schedule and predecessor associations when browsing chores",
 		func(ctx SpecContext) {

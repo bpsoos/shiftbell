@@ -124,11 +124,7 @@ templ detailCard(t *Templater, chore choreapimodels.Representation, editHref str
 			}
 		</style>
 		@choreDetailHeader(chore.Name, editHref, deleteHref)
-		if chore.CompletedOn != nil {
-			@choreCompletion(t, chore)
-		} else {
-			@choreDeadline(t, chore.Deadline, today)
-		}
+		@choreMetadata(t, chore, today)
 		if chore.Description != "" {
 			<div data-description>
 				@markdownview.Description(chore.Description)
@@ -266,14 +262,41 @@ templ choreDetailActions(editHref string, deleteHref string) {
 	</div>
 }
 
-templ choreDeadline(t *Templater, deadline string, today time.Time) {
-	<div data-deadline>
+templ choreMetadata(t *Templater, chore choreapimodels.Representation, today time.Time) {
+	<div data-detail-metadata data-has-owner?={ t.profilesUIEnabled }>
 		<style>
 			me {
+				align-items: center;
 				border-top: 1px solid var(--sb-border);
+				display: grid;
+				gap: 1rem;
+				grid-template-columns: minmax(0, 1fr);
 				margin-top: 1rem;
 				padding-top: 0.875rem;
 			}
+			me[data-has-owner] {
+				grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			}
+			me > [data-chore-assignment] {
+				justify-self: end;
+				max-width: 100%;
+				min-width: 0;
+			}
+		</style>
+		if chore.CompletedOn != nil {
+			@choreCompletion(t, chore)
+		} else {
+			@choreDeadline(t, chore.Deadline, today)
+		}
+		if t.profilesUIEnabled {
+			@choreAssignment(chore)
+		}
+	</div>
+}
+
+templ choreDeadline(t *Templater, deadline string, today time.Time) {
+	<div data-deadline>
+		<style>
 			me > [data-due-state] {
 				align-items: center;
 				display: flex;

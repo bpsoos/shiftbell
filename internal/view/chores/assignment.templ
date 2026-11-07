@@ -1,0 +1,104 @@
+package chores
+
+import (
+	"strconv"
+
+	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
+	profileview "github.com/bpsoos/shiftbell/internal/view/profiles"
+)
+
+templ assignmentForm(model viewmodels.Assignment) {
+	<div data-assignment-options>
+		<style>
+			me .dropdown-item {
+				align-items: center;
+				border: 0;
+				color: var(--sb-text);
+				display: flex;
+				gap: 0.75rem;
+				min-height: 3.25rem;
+				padding: 0.5rem;
+			}
+			me .dropdown-item:hover,
+			me .dropdown-item:focus {
+				background: var(--sb-hover);
+				color: var(--sb-text);
+			}
+			me .dropdown-item:active {
+				background: var(--sb-subtle);
+			}
+			me .dropdown-item > img {
+				border: 1px solid var(--sb-border);
+				flex: 0 0 2.25rem;
+				height: 2.25rem;
+				object-fit: cover;
+				width: 2.25rem;
+			}
+			me .dropdown-item > span {
+				flex: 1;
+				font-size: 0.9375rem;
+				font-weight: 650;
+				min-width: 0;
+				overflow-wrap: anywhere;
+				text-align: left;
+				white-space: normal;
+			}
+			me .dropdown-item > small {
+				color: var(--sb-muted);
+				flex-shrink: 0;
+				font-size: 0.75rem;
+				font-weight: 400;
+				margin-left: auto;
+			}
+			me > [data-unassign] {
+				border-top: 1px solid var(--sb-border);
+				color: var(--sb-muted);
+				font-size: 0.8125rem;
+				margin-top: 0.375rem;
+				min-height: 2.5rem;
+			}
+			me > p {
+				color: var(--sb-muted);
+				font-size: 0.8125rem;
+				margin: 0;
+				padding: 0.5rem;
+			}
+			me > [role="alert"] {
+				color: var(--sb-danger);
+			}
+		</style>
+		if model.Error != "" {
+			<p role="alert">{ model.Error }</p>
+			if model.RetryHref != "" {
+				<button type="button" class="dropdown-item" hx-get={ model.RetryHref } hx-target="closest .dropdown-menu" hx-swap="innerHTML">Retry</button>
+			}
+		} else {
+			if len(model.Profiles) == 0 {
+				<p>No profiles available.</p>
+			} else {
+				<form action={ model.Chore.Actions.Href("set_assignment") } method="post" hx-put={ model.Chore.Actions.Href("set_assignment") } hx-target="#main" hx-swap="outerHTML" hx-disabled-elt="findAll button" aria-label="Assign profile">
+					for _, profile := range model.Profiles {
+						<button
+							type="submit"
+							class="dropdown-item"
+							name="owner_profile_id"
+							value={ strconv.Itoa(profile.Id) }
+							if model.Chore.OwnerProfileId != nil && *model.Chore.OwnerProfileId == profile.Id {
+								aria-current="true"
+							}
+						>
+							<img src={ profileview.AvatarHref(profile.Id) } alt="" width="36" height="36"/>
+							<span>{ profile.Name }</span>
+							if model.Chore.OwnerProfileId != nil && *model.Chore.OwnerProfileId == profile.Id {
+								<small>Current</small>
+							}
+						</button>
+					}
+				</form>
+			}
+			if href := model.Chore.Actions.Href("clear_assignment"); href != "" {
+				<button type="button" class="dropdown-item" data-unassign hx-delete={ href } hx-target="#main" hx-swap="outerHTML" hx-disabled-elt="this">Unassign</button>
+			}
+		}
+	</div>
+}

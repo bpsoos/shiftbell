@@ -92,7 +92,7 @@ templ selectedProfile(model viewmodels.Navigation) {
 			}
 		</style>
 		<button type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label={ "Switch profile: " + model.Profile.Name } title={ model.Profile.Name }>
-			<img src={ profileAvatarHref(model.Profile.Id) } alt="" width="40" height="40"/>
+			<img src={ AvatarHref(model.Profile.Id) } alt="" width="40" height="40"/>
 		</button>
 		<form class="dropdown-menu dropdown-menu-end" action="/profiles/selection" method="post" aria-label="Switch profile">
 			for _, profile := range model.Profiles {
@@ -105,7 +105,7 @@ templ selectedProfile(model viewmodels.Navigation) {
 						aria-current="true"
 					}
 				>
-					<img src={ profileAvatarHref(profile.Id) } alt="" width="36" height="36"/>
+					<img src={ AvatarHref(profile.Id) } alt="" width="36" height="36"/>
 					<span>{ profile.Name }</span>
 					if profile.Id == model.Profile.Id {
 						<small>Current</small>
