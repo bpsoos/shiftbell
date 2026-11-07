@@ -75,6 +75,9 @@ go *args: build (_prepare-cache "shiftbell-go-cache")
     just go tool templ fmt -prettier-command ./scripts/format-templ-blocks.sh -prettier-required .
     just golangci-lint fmt
 
+@check-templ-fmt:
+    just go tool templ fmt -prettier-command ./scripts/format-templ-blocks.sh -prettier-required -fail .
+
 test:
     just go tool ginkgo run -r -p --randomize-all --randomize-suites --skip-package=test/acceptance
 
