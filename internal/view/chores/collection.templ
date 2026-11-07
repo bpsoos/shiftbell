@@ -396,15 +396,15 @@ templ choreRowStyles() {
 			color: var(--sb-text);
 			display: grid;
 			flex: 1 1 auto;
-			gap: 0.75rem;
-			grid-template-columns: minmax(0, 1fr) 5.5rem 1.125rem;
+			gap: 10px 0.75rem;
+			grid-template-columns: minmax(0, 1fr) 5.5rem;
 			min-height: 4rem;
 			min-width: 0;
 			padding: 0.6875rem 0.875rem;
 			text-decoration: none;
 		}
 		me [data-chore-detail][data-completed] {
-			grid-template-columns: minmax(0, 1fr) 10rem 1.125rem;
+			grid-template-columns: minmax(0, 1fr) 10rem;
 		}
 		me a[data-chore-detail]:hover {
 			background: var(--sb-hover);
@@ -425,12 +425,13 @@ templ choreRowStyles() {
 			white-space: nowrap;
 		}
 		me [data-owner-picture] {
-			border: 1px solid var(--sb-border);
+			border: 1px solid var(--sb-avatar-border);
 			display: block;
-			height: 20px;
-			margin-top: 0.125rem;
+			grid-column: 1;
+			grid-row: 2;
+			height: 18px;
 			object-fit: cover;
-			width: 20px;
+			width: 18px;
 		}
 		me [data-chore-detail] > time {
 			color: var(--sb-muted);
@@ -446,21 +447,11 @@ templ choreRowStyles() {
 		me [data-chore-detail] > time[data-deadline-state="today"] {
 			color: var(--sb-warning);
 		}
-		me [data-row-caret] {
-			color: var(--sb-muted);
-			grid-column: 3;
-			grid-row: 1;
-			opacity: 0.5;
-		}
-		me a[data-chore-detail]:hover [data-row-caret] {
-			color: var(--sb-text);
-			opacity: 1;
-		}
 		@media sm- {
 			me [data-chore-detail],
 			me [data-chore-detail][data-completed] {
-				gap: 0.25rem 0.5rem;
-				grid-template-columns: minmax(0, 1fr) 5.5rem 1.125rem;
+				column-gap: 0.5rem;
+				grid-template-columns: minmax(0, 1fr) 5.5rem;
 				min-height: 3.625rem;
 				padding-inline: 0.75rem;
 			}
@@ -522,10 +513,10 @@ templ choreSummary(t *Templater, item choreviewmodels.CollectionItem, today time
 templ choreSummaryContent(t *Templater, item choreviewmodels.CollectionItem, today time.Time) {
 	<span data-chore-copy>
 		<span data-chore-name>{ item.Name }</span>
-		if t.profilesUIEnabled && item.OwnerProfileId != nil {
-			<img data-owner-picture src={ profileview.AvatarHref(*item.OwnerProfileId) } alt={ "Owner: " + item.OwnerProfileName } title={ item.OwnerProfileName } width="20" height="20"/>
-		}
 	</span>
+	if t.profilesUIEnabled && item.OwnerProfileId != nil {
+		<img data-owner-picture src={ profileview.AvatarHref(*item.OwnerProfileId) } alt={ "Owner: " + item.OwnerProfileName } title={ item.OwnerProfileName } width="18" height="18"/>
+	}
 	if item.Status == choremodels.ChoreStatusCompleted && item.CompletedOn != nil {
 		<time datetime={ *item.CompletedOn }>{ "Completed " + t.exactDeadline(*item.CompletedOn) }</time>
 	} else {
@@ -536,7 +527,6 @@ templ choreSummaryContent(t *Templater, item choreviewmodels.CollectionItem, tod
 			title={ t.deadlineAccessibleLabel(item.Deadline) }
 		>{ t.relativeDeadline(item.Deadline, today) }</time>
 	}
-	<span data-row-caret>@viewicons.CaretRight()</span>
 }
 
 templ collectionEmptyState(model choreviewmodels.Collection) {
