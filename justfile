@@ -72,7 +72,7 @@ go *args: build (_prepare-cache "shiftbell-go-cache")
         {{args}}
 
 @fmt:
-    just go tool templ fmt
+    just go tool templ fmt -prettier-command ./scripts/format-templ-blocks.sh -prettier-required .
     just golangci-lint fmt
 
 test:
