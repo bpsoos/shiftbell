@@ -183,7 +183,7 @@ templ choreCollectionUtilities(model choreviewmodels.Collection) {
 				color: var(--sb-text);
 			}
 		</style>
-		if model.AllHref != "" && model.MineHref != "" {
+		if model.HasMultipleProfiles && model.AllHref != "" && model.MineHref != "" {
 			@choreOwnerScope(model)
 		}
 		if model.Status == choremodels.ChoreStatusCompleted {
@@ -228,11 +228,8 @@ templ choreOwnerScope(model choreviewmodels.Collection) {
 		<style>
 			me {
 				border: 1px solid var(--sb-control-border);
-				display: none;
-				flex-shrink: 0;
-			}
-			body:has([data-profile-switcher]) me {
 				display: inline-flex;
+				flex-shrink: 0;
 			}
 			me > a {
 				color: var(--sb-muted);

@@ -20,6 +20,7 @@ type ChoreTemplateService interface {
 
 type ProfileService interface {
 	List(context.Context) ([]profilemodels.Profile, error)
+	HasMultipleProfiles(context.Context) (bool, error)
 }
 
 type Service interface {

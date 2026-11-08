@@ -53,7 +53,7 @@ templ detailContent(t *Templater, model choreviewmodels.Detail, today time.Time)
 		if model.Notice != "" {
 			@detailNotice(model.Notice)
 		}
-		@detailCard(t, model.Chore, model.EditHref, model.DeleteHref, today)
+		@detailCard(t, model.Chore, model.EditHref, model.DeleteHref, today, model.HasMultipleProfiles)
 	</section>
 }
 
@@ -82,7 +82,7 @@ templ detailNotice(notice string) {
 	</div>
 }
 
-templ detailCard(t *Templater, chore choreapimodels.Representation, editHref string, deleteHref string, today time.Time) {
+templ detailCard(t *Templater, chore choreapimodels.Representation, editHref string, deleteHref string, today time.Time, hasMultipleProfiles bool) {
 	<article data-chore-detail>
 		<style>
 			me {
@@ -124,7 +124,7 @@ templ detailCard(t *Templater, chore choreapimodels.Representation, editHref str
 			}
 		</style>
 		@choreDetailHeader(chore.Name, editHref, deleteHref)
-		@choreMetadata(t, chore, today)
+		@choreMetadata(t, chore, today, hasMultipleProfiles)
 		if chore.Description != "" {
 			<div data-description>
 				@markdownview.Description(chore.Description)
@@ -262,8 +262,8 @@ templ choreDetailActions(editHref string, deleteHref string) {
 	</div>
 }
 
-templ choreMetadata(t *Templater, chore choreapimodels.Representation, today time.Time) {
-	<div data-detail-metadata data-has-owner?={ t.profilesUIEnabled }>
+templ choreMetadata(t *Templater, chore choreapimodels.Representation, today time.Time, hasMultipleProfiles bool) {
+	<div data-detail-metadata data-has-owner?={ t.profilesUIEnabled && hasMultipleProfiles }>
 		<style>
 			me {
 				align-items: center;
@@ -274,7 +274,7 @@ templ choreMetadata(t *Templater, chore choreapimodels.Representation, today tim
 				margin-top: 1rem;
 				padding-top: 0.875rem;
 			}
-			body:has([data-profile-switcher]) me[data-has-owner] {
+			me[data-has-owner] {
 				grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 			}
 			me > [data-chore-assignment] {
@@ -288,7 +288,7 @@ templ choreMetadata(t *Templater, chore choreapimodels.Representation, today tim
 		} else {
 			@choreDeadline(t, chore.Deadline, today)
 		}
-		if t.profilesUIEnabled {
+		if t.profilesUIEnabled && hasMultipleProfiles {
 			@choreAssignment(chore)
 		}
 	</div>

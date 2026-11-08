@@ -44,12 +44,9 @@ templ choreAssignment(chore choreapimodels.Representation) {
 		<style>
 			me {
 				align-items: center;
-				display: none;
+				display: grid;
 				grid-template-columns: auto minmax(0, 1fr);
 				gap: 0.625rem;
-			}
-			body:has([data-profile-switcher]) me {
-				display: grid;
 			}
 			me > [data-label] {
 				color: var(--sb-muted);

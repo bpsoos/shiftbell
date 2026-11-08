@@ -14,6 +14,7 @@ type Persister interface {
 	Create(context.Context, *models.CreateParams) (*models.Profile, error)
 	List(context.Context) ([]models.Profile, error)
 	HasProfiles(context.Context) (bool, error)
+	HasMultipleProfiles(context.Context) (bool, error)
 	CreateInitial(context.Context, *models.CreateParams) (*models.Profile, error)
 }
 

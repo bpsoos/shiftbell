@@ -15,20 +15,21 @@ type CollectionItem struct {
 }
 
 type Collection struct {
-	Items           []CollectionItem
-	SelfHref        string
-	PreviousHref    string
-	NextHref        string
-	CreateHref      string
-	Status          choremodels.ChoreStatus
-	OwnerFilter     choremodels.OwnerFilter
-	Mine            bool
-	AllHref         string
-	MineHref        string
-	Search          string
-	SearchOpen      bool
-	Notice          string
-	AutofocusSearch bool
+	HasMultipleProfiles bool
+	Items               []CollectionItem
+	SelfHref            string
+	PreviousHref        string
+	NextHref            string
+	CreateHref          string
+	Status              choremodels.ChoreStatus
+	OwnerFilter         choremodels.OwnerFilter
+	Mine                bool
+	AllHref             string
+	MineHref            string
+	Search              string
+	SearchOpen          bool
+	Notice              string
+	AutofocusSearch     bool
 }
 
 func (model Collection) HasPagination() bool {

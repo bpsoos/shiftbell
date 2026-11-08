@@ -20,14 +20,21 @@ import (
 
 var _ = Describe("Clear chore assignment", func() {
 	var service *MockService
+	var profiles *MockProfileService
 	var view *MockView
 	var app *echo.Echo
 
 	BeforeEach(func() {
 		service = NewMockService(GinkgoT())
+		profiles = NewMockProfileService(GinkgoT())
 		view = NewMockView(GinkgoT())
 		handler := endpoint.NewHandler(
-			&endpoint.HandlerDeps{Service: service, View: view, ProfilesUIEnabled: true},
+			&endpoint.HandlerDeps{
+				Service:           service,
+				View:              view,
+				ProfileService:    profiles,
+				ProfilesUIEnabled: true,
+			},
 		)
 		app = echo.New()
 		app.DELETE("/chores/:id/assignment", handler.ClearAssignment)
@@ -67,6 +74,7 @@ var _ = Describe("Clear chore assignment", func() {
 	DescribeTable(
 		"renders the updated chore after clearing ownership",
 		func(ctx SpecContext, htmx string, fullPage bool, status models.ChoreStatus) {
+			profiles.EXPECT().HasMultipleProfiles(ctx).Return(true, nil).Once()
 			service.EXPECT().
 				ClearAssignment(ctx, 42).
 				Return(&models.Chore{Id: 42, Status: status}, nil).
@@ -75,6 +83,7 @@ var _ = Describe("Clear chore assignment", func() {
 				Detail(mock.Anything, fullPage).
 				Run(func(model viewmodels.Detail, fullPage bool) {
 					Expect(model.Chore.Id).To(Equal(42))
+					Expect(model.HasMultipleProfiles).To(BeTrue())
 					Expect(model.Chore.OwnerProfileId).To(BeNil())
 					Expect(model.Chore.OwnerProfileName).To(BeEmpty())
 					Expect(model.Chore.Actions.Href("clear_assignment")).To(BeEmpty())

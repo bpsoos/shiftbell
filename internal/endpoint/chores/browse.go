@@ -30,8 +30,9 @@ type browseQuery struct {
 }
 
 type browseRequest struct {
-	params      choremodels.BrowseChoresParams
-	responseURL url.URL
+	hasMultipleProfiles bool
+	params              choremodels.BrowseChoresParams
+	responseURL         url.URL
 }
 
 func (h *Handler) browse(ctx *echo.Context) error {
@@ -52,6 +53,14 @@ func (h *Handler) browse(ctx *echo.Context) error {
 			return hypermedia.NotAcceptable(ctx)
 		}
 		return h.browseMine(ctx, request)
+	}
+	if h.profilesUIEnabled && acceptsHTML(ctx) {
+		request.hasMultipleProfiles, err = h.profileService.HasMultipleProfiles(
+			ctx.Request().Context(),
+		)
+		if err != nil {
+			return h.renderProfileStateError(ctx, err)
+		}
 	}
 	return h.browseCollection(ctx, request, false)
 }
@@ -75,6 +84,7 @@ func (h *Handler) browseMine(ctx *echo.Context, request browseRequest) error {
 	}
 	for _, profile := range profiles {
 		if profile.Id == selected {
+			request.hasMultipleProfiles = len(profiles) > 1
 			request.params.OwnerFilter = choremodels.OwnerFilter{
 				Mode: choremodels.OwnerFilterProfile, Id: &profile.Id,
 			}
@@ -109,6 +119,7 @@ func (h *Handler) browseCollection(
 		newBrowseResponse(request, page),
 		request.params,
 		mine,
+		request.hasMultipleProfiles,
 		request.responseURL.Query().Has("search"),
 		searchChanged(
 			ctx.Request().Header.Get("HX-Current-URL"),

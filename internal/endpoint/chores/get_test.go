@@ -21,6 +21,43 @@ import (
 )
 
 var _ = Describe("Get chore", func() {
+	It("reports a profile-state lookup failure", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		service.EXPECT().
+			Get(ctx, 42).
+			Return(&choremodels.Chore{Id: 42, Status: choremodels.ChoreStatusActive}, nil).
+			Once()
+		profiles := NewMockProfileService(GinkgoT())
+		profiles.EXPECT().
+			HasMultipleProfiles(ctx).
+			Return(false, errors.New("storage")).
+			Once()
+		view := NewMockView(GinkgoT())
+		view.EXPECT().
+			Error(mock.Anything, true).
+			Run(func(model choreviewmodels.Error, fullPage bool) {
+				Expect(
+					model.Message,
+				).To(Equal("Could not load profile settings. Try again."))
+			}).
+			Return(templ.Raw("profile state failed")).
+			Once()
+		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+			Service:           service,
+			ProfileService:    profiles,
+			View:              view,
+			ProfilesUIEnabled: true,
+		})
+		app := echo.New()
+		app.GET("/chores/:id", handler.Get)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/chores/42", nil)
+		request.Header.Set("Accept", "text/html")
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusInternalServerError))
+		Expect(response.Body.String()).To(Equal("profile state failed"))
+	})
+
 	DescribeTable(
 		"preserves a local collection return link",
 		func(ctx SpecContext, returnTo, expected string) {
@@ -69,9 +106,11 @@ var _ = Describe("Get chore", func() {
 
 	DescribeTable(
 		"includes the owner in HTML details without listing profiles",
-		func(ctx SpecContext, status choremodels.ChoreStatus) {
+		func(ctx SpecContext, status choremodels.ChoreStatus, multiple bool) {
 			service := NewMockService(GinkgoT())
 			view := NewMockView(GinkgoT())
+			profiles := NewMockProfileService(GinkgoT())
+			profiles.EXPECT().HasMultipleProfiles(ctx).Return(multiple, nil).Once()
 			service.EXPECT().
 				Get(ctx, 42).
 				Return(&choremodels.Chore{Id: 42, Status: status, OwnerProfileId: new(7), OwnerProfileName: "Alex"}, nil).
@@ -79,6 +118,7 @@ var _ = Describe("Get chore", func() {
 			view.EXPECT().
 				Detail(mock.Anything, true).
 				Run(func(model choreviewmodels.Detail, fullPage bool) {
+					Expect(model.HasMultipleProfiles).To(Equal(multiple))
 					Expect(model.Chore.OwnerProfileId).To(Equal(new(7)))
 					Expect(model.Chore.OwnerProfileName).To(Equal("Alex"))
 					Expect(
@@ -91,7 +131,7 @@ var _ = Describe("Get chore", func() {
 				&choresendpoint.HandlerDeps{
 					Service:           service,
 					View:              view,
-					ProfileService:    NewMockProfileService(GinkgoT()),
+					ProfileService:    profiles,
 					ProfilesUIEnabled: true,
 				},
 			)
@@ -109,8 +149,10 @@ var _ = Describe("Get chore", func() {
 			Expect(response.Code).To(Equal(http.StatusOK))
 			Expect(response.Body.String()).To(Equal("owned chore"))
 		},
-		Entry("active", choremodels.ChoreStatusActive),
-		Entry("completed", choremodels.ChoreStatusCompleted),
+		Entry("active with multiple profiles", choremodels.ChoreStatusActive, true),
+		Entry("completed with multiple profiles", choremodels.ChoreStatusCompleted, true),
+		Entry("active with a single profile", choremodels.ChoreStatusActive, false),
+		Entry("completed with a single profile", choremodels.ChoreStatusCompleted, false),
 	)
 
 	It("rejects a non-numeric chore id", func(ctx SpecContext) {

@@ -22,11 +22,47 @@ import (
 )
 
 var _ = Describe("Browse chores", func() {
-	It(
-		"defaults to all chores and provides scope links without reading profiles",
-		func(ctx SpecContext) {
+	It("reports a profile-state lookup failure", func(ctx SpecContext) {
+		profiles := NewMockProfileService(GinkgoT())
+		profiles.EXPECT().
+			HasMultipleProfiles(ctx).
+			Return(false, errors.New("storage")).
+			Once()
+		view := NewMockView(GinkgoT())
+		view.EXPECT().
+			Error(mock.Anything, true).
+			Run(func(model choreviewmodels.Error, fullPage bool) {
+				Expect(
+					model.Message,
+				).To(Equal("Could not load profile settings. Try again."))
+			}).
+			Return(templ.Raw("profile state failed")).
+			Once()
+		handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+			Service: NewMockService(
+				GinkgoT(),
+			),
+			ProfileService:    profiles,
+			View:              view,
+			ProfilesUIEnabled: true,
+		})
+		app := echo.New()
+		app.GET("/chores", handler.GetBatch)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/chores", nil)
+		request.Header.Set("Accept", "text/html")
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusInternalServerError))
+		Expect(response.Body.String()).To(Equal("profile state failed"))
+	})
+
+	DescribeTable(
+		"provides collection visibility using the lightweight profile check",
+		func(ctx SpecContext, multiple bool) {
 			service := NewMockService(GinkgoT())
 			view := NewMockView(GinkgoT())
+			profiles := NewMockProfileService(GinkgoT())
+			profiles.EXPECT().HasMultipleProfiles(ctx).Return(multiple, nil).Once()
 			service.EXPECT().
 				Browse(ctx, &choremodels.BrowseChoresParams{Search: "Kitchen", Offset: 2, Limit: 20}).
 				Return(&choremodels.ChorePage{Chores: []choremodels.Chore{{Id: 42, Status: choremodels.ChoreStatusActive}}}, nil).
@@ -35,6 +71,7 @@ var _ = Describe("Browse chores", func() {
 				Collection(mock.Anything, false).
 				Run(func(model choreviewmodels.Collection, fullPage bool) {
 					Expect(model.Mine).To(BeFalse())
+					Expect(model.HasMultipleProfiles).To(Equal(multiple))
 					Expect(model.AllHref).To(Equal("/chores?search=Kitchen"))
 					Expect(model.MineHref).To(Equal("/chores?scope=mine&search=Kitchen"))
 					Expect(
@@ -47,7 +84,7 @@ var _ = Describe("Browse chores", func() {
 				Service:           service,
 				View:              view,
 				ProfilesUIEnabled: true,
-				ProfileService:    NewMockProfileService(GinkgoT()),
+				ProfileService:    profiles,
 			})
 			app := echo.New()
 			app.GET("/chores", handler.GetBatch)
@@ -63,6 +100,8 @@ var _ = Describe("Browse chores", func() {
 			app.ServeHTTP(response, request)
 			Expect(response.Code).To(Equal(http.StatusOK))
 		},
+		Entry("single profile", false),
+		Entry("multiple profiles", true),
 	)
 
 	DescribeTable(
@@ -86,6 +125,7 @@ var _ = Describe("Browse chores", func() {
 				Collection(mock.Anything, false).
 				Run(func(model choreviewmodels.Collection, fullPage bool) {
 					Expect(model.Mine).To(BeTrue())
+					Expect(model.HasMultipleProfiles).To(Equal(len(available) > 1))
 					Expect(model.Items).To(BeEmpty())
 					Expect(model.OwnerFilter.Id).To(Equal(&owner))
 					Expect(
@@ -452,6 +492,8 @@ var _ = Describe("Browse chores", func() {
 		func(ctx SpecContext, status choremodels.ChoreStatus) {
 			service := NewMockService(GinkgoT())
 			view := NewMockView(GinkgoT())
+			profiles := NewMockProfileService(GinkgoT())
+			profiles.EXPECT().HasMultipleProfiles(ctx).Return(true, nil).Once()
 			service.EXPECT().
 				Browse(ctx, &choremodels.BrowseChoresParams{Status: status, Limit: 20}).
 				Return(&choremodels.ChorePage{Chores: []choremodels.Chore{
@@ -479,7 +521,7 @@ var _ = Describe("Browse chores", func() {
 				&choresendpoint.HandlerDeps{
 					Service:           service,
 					View:              view,
-					ProfileService:    NewMockProfileService(GinkgoT()),
+					ProfileService:    profiles,
 					ProfilesUIEnabled: true,
 				},
 			)

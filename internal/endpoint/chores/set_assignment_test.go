@@ -22,13 +22,20 @@ import (
 
 var _ = Describe("Set chore assignment", func() {
 	var service *MockService
+	var profiles *MockProfileService
 	var view *MockView
 	var app *echo.Echo
 	BeforeEach(func() {
 		service = NewMockService(GinkgoT())
+		profiles = NewMockProfileService(GinkgoT())
 		view = NewMockView(GinkgoT())
 		handler := endpoint.NewHandler(
-			&endpoint.HandlerDeps{Service: service, View: view, ProfilesUIEnabled: true},
+			&endpoint.HandlerDeps{
+				Service:           service,
+				View:              view,
+				ProfileService:    profiles,
+				ProfilesUIEnabled: true,
+			},
 		)
 		app = echo.New()
 		app.PUT("/chores/:id/assignment", handler.SetAssignment)
@@ -68,6 +75,7 @@ var _ = Describe("Set chore assignment", func() {
 	It(
 		"preserves the filtered collection when refreshing detail after assignment",
 		func(ctx SpecContext) {
+			profiles.EXPECT().HasMultipleProfiles(ctx).Return(true, nil).Once()
 			service.EXPECT().
 				SetAssignment(ctx, &models.SetAssignmentParams{Id: 42, OwnerProfileId: 7}).
 				Return(&models.Chore{Id: 42, Status: models.ChoreStatusActive, OwnerProfileId: new(7)}, nil).
@@ -102,6 +110,7 @@ var _ = Describe("Set chore assignment", func() {
 	DescribeTable(
 		"renders the updated chore after assigning through HTMX",
 		func(ctx SpecContext, status models.ChoreStatus) {
+			profiles.EXPECT().HasMultipleProfiles(ctx).Return(true, nil).Once()
 			owner := 7
 			service.EXPECT().
 				SetAssignment(ctx, &models.SetAssignmentParams{Id: 42, OwnerProfileId: owner}).
@@ -111,6 +120,7 @@ var _ = Describe("Set chore assignment", func() {
 				Detail(mock.Anything, false).
 				Run(func(model viewmodels.Detail, fullPage bool) {
 					Expect(model.Chore.Id).To(Equal(42))
+					Expect(model.HasMultipleProfiles).To(BeTrue())
 					Expect(model.Chore.OwnerProfileId).To(Equal(&owner))
 					Expect(model.Chore.OwnerProfileName).To(Equal("Alex"))
 					Expect(model.Chore.Status).To(Equal(status))

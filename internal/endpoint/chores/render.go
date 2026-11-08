@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	"github.com/bpsoos/shiftbell/internal/logging"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	confirmationviewmodels "github.com/bpsoos/shiftbell/internal/models/view/confirmation"
@@ -16,6 +17,7 @@ func (h *Handler) renderCollection(
 	collection choreCollectionResponse,
 	params choremodels.BrowseChoresParams,
 	mine bool,
+	hasMultipleProfiles bool,
 	searchOpen bool,
 	autofocusSearch bool,
 ) error {
@@ -32,6 +34,7 @@ func (h *Handler) renderCollection(
 		)
 		model.Notice = consumeFlashCookie(ctx)
 		model.Mine = mine
+		model.HasMultipleProfiles = hasMultipleProfiles
 		if h.profilesUIEnabled {
 			model.AllHref = collectionScopeHref(model.SelfHref, false)
 			model.MineHref = collectionScopeHref(model.SelfHref, true)
@@ -80,6 +83,13 @@ func (h *Handler) renderDetail(
 		return hypermedia.JSON(ctx, status, chore)
 	case hypermedia.RepresentationHTML:
 		model := detailViewModel(chore, notice)
+		if h.profilesUIEnabled {
+			multiple, err := h.profileService.HasMultipleProfiles(ctx.Request().Context())
+			if err != nil {
+				return h.renderProfileStateError(ctx, err)
+			}
+			model.HasMultipleProfiles = multiple
+		}
 		if returnTo := collectionReturn(ctx); returnTo != "" {
 			model.BackHref = returnTo
 			for i := range model.Chore.Links {
@@ -99,6 +109,13 @@ func (h *Handler) renderDetail(
 	default:
 		return hypermedia.NotAcceptable(ctx)
 	}
+}
+
+func (h *Handler) renderProfileStateError(ctx *echo.Context, err error) error {
+	logging.Default().Error("check multiple profiles", "err", err)
+	return h.renderError(ctx, http.StatusInternalServerError, apiErrorResponse{
+		Error: "Could not load profile settings. Try again.",
+	})
 }
 
 func (h *Handler) renderEditForm(
