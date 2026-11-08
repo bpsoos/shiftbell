@@ -64,10 +64,21 @@ templ collection(model viewmodels.Collection) {
 			}
 			me [data-profile-name] {
 				color: var(--sb-text);
+				flex: 1;
 				font-size: 1rem;
 				font-weight: 650;
 				min-width: 0;
 				overflow-wrap: anywhere;
+			}
+			me [data-delete-profile] {
+				flex-shrink: 0;
+				gap: 0.375rem;
+			}
+			me [data-delete-profile]:hover,
+			me [data-delete-profile]:focus-visible {
+				background: color-mix(in srgb, var(--sb-danger) 10%, var(--sb-surface));
+				border-color: var(--sb-danger);
+				color: var(--sb-danger);
 			}
 			me [data-empty] {
 				background: var(--sb-surface);
@@ -115,6 +126,21 @@ templ collection(model viewmodels.Collection) {
 					<li>
 						<img data-profile-icon src={ AvatarHref(profile.Id) } alt="" width="40" height="40"/>
 						<span data-profile-name>{ profile.Name }</span>
+						if deleteHref := profile.Actions.Href("delete"); deleteHref != "" {
+							<button
+								class="btn btn-outline-secondary btn-sm"
+								type="button"
+								data-delete-profile
+								aria-label={ "Delete " + profile.Name }
+								hx-delete={ deleteHref }
+								hx-target="#main"
+								hx-swap="outerHTML"
+								hx-disabled-elt="this"
+							>
+								@viewicons.Trash()
+								<span>Delete</span>
+							</button>
+						}
 					</li>
 				}
 			</ul>

@@ -84,5 +84,9 @@ var _ = Describe("Create", func() {
 		result, err := service.Create(ctx, &models.CreateParams{Name: "Alex"})
 		Expect(result).To(BeNil())
 		Expect(errors.Is(err, failure)).To(BeTrue())
-	}, Entry("conflict", models.ErrNameConflict), Entry("storage", errors.New("storage failed")))
+	},
+		Entry("conflict", models.ErrNameConflict),
+		Entry("limit reached", models.ErrLimitReached),
+		Entry("storage", errors.New("storage failed")),
+	)
 })

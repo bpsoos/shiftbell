@@ -14,7 +14,10 @@ var _ = Describe("Create", func() {
 	var persister *profiles.Persister
 	BeforeEach(func() {
 		db = sqlitetest.NewMigratedDB()
-		persister = profiles.NewPersister(&profiles.Deps{Db: db})
+		persister = profiles.NewPersister(
+			&profiles.Deps{Db: db},
+			&profiles.Config{MaxProfiles: 2},
+		)
 	})
 
 	It("persists the display name and a stable identity", func(ctx SpecContext) {
@@ -32,6 +35,19 @@ var _ = Describe("Create", func() {
 			),
 		).To(Succeed())
 		Expect(name).To(Equal("Álex"))
+	})
+
+	It("rejects creation once the configured limit is reached", func(ctx SpecContext) {
+		_, err := persister.Create(ctx, &models.CreateParams{Name: "Alex"})
+		Expect(err).NotTo(HaveOccurred())
+		_, err = persister.Create(ctx, &models.CreateParams{Name: "Sam"})
+		Expect(err).NotTo(HaveOccurred())
+		rejected, err := persister.Create(ctx, &models.CreateParams{Name: "Extra"})
+		Expect(err).To(MatchError(models.ErrLimitReached))
+		Expect(rejected).To(BeNil())
+		var count int
+		Expect(db.GetContext(ctx, &count, `SELECT count(*) FROM profiles`)).To(Succeed())
+		Expect(count).To(Equal(2))
 	})
 
 	DescribeTable(

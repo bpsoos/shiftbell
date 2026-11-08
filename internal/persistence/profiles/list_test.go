@@ -10,7 +10,10 @@ import (
 
 var _ = Describe("List", func() {
 	It("returns an empty non-nil list", func(ctx SpecContext) {
-		persister := profiles.NewPersister(&profiles.Deps{Db: sqlitetest.NewMigratedDB()})
+		persister := profiles.NewPersister(
+			&profiles.Deps{Db: sqlitetest.NewMigratedDB()},
+			&profiles.Config{MaxProfiles: 2},
+		)
 		items, err := persister.List(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(items).To(Equal([]models.Profile{}))
@@ -23,7 +26,10 @@ var _ = Describe("List", func() {
 			`INSERT INTO profiles (id, name, name_key) VALUES (8, 'Alex', 'alex'), (3, 'Zoe', 'zoe')`,
 		)
 		Expect(err).NotTo(HaveOccurred())
-		persister := profiles.NewPersister(&profiles.Deps{Db: db})
+		persister := profiles.NewPersister(
+			&profiles.Deps{Db: db},
+			&profiles.Config{MaxProfiles: 2},
+		)
 		items, err := persister.List(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(
@@ -35,7 +41,10 @@ var _ = Describe("List", func() {
 		db := sqlitetest.NewMigratedDB()
 		_, err := db.ExecContext(ctx, `DROP TABLE profiles`)
 		Expect(err).NotTo(HaveOccurred())
-		persister := profiles.NewPersister(&profiles.Deps{Db: db})
+		persister := profiles.NewPersister(
+			&profiles.Deps{Db: db},
+			&profiles.Config{MaxProfiles: 2},
+		)
 		items, err := persister.List(ctx)
 		Expect(items).To(BeNil())
 		Expect(err).To(HaveOccurred())

@@ -21,6 +21,10 @@ func (h *Handler) creationFailure(
 	status := http.StatusUnprocessableEntity
 	var message string
 	switch {
+	case errors.Is(err, models.ErrLimitReached):
+		status = http.StatusConflict
+		message = models.ErrLimitReached.Error()
+		form.SummaryError = "Profile limit reached. Delete a profile before creating another."
 	case errors.Is(err, models.ErrNameConflict):
 		status = http.StatusConflict
 		message = models.ErrNameConflict.Error()

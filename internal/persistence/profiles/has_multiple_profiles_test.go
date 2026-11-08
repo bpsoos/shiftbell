@@ -12,7 +12,10 @@ var _ = Describe("HasMultipleProfiles", func() {
 		"detects the second profile and reflects subsequent removal",
 		func(ctx SpecContext) {
 			db := sqlitetest.NewMigratedDB()
-			persister := profiles.NewPersister(&profiles.Deps{Db: db})
+			persister := profiles.NewPersister(
+				&profiles.Deps{Db: db},
+				&profiles.Config{MaxProfiles: 2},
+			)
 			multiple, err := persister.HasMultipleProfiles(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(multiple).To(BeFalse())
@@ -47,7 +50,10 @@ var _ = Describe("HasMultipleProfiles", func() {
 		db := sqlitetest.NewMigratedDB()
 		_, err := db.ExecContext(ctx, `DROP TABLE profiles`)
 		Expect(err).NotTo(HaveOccurred())
-		persister := profiles.NewPersister(&profiles.Deps{Db: db})
+		persister := profiles.NewPersister(
+			&profiles.Deps{Db: db},
+			&profiles.Config{MaxProfiles: 2},
+		)
 		_, err = persister.HasMultipleProfiles(ctx)
 		Expect(err).To(HaveOccurred())
 	})

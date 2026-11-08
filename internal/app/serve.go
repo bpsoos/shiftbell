@@ -53,7 +53,10 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 		&choretemplatesservice.Config{},
 	)
 	profileService := profilesservice.NewService(&profilesservice.Deps{
-		Persister:  profilespersistence.NewPersister(&profilespersistence.Deps{Db: db}),
+		Persister: profilespersistence.NewPersister(
+			&profilespersistence.Deps{Db: db},
+			&profilespersistence.Config{MaxProfiles: 50},
+		),
 		Normalizer: normalizer,
 	})
 	if err := profileService.Initialize(

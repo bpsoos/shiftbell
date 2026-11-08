@@ -10,12 +10,17 @@ type Deps struct {
 	Db *sqlx.DB
 }
 
-type Persister struct {
-	db *sqlx.DB
+type Config struct {
+	MaxProfiles int
 }
 
-func NewPersister(deps *Deps) *Persister {
-	return &Persister{db: deps.Db}
+type Persister struct {
+	db          *sqlx.DB
+	maxProfiles int
+}
+
+func NewPersister(deps *Deps, config *Config) *Persister {
+	return &Persister{db: deps.Db, maxProfiles: config.MaxProfiles}
 }
 
 func nameKey(name string) string {

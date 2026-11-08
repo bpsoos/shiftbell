@@ -16,7 +16,10 @@ import (
 var _ = Describe("CreateInitial", func() {
 	It("creates exactly one initial profile across retries", func(ctx SpecContext) {
 		db := sqlitetest.NewMigratedDB()
-		persister := profiles.NewPersister(&profiles.Deps{Db: db})
+		persister := profiles.NewPersister(
+			&profiles.Deps{Db: db},
+			&profiles.Config{MaxProfiles: 2},
+		)
 		created, err := persister.CreateInitial(ctx, &models.CreateParams{Name: "Alex"})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(created).To(Equal(&models.Profile{Id: 1, Name: "Alex"}))
@@ -29,7 +32,10 @@ var _ = Describe("CreateInitial", func() {
 	})
 
 	It("does not overwrite profiles created through management", func(ctx SpecContext) {
-		persister := profiles.NewPersister(&profiles.Deps{Db: sqlitetest.NewMigratedDB()})
+		persister := profiles.NewPersister(
+			&profiles.Deps{Db: sqlitetest.NewMigratedDB()},
+			&profiles.Config{MaxProfiles: 2},
+		)
 		original, err := persister.Create(ctx, &models.CreateParams{Name: "Sam"})
 		Expect(err).NotTo(HaveOccurred())
 		created, err := persister.CreateInitial(ctx, &models.CreateParams{Name: "Alex"})
@@ -41,7 +47,10 @@ var _ = Describe("CreateInitial", func() {
 	})
 
 	It("folds the initial name for subsequent uniqueness checks", func(ctx SpecContext) {
-		persister := profiles.NewPersister(&profiles.Deps{Db: sqlitetest.NewMigratedDB()})
+		persister := profiles.NewPersister(
+			&profiles.Deps{Db: sqlitetest.NewMigratedDB()},
+			&profiles.Config{MaxProfiles: 2},
+		)
 		_, err := persister.CreateInitial(ctx, &models.CreateParams{Name: "Álex"})
 		Expect(err).NotTo(HaveOccurred())
 		_, err = persister.Create(ctx, &models.CreateParams{Name: "ÁLEX"})
@@ -69,8 +78,14 @@ var _ = Describe("CreateInitial", func() {
 			_, err = db.ExecContext(ctx, `PRAGMA busy_timeout = 5000`)
 			Expect(err).NotTo(HaveOccurred())
 			persisters := []*profiles.Persister{
-				profiles.NewPersister(&profiles.Deps{Db: db}),
-				profiles.NewPersister(&profiles.Deps{Db: other}),
+				profiles.NewPersister(
+					&profiles.Deps{Db: db},
+					&profiles.Config{MaxProfiles: 2},
+				),
+				profiles.NewPersister(
+					&profiles.Deps{Db: other},
+					&profiles.Config{MaxProfiles: 2},
+				),
 			}
 			results := make([]error, len(persisters))
 			start := make(chan struct{})
@@ -104,7 +119,10 @@ var _ = Describe("CreateInitial", func() {
 			`CREATE TRIGGER reject_profiles BEFORE INSERT ON profiles BEGIN SELECT RAISE(ABORT, 'unavailable'); END`,
 		)
 		Expect(err).NotTo(HaveOccurred())
-		persister := profiles.NewPersister(&profiles.Deps{Db: db})
+		persister := profiles.NewPersister(
+			&profiles.Deps{Db: db},
+			&profiles.Config{MaxProfiles: 2},
+		)
 		created, err := persister.CreateInitial(ctx, &models.CreateParams{Name: "Alex"})
 		Expect(created).To(BeNil())
 		Expect(err).To(HaveOccurred())

@@ -30,7 +30,10 @@ var _ = Describe("Delete", func() {
 			(4, 'Unassigned', '2026-01-05', false, NULL, NULL)`,
 			)
 			Expect(err).NotTo(HaveOccurred())
-			persister := profiles.NewPersister(&profiles.Deps{Db: db})
+			persister := profiles.NewPersister(
+				&profiles.Deps{Db: db},
+				&profiles.Config{MaxProfiles: 2},
+			)
 
 			Expect(persister.Delete(ctx, 7)).To(Succeed())
 
@@ -75,7 +78,10 @@ var _ = Describe("Delete", func() {
 
 	It("allows deleting the last profile", func(ctx SpecContext) {
 		db := sqlitetest.NewMigratedDB()
-		persister := profiles.NewPersister(&profiles.Deps{Db: db})
+		persister := profiles.NewPersister(
+			&profiles.Deps{Db: db},
+			&profiles.Config{MaxProfiles: 2},
+		)
 		profile, err := persister.Create(ctx, &models.CreateParams{Name: "Alex"})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(persister.Delete(ctx, profile.Id)).To(Succeed())
@@ -85,7 +91,10 @@ var _ = Describe("Delete", func() {
 	})
 
 	It("reports a missing profile", func(ctx SpecContext) {
-		persister := profiles.NewPersister(&profiles.Deps{Db: sqlitetest.NewMigratedDB()})
+		persister := profiles.NewPersister(
+			&profiles.Deps{Db: sqlitetest.NewMigratedDB()},
+			&profiles.Config{MaxProfiles: 2},
+		)
 		Expect(persister.Delete(ctx, 7)).To(MatchError(models.ErrNotFound))
 	})
 
@@ -105,7 +114,10 @@ var _ = Describe("Delete", func() {
 			Expect(err).NotTo(HaveOccurred())
 			_, err = db.ExecContext(ctx, trigger)
 			Expect(err).NotTo(HaveOccurred())
-			persister := profiles.NewPersister(&profiles.Deps{Db: db})
+			persister := profiles.NewPersister(
+				&profiles.Deps{Db: db},
+				&profiles.Config{MaxProfiles: 2},
+			)
 
 			Expect(persister.Delete(ctx, 7)).To(HaveOccurred())
 

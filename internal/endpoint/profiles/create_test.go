@@ -127,6 +127,12 @@ var _ = Describe("Create", func() {
 			models.ErrNameConflict.Error(),
 		),
 		Entry(
+			"limit reached",
+			models.ErrLimitReached,
+			http.StatusConflict,
+			models.ErrLimitReached.Error(),
+		),
+		Entry(
 			"storage",
 			errors.New("secret"),
 			http.StatusInternalServerError,
@@ -214,6 +220,13 @@ var _ = Describe("Create", func() {
 			http.StatusConflict,
 			"A profile already uses this name.",
 			"",
+		),
+		Entry(
+			"limit reached",
+			models.ErrLimitReached,
+			http.StatusConflict,
+			"",
+			"Profile limit reached. Delete a profile before creating another.",
 		),
 		Entry(
 			"storage",
