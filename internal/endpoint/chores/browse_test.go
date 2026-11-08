@@ -2,14 +2,17 @@ package chores_test
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"time"
 
 	"github.com/a-h/templ"
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
+	profilemodels "github.com/bpsoos/shiftbell/internal/models/profiles"
 	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/labstack/echo/v5"
@@ -19,6 +22,258 @@ import (
 )
 
 var _ = Describe("Browse chores", func() {
+	It(
+		"defaults to all chores and provides scope links without reading profiles",
+		func(ctx SpecContext) {
+			service := NewMockService(GinkgoT())
+			view := NewMockView(GinkgoT())
+			service.EXPECT().
+				Browse(ctx, &choremodels.BrowseChoresParams{Search: "Kitchen", Offset: 2, Limit: 20}).
+				Return(&choremodels.ChorePage{Chores: []choremodels.Chore{{Id: 42, Status: choremodels.ChoreStatusActive}}}, nil).
+				Once()
+			view.EXPECT().
+				Collection(mock.Anything, false).
+				Run(func(model choreviewmodels.Collection, fullPage bool) {
+					Expect(model.Mine).To(BeFalse())
+					Expect(model.AllHref).To(Equal("/chores?search=Kitchen"))
+					Expect(model.MineHref).To(Equal("/chores?scope=mine&search=Kitchen"))
+					Expect(
+						model.Items[0].DetailHref,
+					).To(Equal("/chores/42?return_to=" + url.QueryEscape("/chores?search=Kitchen&offset=2")))
+				}).
+				Return(templ.Raw("all chores")).
+				Once()
+			handler := choresendpoint.NewHandler(&choresendpoint.HandlerDeps{
+				Service:           service,
+				View:              view,
+				ProfilesUIEnabled: true,
+				ProfileService:    NewMockProfileService(GinkgoT()),
+			})
+			app := echo.New()
+			app.GET("/chores", handler.GetBatch)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores?search=Kitchen&offset=2",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+		},
+	)
+
+	DescribeTable(
+		"resolves Mine to the active profile and preserves empty results",
+		func(ctx SpecContext, available []profilemodels.Profile, cookie string, owner int, status choremodels.ChoreStatus) {
+			service := NewMockService(GinkgoT())
+			profiles := NewMockProfileService(GinkgoT())
+			view := NewMockView(GinkgoT())
+			profiles.EXPECT().List(ctx).Return(available, nil).Once()
+			service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
+				Status: status,
+				OwnerFilter: choremodels.OwnerFilter{
+					Mode: choremodels.OwnerFilterProfile,
+					Id:   &owner,
+				},
+				Search: "Kitchen",
+				Offset: 2,
+				Limit:  2,
+			}).Return(&choremodels.ChorePage{}, nil).Once()
+			view.EXPECT().
+				Collection(mock.Anything, false).
+				Run(func(model choreviewmodels.Collection, fullPage bool) {
+					Expect(model.Mine).To(BeTrue())
+					Expect(model.Items).To(BeEmpty())
+					Expect(model.OwnerFilter.Id).To(Equal(&owner))
+					Expect(
+						model.AllHref,
+					).To(Equal("/chores?limit=2&search=Kitchen&status=" + string(status)))
+					Expect(
+						model.MineHref,
+					).To(Equal("/chores?limit=2&scope=mine&search=Kitchen&status=" + string(status)))
+					Expect(
+						model.PreviousHref,
+					).To(Equal("/chores?limit=2&offset=0&scope=mine&search=Kitchen&status=" + string(status)))
+				}).
+				Return(templ.Raw("empty mine")).
+				Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{
+					Service:           service,
+					View:              view,
+					ProfileService:    profiles,
+					ProfilesUIEnabled: true,
+				},
+			)
+			app := echo.New()
+			app.GET("/chores", handler.GetBatch)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores?scope=mine&search=Kitchen&offset=2&limit=2&status="+string(
+					status,
+				),
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			request.AddCookie(&http.Cookie{Name: "shiftbell_profile", Value: cookie})
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Body.String()).To(Equal("empty mine"))
+			Expect(response.Header().Get("Cache-Control")).To(Equal("private, no-store"))
+		},
+		Entry(
+			"selected profile",
+			[]profilemodels.Profile{{Id: 7}, {Id: 8}},
+			"7",
+			7,
+			choremodels.ChoreStatusActive,
+		),
+		Entry(
+			"switched profile",
+			[]profilemodels.Profile{{Id: 7}, {Id: 8}},
+			"8",
+			8,
+			choremodels.ChoreStatusActive,
+		),
+		Entry(
+			"implicit single profile",
+			[]profilemodels.Profile{{Id: 7}},
+			"",
+			7,
+			choremodels.ChoreStatusActive,
+		),
+		Entry(
+			"single profile ignores stale selection",
+			[]profilemodels.Profile{{Id: 7}},
+			"8",
+			7,
+			choremodels.ChoreStatusActive,
+		),
+		Entry(
+			"completion history",
+			[]profilemodels.Profile{{Id: 7}, {Id: 8}},
+			"7",
+			7,
+			choremodels.ChoreStatusCompleted,
+		),
+	)
+
+	DescribeTable(
+		"requires an active profile for Mine",
+		func(ctx SpecContext, available []profilemodels.Profile, cookie, redirect string) {
+			profiles := NewMockProfileService(GinkgoT())
+			profiles.EXPECT().List(ctx).Return(available, nil).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{
+					Service:           NewMockService(GinkgoT()),
+					ProfileService:    profiles,
+					ProfilesUIEnabled: true,
+				},
+			)
+			app := echo.New()
+			app.GET("/chores", handler.GetBatch)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores?scope=mine",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			request.AddCookie(&http.Cookie{Name: "shiftbell_profile", Value: cookie})
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Header().Get("HX-Redirect")).To(Equal(redirect))
+		},
+		Entry("setup", []profilemodels.Profile{}, "", "/setup"),
+		Entry(
+			"missing selection",
+			[]profilemodels.Profile{{Id: 7}, {Id: 8}},
+			"",
+			"/profiles/selection?return_to=%2Fchores%3Fscope%3Dmine",
+		),
+		Entry(
+			"stale selection",
+			[]profilemodels.Profile{{Id: 7}, {Id: 8}},
+			"99",
+			"/profiles/selection?return_to=%2Fchores%3Fscope%3Dmine",
+		),
+	)
+
+	It(
+		"shows profile lookup failures instead of falling back to all chores",
+		func(ctx SpecContext) {
+			profiles := NewMockProfileService(GinkgoT())
+			profiles.EXPECT().List(ctx).Return(nil, errors.New("storage")).Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().
+				Error(mock.Anything, false).
+				Return(templ.Raw("profile lookup failed")).
+				Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{
+					Service:           NewMockService(GinkgoT()),
+					ProfileService:    profiles,
+					View:              view,
+					ProfilesUIEnabled: true,
+				},
+			)
+			app := echo.New()
+			app.GET("/chores", handler.GetBatch)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores?scope=mine",
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusInternalServerError))
+			Expect(response.Body.String()).To(Equal("profile lookup failed"))
+		},
+	)
+
+	DescribeTable(
+		"gates the Mine UI without reading profiles or chores",
+		func(ctx SpecContext, enabled bool, accept string, status int) {
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{
+					Service:           NewMockService(GinkgoT()),
+					ProfileService:    NewMockProfileService(GinkgoT()),
+					ProfilesUIEnabled: enabled,
+				},
+			)
+			app := echo.New()
+			app.GET("/chores", handler.GetBatch)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores?scope=mine",
+				nil,
+			)
+			request.Header.Set("Accept", accept)
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(status))
+		},
+		Entry("flag disabled", false, "text/html", http.StatusNotFound),
+		Entry(
+			"JSON uses explicit owner parameters",
+			true,
+			hypermedia.MediaType,
+			http.StatusNotAcceptable,
+		),
+	)
+
 	DescribeTable(
 		"preserves ownership, search and status in pagination links",
 		func(ctx SpecContext, ownerQuery string, filter choremodels.OwnerFilter) {

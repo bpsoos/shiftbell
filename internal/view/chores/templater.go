@@ -2,6 +2,7 @@ package chores
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/a-h/templ"
@@ -55,18 +56,29 @@ func (t *Templater) Collection(
 	)
 }
 
-func choreCollectionViewHref(status choremodels.ChoreStatus) string {
+func choreCollectionViewHref(
+	model choreviewmodels.Collection,
+	status choremodels.ChoreStatus,
+) string {
+	target, _ := url.Parse(model.SelfHref)
+	query := target.Query()
+	query.Del("search")
+	query.Del("offset")
+	query.Del("status")
 	if status == choremodels.ChoreStatusCompleted {
-		return "/chores?status=completed"
+		query.Set("status", "completed")
 	}
-	return "/chores"
+	target.RawQuery = query.Encode()
+	return target.RequestURI()
 }
 
-func choreSearchHref(status choremodels.ChoreStatus) string {
-	if status == choremodels.ChoreStatusCompleted {
-		return "/chores?status=completed&search="
-	}
-	return "/chores?search="
+func choreSearchHref(model choreviewmodels.Collection) string {
+	target, _ := url.Parse(model.SelfHref)
+	query := target.Query()
+	query.Set("search", "")
+	query.Del("offset")
+	target.RawQuery = query.Encode()
+	return target.RequestURI()
 }
 
 func choreSearchPlaceholder(status choremodels.ChoreStatus) string {

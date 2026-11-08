@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	"github.com/bpsoos/shiftbell/internal/endpoint/profileselection"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	api "github.com/bpsoos/shiftbell/internal/models/api"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
@@ -42,6 +44,57 @@ func (h *Handler) browse(ctx *echo.Context) error {
 		)
 	}
 
+	if ctx.QueryParam("scope") == "mine" {
+		if !h.profilesUIEnabled {
+			return ctx.NoContent(http.StatusNotFound)
+		}
+		if !acceptsHTML(ctx) {
+			return hypermedia.NotAcceptable(ctx)
+		}
+		return h.browseMine(ctx, request)
+	}
+	return h.browseCollection(ctx, request, false)
+}
+
+func (h *Handler) browseMine(ctx *echo.Context, request browseRequest) error {
+	ctx.Response().Header().Set("Cache-Control", "private, no-store")
+	ctx.Response().Header().Add(echo.HeaderVary, "Cookie")
+	profiles, err := h.profileService.List(ctx.Request().Context())
+	if err != nil {
+		logging.Default().Error("resolve chore owner filter", "err", err)
+		return h.renderError(ctx, http.StatusInternalServerError, apiErrorResponse{
+			Error: "Could not load your profile. Try again.",
+		})
+	}
+	if len(profiles) == 0 {
+		return hypermedia.HTMLRedirect(ctx, http.StatusSeeOther, "/setup")
+	}
+	selected := profileselection.SelectedId(ctx.Request())
+	if len(profiles) == 1 {
+		selected = profiles[0].Id
+	}
+	for _, profile := range profiles {
+		if profile.Id == selected {
+			request.params.OwnerFilter = choremodels.OwnerFilter{
+				Mode: choremodels.OwnerFilterProfile, Id: &profile.Id,
+			}
+			return h.browseCollection(ctx, request, true)
+		}
+	}
+	return hypermedia.HTMLRedirect(
+		ctx,
+		http.StatusSeeOther,
+		"/profiles/selection?"+url.Values{
+			"return_to": {request.responseURL.RequestURI()},
+		}.Encode(),
+	)
+}
+
+func (h *Handler) browseCollection(
+	ctx *echo.Context,
+	request browseRequest,
+	mine bool,
+) error {
 	page, err := h.service.Browse(
 		ctx.Request().Context(),
 		&request.params,
@@ -55,6 +108,7 @@ func (h *Handler) browse(ctx *echo.Context) error {
 		http.StatusOK,
 		newBrowseResponse(request, page),
 		request.params,
+		mine,
 		request.responseURL.Query().Has("search"),
 		searchChanged(
 			ctx.Request().Header.Get("HX-Current-URL"),

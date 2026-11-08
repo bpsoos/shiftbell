@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"time"
 
 	"github.com/a-h/templ"
@@ -20,6 +21,52 @@ import (
 )
 
 var _ = Describe("Get chore", func() {
+	DescribeTable(
+		"preserves a local collection return link",
+		func(ctx SpecContext, returnTo, expected string) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().
+				Get(ctx, 42).
+				Return(&choremodels.Chore{Id: 42, Status: choremodels.ChoreStatusActive}, nil).
+				Once()
+			view := NewMockView(GinkgoT())
+			view.EXPECT().
+				Detail(mock.Anything, true).
+				Run(func(model choreviewmodels.Detail, fullPage bool) {
+					Expect(model.BackHref).To(Equal(expected))
+				}).
+				Return(templ.Raw("detail")).
+				Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service, View: view},
+			)
+			app := echo.New()
+			app.GET("/chores/:id", handler.Get)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores/42?return_to="+url.QueryEscape(returnTo),
+				nil,
+			)
+			request.Header.Set("Accept", "text/html")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+		},
+		Entry(
+			"mine with search and pagination",
+			"/chores?scope=mine&search=Kitchen&offset=20",
+			"/chores?scope=mine&search=Kitchen&offset=20",
+		),
+		Entry(
+			"completed chores",
+			"/chores?scope=mine&status=completed",
+			"/chores?scope=mine&status=completed",
+		),
+		Entry("external URL", "https://example.net/chores?scope=mine", "/chores"),
+		Entry("another resource", "/profiles", "/chores"),
+	)
+
 	DescribeTable(
 		"includes the owner in HTML details without listing profiles",
 		func(ctx SpecContext, status choremodels.ChoreStatus) {

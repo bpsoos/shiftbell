@@ -22,6 +22,9 @@ type Collection struct {
 	CreateHref      string
 	Status          choremodels.ChoreStatus
 	OwnerFilter     choremodels.OwnerFilter
+	Mine            bool
+	AllHref         string
+	MineHref        string
 	Search          string
 	SearchOpen      bool
 	Notice          string

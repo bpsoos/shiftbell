@@ -274,7 +274,7 @@ templ choreMetadata(t *Templater, chore choreapimodels.Representation, today tim
 				margin-top: 1rem;
 				padding-top: 0.875rem;
 			}
-			me[data-has-owner] {
+			body:has([data-profile-switcher]) me[data-has-owner] {
 				grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 			}
 			me > [data-chore-assignment] {

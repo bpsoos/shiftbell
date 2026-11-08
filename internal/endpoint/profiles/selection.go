@@ -8,14 +8,14 @@ import (
 
 	"github.com/bpsoos/shiftbell/internal/endpoint/binding"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	"github.com/bpsoos/shiftbell/internal/endpoint/profileselection"
 	models "github.com/bpsoos/shiftbell/internal/models/profiles"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/profiles"
 	"github.com/labstack/echo/v5"
 )
 
 const (
-	selectionPath   = "/profiles/selection"
-	selectionCookie = "shiftbell_profile"
+	selectionPath = "/profiles/selection"
 )
 
 type selectionRequest struct {
@@ -78,7 +78,7 @@ func (h *Handler) Select(ctx *echo.Context) error {
 	for _, profile := range profiles {
 		if profile.Id == request.ProfileId {
 			ctx.SetCookie(&http.Cookie{
-				Name:     selectionCookie,
+				Name:     profileselection.CookieName,
 				Value:    strconv.Itoa(profile.Id),
 				Path:     "/",
 				MaxAge:   365 * 24 * 60 * 60,
@@ -107,19 +107,10 @@ func (h *Handler) renderSelection(
 	ctx.Response().Header().Set("Cache-Control", "private, no-store")
 	return hypermedia.HTML(ctx, status, h.view.Selection(viewmodels.Selection{
 		Profiles:          profiles,
-		SelectedProfileId: selectedProfileId(ctx),
+		SelectedProfileId: profileselection.SelectedId(ctx.Request()),
 		ReturnTo:          returnTo,
 		Error:             message,
 	}, fullPage(ctx)))
-}
-
-func selectedProfileId(ctx *echo.Context) int {
-	cookie, err := ctx.Cookie(selectionCookie)
-	if err != nil {
-		return 0
-	}
-	id, _ := strconv.Atoi(cookie.Value)
-	return id
 }
 
 func selectionReturnTo(value string) string {

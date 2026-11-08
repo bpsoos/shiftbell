@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -62,6 +63,40 @@ var _ = Describe("Set chore assignment", func() {
 			).To(Equal("/chores/42/assignment"))
 		},
 		Entry("assign", `{"owner_profile_id":7}`, 7),
+	)
+
+	It(
+		"preserves the filtered collection when refreshing detail after assignment",
+		func(ctx SpecContext) {
+			service.EXPECT().
+				SetAssignment(ctx, &models.SetAssignmentParams{Id: 42, OwnerProfileId: 7}).
+				Return(&models.Chore{Id: 42, Status: models.ChoreStatusActive, OwnerProfileId: new(7)}, nil).
+				Once()
+			returnTo := "/chores?scope=mine&status=completed"
+			detailHref := "/chores/42?return_to=" + url.QueryEscape(returnTo)
+			view.EXPECT().
+				Detail(mock.Anything, false).
+				Run(func(model viewmodels.Detail, fullPage bool) {
+					Expect(model.BackHref).To(Equal(returnTo))
+					Expect(model.Chore.Links.Href("self")).To(Equal(detailHref))
+				}).
+				Return(templ.Raw("updated detail")).
+				Once()
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodPut,
+				"/chores/42/assignment",
+				strings.NewReader("owner_profile_id=7"),
+			)
+			request.Header.Set("Accept", "text/html")
+			request.Header.Set("HX-Request", "true")
+			request.Header.Set("HX-Current-URL", "http://example.com"+detailHref)
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			Expect(response.Header().Get("HX-Push-Url")).To(Equal(detailHref))
+		},
 	)
 
 	DescribeTable(

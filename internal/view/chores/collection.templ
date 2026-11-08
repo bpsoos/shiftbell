@@ -1,6 +1,7 @@
 package chores
 
 import (
+	"strconv"
 	"time"
 
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
@@ -35,10 +36,9 @@ templ collectionContent(t *Templater, model choreviewmodels.Collection, today ti
 		if model.Notice != "" {
 			@collectionNotice(model.Notice)
 		}
+		@choreCollectionUtilities(model)
 		if model.SearchOpen {
 			@choreSearch(model)
-		} else {
-			@choreCollectionUtilities(model)
 		}
 		if len(model.Items) == 0 {
 			@collectionEmptyState(model)
@@ -151,6 +151,9 @@ templ choreCollectionUtilities(model choreviewmodels.Collection) {
 				margin: 0 0 0.5rem;
 				min-height: 1.5rem;
 			}
+			me > [data-owner-scope] {
+				margin-right: auto;
+			}
 			me > [data-utility-link] {
 				color: var(--sb-muted);
 				font-size: 0.75rem;
@@ -180,11 +183,14 @@ templ choreCollectionUtilities(model choreviewmodels.Collection) {
 				color: var(--sb-text);
 			}
 		</style>
+		if model.AllHref != "" && model.MineHref != "" {
+			@choreOwnerScope(model)
+		}
 		if model.Status == choremodels.ChoreStatusCompleted {
 			<a
 				data-utility-link
-				href="/chores"
-				hx-get="/chores"
+				href={ choreCollectionViewHref(model, choremodels.ChoreStatusActive) }
+				hx-get={ choreCollectionViewHref(model, choremodels.ChoreStatusActive) }
 				hx-target="#main"
 				hx-swap="outerHTML"
 				hx-push-url="true"
@@ -192,27 +198,84 @@ templ choreCollectionUtilities(model choreviewmodels.Collection) {
 		} else {
 			<a
 				data-utility-link
-				href="/chores?status=completed"
-				hx-get="/chores?status=completed"
+				href={ choreCollectionViewHref(model, choremodels.ChoreStatusCompleted) }
+				hx-get={ choreCollectionViewHref(model, choremodels.ChoreStatusCompleted) }
 				hx-target="#main"
 				hx-swap="outerHTML"
 				hx-push-url="true"
 			>View completed</a>
 		}
+		if !model.SearchOpen {
+			<a
+				data-search-toggle
+				href={ choreSearchHref(model) }
+				hx-get={ choreSearchHref(model) }
+				hx-target="#main"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+				aria-label={ choreSearchPlaceholder(model.Status) }
+				title={ choreSearchPlaceholder(model.Status) }
+			>
+				@viewicons.MagnifyingGlass()
+				<span class="visually-hidden">Search</span>
+			</a>
+		}
+	</nav>
+}
+
+templ choreOwnerScope(model choreviewmodels.Collection) {
+	<div data-owner-scope role="group" aria-label="Chore ownership">
+		<style>
+			me {
+				border: 1px solid var(--sb-control-border);
+				display: none;
+				flex-shrink: 0;
+			}
+			body:has([data-profile-switcher]) me {
+				display: inline-flex;
+			}
+			me > a {
+				color: var(--sb-muted);
+				font-size: 0.8125rem;
+				font-weight: 500;
+				line-height: 1.25;
+				padding: 0.375rem 0.625rem;
+				text-decoration: none;
+			}
+			me > a + a {
+				border-left: 1px solid var(--sb-control-border);
+			}
+			me > a:hover {
+				background: var(--sb-hover);
+				color: var(--sb-text);
+			}
+			me > a[aria-current="page"] {
+				background: var(--sb-subtle);
+				box-shadow: inset 0 -2px var(--sb-accent);
+				color: var(--sb-text);
+			}
+		</style>
 		<a
-			data-search-toggle
-			href={ choreSearchHref(model.Status) }
-			hx-get={ choreSearchHref(model.Status) }
+			href={ model.AllHref }
+			hx-get={ model.AllHref }
 			hx-target="#main"
 			hx-swap="outerHTML"
 			hx-push-url="true"
-			aria-label={ choreSearchPlaceholder(model.Status) }
-			title={ choreSearchPlaceholder(model.Status) }
-		>
-			@viewicons.MagnifyingGlass()
-			<span class="visually-hidden">Search</span>
-		</a>
-	</nav>
+			if !model.Mine {
+				aria-current="page"
+			}
+		>All chores</a>
+		<a
+			href={ model.MineHref }
+			hx-get={ model.MineHref }
+			hx-target="#main"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			if model.Mine {
+				aria-current="page"
+			}
+		>Mine</a>
+	</div>
 }
 
 templ choreSearch(model choreviewmodels.Collection) {
@@ -248,6 +311,14 @@ templ choreSearch(model choreviewmodels.Collection) {
 		if model.Status == choremodels.ChoreStatusCompleted {
 			<input type="hidden" name="status" value="completed"/>
 		}
+		if model.Mine {
+			<input type="hidden" name="scope" value="mine"/>
+		} else if model.OwnerFilter.Mode != "" {
+			<input type="hidden" name="owner_mode" value={ string(model.OwnerFilter.Mode) }/>
+			if model.OwnerFilter.Id != nil {
+				<input type="hidden" name="owner_id" value={ strconv.Itoa(*model.OwnerFilter.Id) }/>
+			}
+		}
 		@collectioncontrols.SearchField(
 			"chore-collection-search",
 			model.Search,
@@ -255,8 +326,8 @@ templ choreSearch(model choreviewmodels.Collection) {
 			model.AutofocusSearch,
 		)
 		<a
-			href={ choreCollectionViewHref(model.Status) }
-			hx-get={ choreCollectionViewHref(model.Status) }
+			href={ choreCollectionViewHref(model, model.Status) }
+			hx-get={ choreCollectionViewHref(model, model.Status) }
 			hx-target="#main"
 			hx-swap="outerHTML"
 			hx-push-url="true"
@@ -560,6 +631,10 @@ templ collectionEmptyState(model choreviewmodels.Collection) {
 			if model.Search != "" {
 				<h2>No matching chores</h2>
 				<p>Try a different search.</p>
+			} else if model.Mine && model.Status == choremodels.ChoreStatusCompleted {
+				<h2>No completed chores assigned to you</h2>
+			} else if model.Mine {
+				<h2>No chores assigned to you</h2>
 			} else if model.Status == choremodels.ChoreStatusCompleted {
 				<h2>No completed chores</h2>
 				<p>Completed chores will appear here.</p>

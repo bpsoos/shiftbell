@@ -6,6 +6,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
+	"github.com/bpsoos/shiftbell/internal/endpoint/profileselection"
 	"github.com/bpsoos/shiftbell/internal/logging"
 	viewmodels "github.com/bpsoos/shiftbell/internal/models/view/profiles"
 	"github.com/labstack/echo/v5"
@@ -30,7 +31,7 @@ func (h *Handler) SelectionStatus(ctx *echo.Context) error {
 	if len(profiles) == 1 {
 		return hypermedia.HTML(ctx, http.StatusOK, templ.NopComponent)
 	}
-	selected := selectedProfileId(ctx)
+	selected := profileselection.SelectedId(ctx.Request())
 	for _, profile := range profiles {
 		if profile.Id == selected {
 			return hypermedia.HTML(

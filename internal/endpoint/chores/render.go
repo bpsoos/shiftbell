@@ -15,6 +15,7 @@ func (h *Handler) renderCollection(
 	status int,
 	collection choreCollectionResponse,
 	params choremodels.BrowseChoresParams,
+	mine bool,
 	searchOpen bool,
 	autofocusSearch bool,
 ) error {
@@ -30,6 +31,17 @@ func (h *Handler) renderCollection(
 			autofocusSearch,
 		)
 		model.Notice = consumeFlashCookie(ctx)
+		model.Mine = mine
+		if h.profilesUIEnabled {
+			model.AllHref = collectionScopeHref(model.SelfHref, false)
+			model.MineHref = collectionScopeHref(model.SelfHref, true)
+			for i := range model.Items {
+				model.Items[i].DetailHref = withCollectionReturn(
+					model.Items[i].DetailHref,
+					model.SelfHref,
+				)
+			}
+		}
 		return hypermedia.HTML(
 			ctx,
 			status,
@@ -48,7 +60,9 @@ func (h *Handler) renderAssignment(ctx *echo.Context, chore choreRepresentation)
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, http.StatusOK, chore)
 	case hypermedia.RepresentationHTML:
-		ctx.Response().Header().Set("HX-Push-Url", chore.Links.Href("self"))
+		ctx.Response().
+			Header().
+			Set("HX-Push-Url", withCollectionReturn(chore.Links.Href("self"), collectionReturn(ctx)))
 		return h.renderDetail(ctx, http.StatusOK, chore, "")
 	default:
 		return hypermedia.NotAcceptable(ctx)
@@ -65,10 +79,22 @@ func (h *Handler) renderDetail(
 	case hypermedia.RepresentationJSON:
 		return hypermedia.JSON(ctx, status, chore)
 	case hypermedia.RepresentationHTML:
+		model := detailViewModel(chore, notice)
+		if returnTo := collectionReturn(ctx); returnTo != "" {
+			model.BackHref = returnTo
+			for i := range model.Chore.Links {
+				if model.Chore.Links[i].Rel == "self" {
+					model.Chore.Links[i].Href = withCollectionReturn(
+						model.Chore.Links[i].Href,
+						returnTo,
+					)
+				}
+			}
+		}
 		return hypermedia.HTML(
 			ctx,
 			status,
-			h.view.Detail(detailViewModel(chore, notice), fullPage(ctx)),
+			h.view.Detail(model, fullPage(ctx)),
 		)
 	default:
 		return hypermedia.NotAcceptable(ctx)
