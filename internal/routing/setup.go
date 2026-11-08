@@ -23,6 +23,7 @@ func (r *Router) Setup(app *echo.Echo) error {
 	pages.GET("/", r.homeHandler.Get)
 	pages.GET("/profiles", r.profileHandler.List)
 	pages.POST("/profiles", r.profileHandler.Create)
+	pages.DELETE("/profiles/:id", r.profileHandler.Delete)
 	pages.GET("/profiles/new", r.profileHandler.CreateForm)
 	pages.GET("/schedules", r.scheduleHandler.Browse)
 	pages.GET("/schedules/:id", r.scheduleHandler.Get)

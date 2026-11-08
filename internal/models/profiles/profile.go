@@ -3,6 +3,7 @@ package profiles
 import "errors"
 
 var (
+	ErrNotFound           = errors.New("profile not found")
 	ErrNameConflict       = errors.New("a profile already uses this name")
 	ErrNameContainsSpaces = errors.New("name contains spaces")
 	ErrAlreadyInitialized = errors.New("a profile already exists")

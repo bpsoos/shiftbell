@@ -19,7 +19,7 @@ var _ = Describe("Profile selection", func() {
 	It(
 		"renders the picker with the current choice and return location",
 		func(ctx SpecContext) {
-			handler, service, view := newHandlerWithSetupRequired(false)
+			handler, service, view := newHandler()
 			available := []models.Profile{{Id: 7, Name: "Alex"}, {Id: 8, Name: "Sam"}}
 			service.EXPECT().List(ctx).Return(available, nil).Once()
 			view.EXPECT().
@@ -44,7 +44,7 @@ var _ = Describe("Profile selection", func() {
 	)
 
 	It("skips the picker for a single profile", func(ctx SpecContext) {
-		handler, service, _ := newHandlerWithSetupRequired(false)
+		handler, service, _ := newHandler()
 		service.EXPECT().
 			List(ctx).
 			Return([]models.Profile{{Id: 7, Name: "Alex"}}, nil).
@@ -68,7 +68,7 @@ var _ = Describe("Profile selection", func() {
 	DescribeTable(
 		"remembers the new choice and returns to the page",
 		func(ctx SpecContext, htmx string, status int, header string) {
-			handler, service, _ := newHandlerWithSetupRequired(false)
+			handler, service, _ := newHandler()
 			service.EXPECT().
 				List(ctx).
 				Return([]models.Profile{{Id: 7, Name: "Alex"}, {Id: 8, Name: "Sam"}}, nil).
@@ -107,7 +107,7 @@ var _ = Describe("Profile selection", func() {
 	DescribeTable(
 		"returns dropdown selections to a local referring page",
 		func(ctx SpecContext, referer, destination string) {
-			handler, service, _ := newHandlerWithSetupRequired(false)
+			handler, service, _ := newHandler()
 			service.EXPECT().
 				List(ctx).
 				Return([]models.Profile{{Id: 7}, {Id: 8}}, nil).
@@ -141,7 +141,7 @@ var _ = Describe("Profile selection", func() {
 	)
 
 	It("rejects a profile that is not available", func(ctx SpecContext) {
-		handler, service, view := newHandlerWithSetupRequired(false)
+		handler, service, view := newHandler()
 		available := []models.Profile{{Id: 7, Name: "Alex"}, {Id: 8, Name: "Sam"}}
 		service.EXPECT().List(ctx).Return(available, nil).Once()
 		view.EXPECT().
@@ -168,7 +168,7 @@ var _ = Describe("Profile selection", func() {
 	DescribeTable(
 		"restricts return locations to local pages",
 		func(ctx SpecContext, returnTo string) {
-			handler, service, _ := newHandlerWithSetupRequired(false)
+			handler, service, _ := newHandler()
 			service.EXPECT().
 				List(ctx).
 				Return([]models.Profile{{Id: 7}, {Id: 8}}, nil).

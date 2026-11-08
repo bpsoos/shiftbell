@@ -17,7 +17,10 @@ func (h *Handler) SetupStatus(ctx *echo.Context) error {
 	if !h.supported(ctx) {
 		return hypermedia.NotAcceptable(ctx)
 	}
-	required := h.setupRequired.Load()
+	required, err := h.service.SetupRequired(ctx.Request().Context())
+	if err != nil {
+		return h.internalError(ctx, "check profile setup", err)
+	}
 	if hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML {
 		if !required {
 			return hypermedia.HTMLRedirect(ctx, http.StatusSeeOther, "/chores")

@@ -15,13 +15,6 @@ func TestProfiles(t *testing.T) {
 
 func newHandler() (*profiles.Handler, *MockService, *MockView) {
 	GinkgoHelper()
-	return newHandlerWithSetupRequired(true)
-}
-
-func newHandlerWithSetupRequired(
-	required bool,
-) (*profiles.Handler, *MockService, *MockView) {
-	GinkgoHelper()
 	service := &MockService{}
 	view := &MockView{}
 	DeferCleanup(func() {
@@ -30,6 +23,6 @@ func newHandlerWithSetupRequired(
 	})
 	return profiles.NewHandler(
 		&profiles.HandlerDeps{Service: service, View: view},
-		&profiles.HandlerConfig{SetupRequired: required, UIEnabled: true},
+		&profiles.HandlerConfig{UIEnabled: true},
 	), service, view
 }

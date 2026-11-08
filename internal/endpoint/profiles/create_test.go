@@ -22,6 +22,7 @@ var _ = Describe("Create", func() {
 		"accepts JSON and form input",
 		func(ctx SpecContext, contentType, body string) {
 			handler, service, _ := newHandler()
+			service.On("SetupRequired", ctx).Return(false, nil).Once()
 			service.On("Create", ctx, &models.CreateParams{Name: " Alex "}).
 				Return(&models.Profile{Id: 7, Name: "Alex"}, nil).
 				Once()
@@ -41,7 +42,7 @@ var _ = Describe("Create", func() {
 			Expect(response.Code).To(Equal(http.StatusCreated))
 			Expect(
 				response.Body.Bytes(),
-			).To(MatchJSON(`{"id":7,"name":"Alex","_links":[{"rel":"collection","href":"/profiles"}]}`))
+			).To(MatchJSON(`{"id":7,"name":"Alex","_links":[{"rel":"collection","href":"/profiles"}],"_actions":[{"rel":"delete","href":"/profiles/7"}]}`))
 			request = httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
 			request.Header.Set("Accept", hypermedia.MediaType)
 			response = httptest.NewRecorder()
@@ -85,6 +86,7 @@ var _ = Describe("Create", func() {
 		"maps service errors to JSON status codes",
 		func(ctx SpecContext, failure error, status int, message string) {
 			handler, service, _ := newHandler()
+			service.On("SetupRequired", ctx).Return(true, nil).Once()
 			service.On("Create", ctx, &models.CreateParams{Name: "Alex"}).
 				Return(nil, failure).
 				Once()
@@ -311,7 +313,7 @@ var _ = Describe("Create", func() {
 		func(ctx SpecContext) {
 			handler := profiles.NewHandler(
 				&profiles.HandlerDeps{Service: &MockService{}},
-				&profiles.HandlerConfig{SetupRequired: true, UIEnabled: true},
+				&profiles.HandlerConfig{UIEnabled: true},
 			)
 			e := echo.New()
 			e.POST("/profiles", handler.Create)

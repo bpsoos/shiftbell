@@ -9,15 +9,25 @@ import (
 )
 
 type Profile struct {
-	Id    int       `json:"id"`
-	Name  string    `json:"name"`
-	Links Relations `json:"_links"`
+	Id      int       `json:"id"`
+	Name    string    `json:"name"`
+	Links   Relations `json:"_links"`
+	Actions Relations `json:"_actions"`
 }
 
 type ProfileCollection struct {
 	Items   []Profile `json:"items"`
 	Links   Relations `json:"_links"`
 	Actions Relations `json:"_actions"`
+}
+
+func (c *APIClient) DeleteProfile(ctx context.Context, href string) error {
+	request, err := c.newRequest(ctx, http.MethodDelete, href, nil)
+	if err != nil {
+		return err
+	}
+	_, _, err = c.do(request, http.StatusNoContent)
+	return err
 }
 
 type ProfileSetup struct {

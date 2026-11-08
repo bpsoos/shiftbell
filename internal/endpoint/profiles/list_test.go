@@ -33,7 +33,7 @@ var _ = Describe("List", func() {
 		Expect(response.Header().Get("Content-Type")).To(Equal(hypermedia.MediaType))
 		Expect(response.Header().Get("Vary")).To(Equal("Accept"))
 		Expect(response.Body.Bytes()).To(MatchJSON(`{
-			"items":[{"id":7,"name":"Alex","_links":[{"rel":"collection","href":"/profiles"}]}],
+			"items":[{"id":7,"name":"Alex","_links":[{"rel":"collection","href":"/profiles"}],"_actions":[{"rel":"delete","href":"/profiles/7"}]}],
 			"_links":[{"rel":"self","href":"/profiles"},{"rel":"setup","href":"/setup"}],
 			"_actions":[{"rel":"create","href":"/profiles"}]
 		}`))
@@ -62,9 +62,10 @@ var _ = Describe("List", func() {
 			view.On("Collection", viewmodels.Collection{
 				Profiles: []apimodels.Response{
 					{
-						Id:    7,
-						Name:  "Alex",
-						Links: api.Relations{{Rel: "collection", Href: "/profiles"}},
+						Id:      7,
+						Name:    "Alex",
+						Links:   api.Relations{{Rel: "collection", Href: "/profiles"}},
+						Actions: api.Relations{{Rel: "delete", Href: "/profiles/7"}},
 					},
 				},
 				CreateHref: "/profiles/new",
@@ -145,7 +146,7 @@ var _ = Describe("List", func() {
 		func(ctx SpecContext) {
 			handler := profiles.NewHandler(
 				&profiles.HandlerDeps{Service: &MockService{}},
-				&profiles.HandlerConfig{SetupRequired: true, UIEnabled: true},
+				&profiles.HandlerConfig{UIEnabled: true},
 			)
 			e := echo.New()
 			e.GET("/profiles", handler.List)

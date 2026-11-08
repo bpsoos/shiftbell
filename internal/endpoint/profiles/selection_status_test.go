@@ -61,7 +61,7 @@ var _ = Describe("Selection status", func() {
 	})
 
 	It("leaves the slot empty for a single implicit profile", func(ctx SpecContext) {
-		handler, service, _ := newHandlerWithSetupRequired(false)
+		handler, service, _ := newHandler()
 		service.EXPECT().
 			List(ctx).
 			Return([]models.Profile{{Id: 7, Name: "Alex"}}, nil).
@@ -88,7 +88,7 @@ var _ = Describe("Selection status", func() {
 	DescribeTable(
 		"redirects to the picker without a valid selection",
 		func(ctx SpecContext, cookie string) {
-			handler, service, _ := newHandlerWithSetupRequired(false)
+			handler, service, _ := newHandler()
 			service.EXPECT().
 				List(ctx).
 				Return([]models.Profile{{Id: 7, Name: "Alex"}, {Id: 8, Name: "Sam"}}, nil).
@@ -120,7 +120,7 @@ var _ = Describe("Selection status", func() {
 	)
 
 	It("renders only the selected-profile snippet", func(ctx SpecContext) {
-		handler, service, view := newHandlerWithSetupRequired(false)
+		handler, service, view := newHandler()
 		service.EXPECT().
 			List(ctx).
 			Return([]models.Profile{{Id: 7, Name: "Alex"}, {Id: 8, Name: "Sam"}}, nil).
@@ -153,7 +153,7 @@ var _ = Describe("Selection status", func() {
 	})
 
 	It("ignores a current-page URL from another host", func(ctx SpecContext) {
-		handler, service, _ := newHandlerWithSetupRequired(false)
+		handler, service, _ := newHandler()
 		service.EXPECT().List(ctx).Return([]models.Profile{{Id: 7}, {Id: 8}}, nil).Once()
 		app := echo.New()
 		app.GET("/profiles/selection/status", handler.SelectionStatus)
@@ -176,7 +176,7 @@ var _ = Describe("Selection status", func() {
 	It(
 		"returns a lookup failure without inserting a page into the slot",
 		func(ctx SpecContext) {
-			handler, service, _ := newHandlerWithSetupRequired(false)
+			handler, service, _ := newHandler()
 			service.EXPECT().List(ctx).Return(nil, errors.New("storage failure")).Once()
 			app := echo.New()
 			app.GET("/profiles/selection/status", handler.SelectionStatus)

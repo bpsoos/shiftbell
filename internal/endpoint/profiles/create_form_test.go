@@ -21,7 +21,7 @@ var _ = Describe("CreateForm", func() {
 			DeferCleanup(func() { view.AssertExpectations(GinkgoT()) })
 			handler := profiles.NewHandler(
 				&profiles.HandlerDeps{Service: &MockService{}, View: view},
-				&profiles.HandlerConfig{SetupRequired: true, UIEnabled: uiEnabled},
+				&profiles.HandlerConfig{UIEnabled: uiEnabled},
 			)
 			view.On("Form", viewmodels.Form{ActionHref: "/profiles", CancelHref: "/profiles"}, fullPage).
 				Return(templ.Raw("new profile")).

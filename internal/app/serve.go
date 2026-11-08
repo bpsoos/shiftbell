@@ -62,10 +62,6 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 	); err != nil {
 		return fmt.Errorf("initialize profiles: %w", err)
 	}
-	setupRequired, err := profileService.SetupRequired(context.Background())
-	if err != nil {
-		return fmt.Errorf("check profile setup at startup: %w", err)
-	}
 	choreTemplatesTemplater := choretemplatesview.NewTemplater(
 		choretemplatesview.Config{
 			AppTimezone:       appConfig.AppTimezone,
@@ -115,8 +111,7 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 				),
 			},
 			&profilesendpoint.HandlerConfig{
-				SetupRequired: setupRequired,
-				UIEnabled:     appConfig.ProfilesUIEnabled,
+				UIEnabled: appConfig.ProfilesUIEnabled,
 			},
 		),
 		ScheduleHandler: schedulesendpoint.NewHandler(&schedulesendpoint.HandlerDeps{
@@ -145,8 +140,7 @@ func Serve(appConfig *appcfg.AppCfg, db *sqlx.DB) error {
 	e.Logger = logging.Default()
 	e.Use(middleware.RequestLogger())
 
-	err = router.Setup(e)
-	if err != nil {
+	if err := router.Setup(e); err != nil {
 		return err
 	}
 

@@ -17,10 +17,46 @@ import (
 )
 
 var _ = Describe("SetupStatus", func() {
+	It("reflects the last profile being removed between requests", func(ctx SpecContext) {
+		handler, service, _ := newHandler()
+		service.On("SetupRequired", ctx).Return(false, nil).Once()
+		service.On("SetupRequired", ctx).Return(true, nil).Once()
+		app := echo.New()
+		app.GET("/setup", handler.SetupStatus)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(ContainSubstring(`"required":false`))
+		response = httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(ContainSubstring(`"required":true`))
+		Expect(
+			response.Body.String(),
+		).To(ContainSubstring(`"rel":"create","href":"/setup"`))
+	})
+
+	It("reports setup lookup failures", func(ctx SpecContext) {
+		handler, service, _ := newHandler()
+		service.On("SetupRequired", ctx).
+			Return(false, errors.New("storage failed")).
+			Once()
+		app := echo.New()
+		app.GET("/setup", handler.SetupStatus)
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusInternalServerError))
+	})
+
 	DescribeTable(
-		"reports startup state and available actions",
+		"reports current profile state and available actions",
 		func(ctx SpecContext, required bool, expected string) {
-			handler, _, _ := newHandlerWithSetupRequired(required)
+			handler, service, _ := newHandler()
+			service.On("SetupRequired", ctx).Return(required, nil).Once()
 			e := echo.New()
 			e.GET("/setup", handler.SetupStatus)
 			request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
@@ -44,7 +80,8 @@ var _ = Describe("SetupStatus", func() {
 	)
 
 	It("renders the setup form", func(ctx SpecContext) {
-		handler, _, view := newHandler()
+		handler, service, view := newHandler()
+		service.On("SetupRequired", ctx).Return(true, nil).Once()
 		view.On("Form", viewmodels.Form{ActionHref: "/setup", Setup: true}, true).
 			Return(templ.Raw("setup form")).Once()
 		e := echo.New()
@@ -59,9 +96,10 @@ var _ = Describe("SetupStatus", func() {
 	})
 
 	It(
-		"redirects to chores when startup found an existing profile",
+		"redirects to chores when a profile exists",
 		func(ctx SpecContext) {
-			handler, _, _ := newHandlerWithSetupRequired(false)
+			handler, service, _ := newHandler()
+			service.On("SetupRequired", ctx).Return(false, nil).Once()
 			e := echo.New()
 			e.GET("/setup", handler.SetupStatus)
 			request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/setup", nil)
@@ -80,6 +118,7 @@ var _ = Describe("Setup", func() {
 		"creates the first profile and redirects subsequent visits to chores",
 		func(ctx SpecContext) {
 			handler, service, _ := newHandler()
+			service.On("SetupRequired", ctx).Return(false, nil).Once()
 			service.On("Setup", ctx, &models.CreateParams{Name: "Alex"}).
 				Return(&models.Profile{Id: 1, Name: "Alex"}, nil).Once()
 			e := echo.New()
@@ -111,6 +150,7 @@ var _ = Describe("Setup", func() {
 
 	It("keeps setup required after a storage failure", func(ctx SpecContext) {
 		handler, service, _ := newHandler()
+		service.On("SetupRequired", ctx).Return(true, nil).Once()
 		service.On("Setup", ctx, &models.CreateParams{Name: "Alex"}).
 			Return(nil, errors.New("storage failed")).Once()
 		e := echo.New()
@@ -137,9 +177,10 @@ var _ = Describe("Setup", func() {
 	})
 
 	It(
-		"offers continuation and clears the flag when setup is already complete",
+		"offers continuation when setup is already complete",
 		func(ctx SpecContext) {
 			handler, service, view := newHandler()
+			service.On("SetupRequired", ctx).Return(false, nil).Once()
 			service.On("Setup", ctx, &models.CreateParams{Name: "Alex"}).
 				Return(nil, models.ErrAlreadyInitialized).Once()
 			view.On("Form", viewmodels.Form{
@@ -172,8 +213,9 @@ var _ = Describe("Setup", func() {
 		},
 	)
 
-	It("preserves the setup form and flag after invalid input", func(ctx SpecContext) {
+	It("preserves the setup form after invalid input", func(ctx SpecContext) {
 		handler, service, view := newHandler()
+		service.On("SetupRequired", ctx).Return(true, nil).Once()
 		service.On("Setup", ctx, &models.CreateParams{Name: "Alex Smith"}).
 			Return(nil, errors.Join(validation.ErrInvalidName, models.ErrNameContainsSpaces)).
 			Once()

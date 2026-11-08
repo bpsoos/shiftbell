@@ -44,12 +44,8 @@ func (h *Handler) create(ctx *echo.Context, setup bool) error {
 		&models.CreateParams{Name: request.Name},
 	)
 	if err != nil {
-		if errors.Is(err, models.ErrAlreadyInitialized) {
-			h.setupRequired.Store(false)
-		}
 		return h.creationFailure(ctx, newForm(request.Name, setup), err)
 	}
-	h.setupRequired.Store(false)
 	if hypermedia.Negotiate(ctx.Request()) == hypermedia.RepresentationHTML {
 		location := "/profiles"
 		if setup {

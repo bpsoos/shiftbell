@@ -7,6 +7,7 @@ type HomeHandler interface {
 }
 
 type ProfileHandler interface {
+	Delete(*echo.Context) error
 	SelectionStatus(*echo.Context) error
 	Selection(*echo.Context) error
 	Select(*echo.Context) error

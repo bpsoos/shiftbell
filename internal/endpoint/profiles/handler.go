@@ -2,7 +2,7 @@ package profiles
 
 import (
 	"context"
-	"sync/atomic"
+	"strconv"
 
 	"github.com/a-h/templ"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
@@ -14,6 +14,8 @@ import (
 )
 
 type Service interface {
+	Delete(context.Context, int) error
+	SetupRequired(context.Context) (bool, error)
 	Create(context.Context, *models.CreateParams) (*models.Profile, error)
 	List(context.Context) ([]models.Profile, error)
 	Setup(context.Context, *models.CreateParams) (*models.Profile, error)
@@ -33,25 +35,21 @@ type HandlerDeps struct {
 }
 
 type HandlerConfig struct {
-	SetupRequired bool
-	UIEnabled     bool
+	UIEnabled bool
 }
 
 type Handler struct {
-	service       Service
-	view          View
-	setupRequired atomic.Bool
-	uiEnabled     bool
+	service   Service
+	view      View
+	uiEnabled bool
 }
 
 func NewHandler(deps *HandlerDeps, config *HandlerConfig) *Handler {
-	handler := &Handler{
+	return &Handler{
 		service:   deps.Service,
 		view:      deps.View,
 		uiEnabled: config.UIEnabled,
 	}
-	handler.setupRequired.Store(config.SetupRequired)
-	return handler
 }
 
 func (h *Handler) supported(ctx *echo.Context) bool {
@@ -65,7 +63,15 @@ func fullPage(ctx *echo.Context) bool {
 }
 
 func newResponse(profile *models.Profile) apimodels.Response {
-	return apimodels.Response{Id: profile.Id, Name: profile.Name, Links: collectionLink()}
+	return apimodels.Response{
+		Id:    profile.Id,
+		Name:  profile.Name,
+		Links: collectionLink(),
+		Actions: api.Relations{{
+			Rel:  "delete",
+			Href: "/profiles/" + strconv.Itoa(profile.Id),
+		}},
+	}
 }
 
 func collectionLink() api.Relations {

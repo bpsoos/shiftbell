@@ -11,6 +11,7 @@ import (
 )
 
 type Persister interface {
+	Delete(context.Context, int) error
 	Create(context.Context, *models.CreateParams) (*models.Profile, error)
 	List(context.Context) ([]models.Profile, error)
 	HasProfiles(context.Context) (bool, error)
