@@ -133,6 +133,7 @@ templ collection(model viewmodels.Collection) {
 								data-delete-profile
 								aria-label={ "Delete " + profile.Name }
 								hx-delete={ deleteHref }
+								hx-confirm={ "Delete profile \"" + profile.Name + "\"?" }
 								hx-target="#main"
 								hx-swap="outerHTML"
 								hx-disabled-elt="this"
