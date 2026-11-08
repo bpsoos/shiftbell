@@ -16,6 +16,12 @@ func (c *APIClient) BrowseChores(
 		return nil, fmt.Errorf("parse chore collection reference: %w", err)
 	}
 	query := reference.Query()
+	if params.OwnerMode != "" {
+		query.Set("owner_mode", params.OwnerMode)
+	}
+	if params.OwnerId != nil {
+		query.Set("owner_id", strconv.Itoa(*params.OwnerId))
+	}
 	if params.Search != "" {
 		query.Set("search", params.Search)
 	}

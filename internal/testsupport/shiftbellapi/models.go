@@ -48,10 +48,12 @@ type GetChoresResult struct {
 }
 
 type BrowseChoresParams struct {
-	Href   string
-	Search string
-	Status string
-	Limit  int
+	OwnerMode string
+	OwnerId   *int
+	Href      string
+	Search    string
+	Status    string
+	Limit     int
 }
 
 type ChoreCreationChoice struct {

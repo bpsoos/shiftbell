@@ -1,6 +1,7 @@
 package chores_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -9,6 +10,7 @@ import (
 	choresendpoint "github.com/bpsoos/shiftbell/internal/endpoint/chores"
 	"github.com/bpsoos/shiftbell/internal/endpoint/hypermedia"
 	choremodels "github.com/bpsoos/shiftbell/internal/models/chores"
+	validationerrors "github.com/bpsoos/shiftbell/internal/models/validation"
 	choreviewmodels "github.com/bpsoos/shiftbell/internal/models/view/chores"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
@@ -17,6 +19,179 @@ import (
 )
 
 var _ = Describe("Browse chores", func() {
+	DescribeTable(
+		"preserves ownership, search and status in pagination links",
+		func(ctx SpecContext, ownerQuery string, filter choremodels.OwnerFilter) {
+			service := NewMockService(GinkgoT())
+			service.EXPECT().Browse(ctx, &choremodels.BrowseChoresParams{
+				Status:      choremodels.ChoreStatusCompleted,
+				OwnerFilter: filter,
+				Search:      "Kitchen",
+				Offset:      2,
+				Limit:       2,
+			}).Return(&choremodels.ChorePage{More: true}, nil).Once()
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: service},
+			)
+			app := echo.New()
+			app.GET("/chores", handler.GetBatch)
+			href := "/chores?status=completed&" + ownerQuery + "&search=Kitchen&offset=2&limit=2"
+			request := httptest.NewRequestWithContext(ctx, http.MethodGet, href, nil)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusOK))
+			var body struct {
+				Links []struct{ Rel, Href string } `json:"_links"`
+			}
+			Expect(json.Unmarshal(response.Body.Bytes(), &body)).To(Succeed())
+			Expect(body.Links).To(ConsistOf(
+				And(HaveField("Rel", "self"), HaveField("Href", href)),
+				And(
+					HaveField("Rel", "next"),
+					HaveField(
+						"Href",
+						"/chores?limit=2&offset=4&"+ownerQuery+"&search=Kitchen&status=completed",
+					),
+				),
+				And(
+					HaveField("Rel", "previous"),
+					HaveField(
+						"Href",
+						"/chores?limit=2&offset=0&"+ownerQuery+"&search=Kitchen&status=completed",
+					),
+				),
+			))
+		},
+		Entry(
+			"all",
+			"owner_mode=all",
+			choremodels.OwnerFilter{Mode: choremodels.OwnerFilterAll},
+		),
+		Entry(
+			"unassigned",
+			"owner_mode=unassigned",
+			choremodels.OwnerFilter{Mode: choremodels.OwnerFilterUnassigned},
+		),
+		Entry(
+			"profile",
+			"owner_id=7&owner_mode=profile",
+			choremodels.OwnerFilter{Mode: choremodels.OwnerFilterProfile, Id: new(7)},
+		),
+	)
+
+	It("returns invalid owner filters as JSON validation errors", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		service.EXPECT().
+			Browse(ctx, &choremodels.BrowseChoresParams{OwnerFilter: choremodels.OwnerFilter{Mode: choremodels.OwnerFilterProfile, Id: new(7)}, Limit: 20}).
+			Return(nil, validationerrors.ErrInvalidOwnerFilter).
+			Once()
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: service},
+		)
+		app := echo.New()
+		app.GET("/chores", handler.GetBatch)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores?owner_mode=profile&owner_id=7",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+		Expect(
+			response.Body.Bytes(),
+		).To(MatchJSON(`{"error":"invalid owner filter","_links":[],"_actions":[]}`))
+	})
+
+	DescribeTable("rejects malformed owner selectors before calling the service",
+		func(ctx SpecContext, query string) {
+			handler := choresendpoint.NewHandler(
+				&choresendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},
+			)
+			app := echo.New()
+			app.GET("/chores", handler.GetBatch)
+			request := httptest.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"/chores?"+query,
+				nil,
+			)
+			request.Header.Set("Accept", hypermedia.MediaType)
+			response := httptest.NewRecorder()
+			app.ServeHTTP(response, request)
+			Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+			Expect(
+				response.Body.Bytes(),
+			).To(MatchJSON(`{"error":"invalid owner filter","_links":[],"_actions":[]}`))
+		},
+		Entry("non-numeric ID", "owner_mode=profile&owner_id=invalid"),
+		Entry("empty ID", "owner_mode=profile&owner_id="),
+		Entry("fraction", "owner_mode=profile&owner_id=1.5"),
+		Entry("overflow", "owner_mode=profile&owner_id=999999999999999999999999"),
+		Entry("whitespace", "owner_mode=profile&owner_id=%207"),
+		Entry("repeated ID", "owner_mode=profile&owner_id=7&owner_id=8"),
+	)
+
+	It("rejects ambiguous repeated owner filters", func(ctx SpecContext) {
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: NewMockService(GinkgoT())},
+		)
+		app := echo.New()
+		app.GET("/chores", handler.GetBatch)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores?owner_mode=profile&owner_mode=unassigned&owner_id=7",
+			nil,
+		)
+		request.Header.Set("Accept", hypermedia.MediaType)
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusUnprocessableEntity))
+		Expect(
+			response.Body.Bytes(),
+		).To(MatchJSON(`{"error":"invalid owner filter","_links":[],"_actions":[]}`))
+	})
+
+	It("provides ownership state to the view placeholder", func(ctx SpecContext) {
+		service := NewMockService(GinkgoT())
+		service.EXPECT().
+			Browse(ctx, &choremodels.BrowseChoresParams{OwnerFilter: choremodels.OwnerFilter{Mode: choremodels.OwnerFilterProfile, Id: new(7)}, Limit: 20}).
+			Return(&choremodels.ChorePage{}, nil).
+			Once()
+		view := NewMockView(GinkgoT())
+		view.EXPECT().
+			Collection(mock.Anything, false).
+			Run(func(model choreviewmodels.Collection, fullPage bool) {
+				Expect(
+					model.OwnerFilter,
+				).To(Equal(choremodels.OwnerFilter{Mode: choremodels.OwnerFilterProfile, Id: new(7)}))
+				Expect(model.SelfHref).To(Equal("/chores?owner_mode=profile&owner_id=7"))
+			}).
+			Return(templ.Raw("placeholder")).
+			Once()
+		handler := choresendpoint.NewHandler(
+			&choresendpoint.HandlerDeps{Service: service, View: view},
+		)
+		app := echo.New()
+		app.GET("/chores", handler.GetBatch)
+		request := httptest.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			"/chores?owner_mode=profile&owner_id=7",
+			nil,
+		)
+		request.Header.Set("Accept", "text/html")
+		request.Header.Set("HX-Request", "true")
+		response := httptest.NewRecorder()
+		app.ServeHTTP(response, request)
+		Expect(response.Code).To(Equal(http.StatusOK))
+		Expect(response.Body.String()).To(Equal("placeholder"))
+	})
+
 	DescribeTable(
 		"includes owners and unassigned chores without listing profiles",
 		func(ctx SpecContext, status choremodels.ChoreStatus) {

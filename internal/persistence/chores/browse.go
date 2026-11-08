@@ -26,22 +26,26 @@ func (p *Persister) Browse(
 			)
 	`
 	isComplete := params.Status == choremodels.ChoreStatusCompleted
+	args := []any{isComplete, params.Search, params.Search, params.Search}
+	switch params.OwnerFilter.Mode {
+	case choremodels.OwnerFilterUnassigned:
+		query += "and c.owner_profile_id is null\n"
+	case choremodels.OwnerFilterProfile:
+		query += "and c.owner_profile_id = ?\n"
+		args = append(args, params.OwnerFilter.Id)
+	}
 	if isComplete {
 		query += "order by c.completed_on desc, c.id desc\n"
 	} else {
 		query += "order by c.deadline asc, c.id asc\n"
 	}
 	query += "limit ? offset ?"
+	args = append(args, params.Limit+1, params.Offset)
 
 	rows, err := p.db.QueryContext(
 		ctx,
 		query,
-		isComplete,
-		params.Search,
-		params.Search,
-		params.Search,
-		params.Limit+1,
-		params.Offset,
+		args...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("browse chores: %w", err)

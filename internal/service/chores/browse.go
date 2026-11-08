@@ -19,6 +19,18 @@ func (s *Service) Browse(
 	if status != models.ChoreStatusActive && status != models.ChoreStatusCompleted {
 		return nil, validationerrors.ErrInvalidFilter
 	}
+	switch params.OwnerFilter.Mode {
+	case "", models.OwnerFilterAll, models.OwnerFilterUnassigned:
+		if params.OwnerFilter.Id != nil {
+			return nil, validationerrors.ErrInvalidOwnerFilter
+		}
+	case models.OwnerFilterProfile:
+		if params.OwnerFilter.Id == nil || *params.OwnerFilter.Id <= 0 {
+			return nil, validationerrors.ErrInvalidOwnerFilter
+		}
+	default:
+		return nil, validationerrors.ErrInvalidOwnerFilter
+	}
 	if params.Offset < 0 {
 		return nil, validationerrors.ErrInvalidOffset
 	}
@@ -31,10 +43,11 @@ func (s *Service) Browse(
 	}
 
 	page, err := s.persister.Browse(ctx, &models.BrowseChoresParams{
-		Status: status,
-		Search: search,
-		Offset: params.Offset,
-		Limit:  params.Limit,
+		Status:      status,
+		OwnerFilter: params.OwnerFilter,
+		Search:      search,
+		Offset:      params.Offset,
+		Limit:       params.Limit,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("browse chores: %w", err)

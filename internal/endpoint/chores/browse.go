@@ -19,10 +19,12 @@ const (
 )
 
 type browseQuery struct {
-	Status string
-	Search string
-	Offset int
-	Limit  int
+	Status    string
+	OwnerMode string
+	OwnerId   int
+	Search    string
+	Offset    int
+	Limit     int
 }
 
 type browseRequest struct {
@@ -52,8 +54,7 @@ func (h *Handler) browse(ctx *echo.Context) error {
 		ctx,
 		http.StatusOK,
 		newBrowseResponse(request, page),
-		request.params.Status,
-		request.params.Search,
+		request.params,
 		request.responseURL.Query().Has("search"),
 		searchChanged(
 			ctx.Request().Header.Get("HX-Current-URL"),
@@ -85,6 +86,8 @@ func parseBrowseRequest(ctx *echo.Context) (browseRequest, error) {
 	query := browseQuery{Offset: defaultBrowseOffset, Limit: defaultBrowseLimit}
 	err := echo.QueryParamsBinder(ctx).
 		String("status", &query.Status).
+		String("owner_mode", &query.OwnerMode).
+		Int("owner_id", &query.OwnerId).
 		String("search", &query.Search).
 		Int("offset", &query.Offset).
 		Int("limit", &query.Limit).
@@ -92,12 +95,26 @@ func parseBrowseRequest(ctx *echo.Context) (browseRequest, error) {
 	if err != nil {
 		return browseRequest{}, browseQueryError(err)
 	}
+	if len(ctx.QueryParams()["owner_mode"]) > 1 ||
+		len(ctx.QueryParams()["owner_id"]) > 1 {
+		return browseRequest{}, validationerrors.ErrInvalidOwnerFilter
+	}
+	ownerFilter := choremodels.OwnerFilter{
+		Mode: choremodels.OwnerFilterMode(query.OwnerMode),
+	}
+	if ctx.QueryParams().Has("owner_id") {
+		if ctx.QueryParam("owner_id") == "" {
+			return browseRequest{}, validationerrors.ErrInvalidOwnerFilter
+		}
+		ownerFilter.Id = &query.OwnerId
+	}
 	return browseRequest{
 		params: choremodels.BrowseChoresParams{
-			Status: choremodels.ChoreStatus(query.Status),
-			Search: query.Search,
-			Offset: query.Offset,
-			Limit:  query.Limit,
+			Status:      choremodels.ChoreStatus(query.Status),
+			OwnerFilter: ownerFilter,
+			Search:      query.Search,
+			Offset:      query.Offset,
+			Limit:       query.Limit,
 		},
 		responseURL: *ctx.Request().URL,
 	}, nil
@@ -109,6 +126,8 @@ func browseQueryError(err error) error {
 		return err
 	}
 	switch bindingError.Field {
+	case "owner_id":
+		return validationerrors.ErrInvalidOwnerFilter
 	case "offset":
 		return validationerrors.ErrInvalidOffset
 	case "limit":
@@ -183,6 +202,7 @@ func chorePageHref(requestURL *url.URL, offset int) string {
 
 func isBrowseValidationError(err error) bool {
 	return errors.Is(err, validationerrors.ErrInvalidFilter) ||
+		errors.Is(err, validationerrors.ErrInvalidOwnerFilter) ||
 		errors.Is(err, validationerrors.ErrInvalidSearch) ||
 		errors.Is(err, validationerrors.ErrInvalidOffset) ||
 		errors.Is(err, validationerrors.ErrInvalidLimit)

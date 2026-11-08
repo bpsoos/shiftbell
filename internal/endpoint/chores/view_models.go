@@ -12,11 +12,11 @@ import (
 
 func collectionViewModel(
 	collection choreCollectionResponse,
-	status choremodels.ChoreStatus,
-	search string,
+	params choremodels.BrowseChoresParams,
 	searchOpen bool,
 	autofocusSearch bool,
 ) choreviewmodels.Collection {
+	status := params.Status
 	if status == "" {
 		status = choremodels.ChoreStatusActive
 	}
@@ -41,7 +41,8 @@ func collectionViewModel(
 		NextHref:        collection.Links.Href("next"),
 		CreateHref:      collection.Actions.Href("create"),
 		Status:          status,
-		Search:          search,
+		Search:          params.Search,
+		OwnerFilter:     params.OwnerFilter,
 		SearchOpen:      searchOpen,
 		AutofocusSearch: autofocusSearch,
 	}

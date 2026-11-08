@@ -145,6 +145,65 @@ var _ = Describe("Browse", func() {
 		Expect(errors.Is(err, persistErr)).To(BeTrue())
 	})
 
+	DescribeTable(
+		"passes ownership filters alongside normalized search and status",
+		func(ctx SpecContext, owner models.OwnerFilter) {
+			normalizer.EXPECT().NormalizeSearch(" kitchen ").Return("kitchen", nil).Once()
+			persisted := &models.ChorePage{}
+			persister.EXPECT().Browse(ctx, &models.BrowseChoresParams{
+				Status:      models.ChoreStatusCompleted,
+				OwnerFilter: owner,
+				Search:      "kitchen",
+				Offset:      2,
+				Limit:       3,
+			}).Return(persisted, nil).Once()
+			params := &models.BrowseChoresParams{
+				Status:      models.ChoreStatusCompleted,
+				OwnerFilter: owner,
+				Search:      " kitchen ",
+				Offset:      2,
+				Limit:       3,
+			}
+			result, err := service.Browse(ctx, params)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(BeIdenticalTo(persisted))
+			Expect(params.OwnerFilter).To(Equal(owner))
+			Expect(params.Search).To(Equal(" kitchen "))
+		},
+		Entry("default", models.OwnerFilter{}),
+		Entry("all owners", models.OwnerFilter{Mode: models.OwnerFilterAll}),
+		Entry("unassigned", models.OwnerFilter{Mode: models.OwnerFilterUnassigned}),
+		Entry(
+			"specific profile",
+			models.OwnerFilter{Mode: models.OwnerFilterProfile, Id: new(7)},
+		),
+	)
+
+	DescribeTable(
+		"rejects invalid owner filters before accessing dependencies",
+		func(ctx SpecContext, owner models.OwnerFilter) {
+			result, err := service.Browse(
+				ctx,
+				&models.BrowseChoresParams{OwnerFilter: owner, Limit: 20},
+			)
+			Expect(result).To(BeNil())
+			Expect(err).To(MatchError(validationerrors.ErrInvalidOwnerFilter))
+		},
+		Entry("unknown mode", models.OwnerFilter{Mode: "mine"}),
+		Entry("profile without ID", models.OwnerFilter{Mode: models.OwnerFilterProfile}),
+		Entry("zero ID", models.OwnerFilter{Mode: models.OwnerFilterProfile, Id: new(0)}),
+		Entry(
+			"negative ID",
+			models.OwnerFilter{Mode: models.OwnerFilterProfile, Id: new(-1)},
+		),
+		Entry("all with ID", models.OwnerFilter{Mode: models.OwnerFilterAll, Id: new(7)}),
+		Entry(
+			"unassigned with ID",
+			models.OwnerFilter{Mode: models.OwnerFilterUnassigned, Id: new(7)},
+		),
+		Entry("ID without mode", models.OwnerFilter{Id: new(7)}),
+	)
+
 	It("rejects an unsupported status", func() {
 		result, err := service.Browse(context.Background(), &models.BrowseChoresParams{
 			Status: "all",

@@ -56,11 +56,25 @@ const (
 	ChoreStatusCompleted ChoreStatus = "completed"
 )
 
+type OwnerFilterMode string
+
+const (
+	OwnerFilterAll        OwnerFilterMode = "all"
+	OwnerFilterUnassigned OwnerFilterMode = "unassigned"
+	OwnerFilterProfile    OwnerFilterMode = "profile"
+)
+
+type OwnerFilter struct {
+	Mode OwnerFilterMode
+	Id   *int
+}
+
 type BrowseChoresParams struct {
-	Status ChoreStatus
-	Search string
-	Offset int
-	Limit  int
+	Status      ChoreStatus
+	OwnerFilter OwnerFilter
+	Search      string
+	Offset      int
+	Limit       int
 }
 
 type Chore struct {

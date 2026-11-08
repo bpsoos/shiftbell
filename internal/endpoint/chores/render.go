@@ -14,8 +14,7 @@ func (h *Handler) renderCollection(
 	ctx *echo.Context,
 	status int,
 	collection choreCollectionResponse,
-	selectedStatus choremodels.ChoreStatus,
-	search string,
+	params choremodels.BrowseChoresParams,
 	searchOpen bool,
 	autofocusSearch bool,
 ) error {
@@ -26,8 +25,7 @@ func (h *Handler) renderCollection(
 		ctx.Response().Header().Add(echo.HeaderVary, "HX-Current-URL")
 		model := collectionViewModel(
 			collection,
-			selectedStatus,
-			search,
+			params,
 			searchOpen,
 			autofocusSearch,
 		)

@@ -11,6 +11,7 @@ var (
 	ErrInvalidDescription    = errors.New("invalid description")
 	ErrInvalidSearch         = errors.New("invalid search")
 	ErrInvalidFilter         = errors.New("invalid filter")
+	ErrInvalidOwnerFilter    = errors.New("invalid owner filter")
 	ErrInvalidOffset         = errors.New("invalid offset")
 	ErrInvalidLimit          = errors.New("invalid limit")
 	ErrInvalidInterval       = errors.New("invalid interval")
