@@ -1,11 +1,13 @@
 package demo
 
 type Data struct {
+	Profiles        []string         `json:"profiles"`
 	OneOffChores    []OneOffChore    `json:"one_off_chores"`
 	ScheduledChores []ScheduledChore `json:"scheduled_chores"`
 }
 
 type OneOffChore struct {
+	Owner               string `json:"owner,omitempty"`
 	Name                string `json:"name"`
 	Description         string `json:"description"`
 	DeadlineDays        int    `json:"deadline_days"`
@@ -14,6 +16,7 @@ type OneOffChore struct {
 }
 
 type ScheduledChore struct {
+	Owner        string `json:"owner,omitempty"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
 	DeadlineDays int    `json:"deadline_days"`

@@ -8,6 +8,7 @@ import (
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
 	demomodels "github.com/bpsoos/shiftbell/internal/models/demo"
+	profilemodels "github.com/bpsoos/shiftbell/internal/models/profiles"
 	"github.com/bpsoos/shiftbell/internal/service/populate"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -22,6 +23,7 @@ func TestPopulate(t *testing.T) {
 var _ = Describe("Populate", func() {
 	var data *MockDataPersister
 	var chores *MockChorePersister
+	var profiles *MockProfileService
 	var service *populate.Service
 	var ctx context.Context
 	var timezone *time.Location
@@ -32,6 +34,7 @@ var _ = Describe("Populate", func() {
 	BeforeEach(func() {
 		data = NewMockDataPersister(GinkgoT())
 		chores = NewMockChorePersister(GinkgoT())
+		profiles = NewMockProfileService(GinkgoT())
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(context.Background())
 		DeferCleanup(cancel)
@@ -59,6 +62,7 @@ var _ = Describe("Populate", func() {
 			},
 		}
 		service = populate.NewService(&populate.Deps{
+			ProfileService: profiles,
 			DataPersister:  data,
 			ChorePersister: chores,
 			Now:            func() time.Time { return now },
@@ -66,9 +70,123 @@ var _ = Describe("Populate", func() {
 	})
 
 	It("leaves existing data alone", func() {
+		input.Profiles = []string{"Alex", "Sam"}
 		data.EXPECT().HasData(ctx).Return(true, nil).Once()
 		Expect(service.Populate(ctx, input)).To(Succeed())
 		Expect(chores.Calls).To(BeEmpty())
+		Expect(profiles.Calls).To(BeEmpty())
+	})
+
+	It("creates profiles from the display name list", func() {
+		data.EXPECT().HasData(ctx).Return(false, nil).Once()
+		profiles.EXPECT().Create(ctx, &profilemodels.CreateParams{Name: "Alex"}).
+			Return(&profilemodels.Profile{Id: 1, Name: "Alex"}, nil).Once()
+		profiles.EXPECT().Create(ctx, &profilemodels.CreateParams{Name: "Sam"}).
+			Return(&profilemodels.Profile{Id: 2, Name: "Sam"}, nil).Once()
+		Expect(
+			service.Populate(ctx, &demomodels.Data{Profiles: []string{"Alex", "Sam"}}),
+		).To(Succeed())
+	})
+
+	It("stops when a profile cannot be created", func() {
+		input.Profiles = []string{"Alex", "Sam"}
+		data.EXPECT().HasData(ctx).Return(false, nil).Once()
+		profiles.EXPECT().Create(ctx, &profilemodels.CreateParams{Name: "Alex"}).
+			Return(nil, failure).Once()
+		err := service.Populate(ctx, input)
+		Expect(err).To(MatchError(failure))
+		Expect(err.Error()).To(ContainSubstring(`create demo profile "Alex"`))
+		Expect(chores.Calls).To(BeEmpty())
+	})
+
+	It(
+		"assigns active and completed one-off chores using the created profile IDs",
+		func() {
+			data.EXPECT().HasData(ctx).Return(false, nil).Once()
+			profiles.EXPECT().Create(ctx, &profilemodels.CreateParams{Name: "Alex"}).
+				Return(&profilemodels.Profile{Id: 7, Name: "Alex"}, nil).Once()
+			profiles.EXPECT().Create(ctx, &profilemodels.CreateParams{Name: "Sam"}).
+				Return(&profilemodels.Profile{Id: 12, Name: "Sam"}, nil).Once()
+			chores.EXPECT().CreateManualOneOff(ctx, mock.Anything).
+				Return(&models.CreateChoreResult{Chore: &models.Chore{Id: 42}}, nil).
+				Once()
+			chores.EXPECT().CreateManualOneOff(ctx, mock.Anything).
+				Return(&models.CreateChoreResult{Chore: &models.Chore{Id: 43}}, nil).
+				Once()
+			chores.EXPECT().
+				SetAssignment(ctx, &models.SetAssignmentParams{Id: 42, OwnerProfileId: 7}).
+				Return(&models.ChoreDetails{}, nil).
+				Once()
+			chores.EXPECT().
+				SetAssignment(ctx, &models.SetAssignmentParams{Id: 43, OwnerProfileId: 12}).
+				Return(&models.ChoreDetails{}, nil).
+				Once()
+			chores.EXPECT().
+				MarkComplete(43, time.Date(2026, 10, 28, 0, 0, 0, 0, timezone)).
+				Return(nil).
+				Once()
+			Expect(service.Populate(ctx, &demomodels.Data{
+				Profiles: []string{"Alex", "Sam"},
+				OneOffChores: []demomodels.OneOffChore{
+					{Name: "Active errand", Owner: "Alex"},
+					{Name: "Finished errand", Owner: "Sam", CompletedDays: new(-1)},
+				},
+			})).To(Succeed())
+		},
+	)
+
+	It("assigns the chore created by a schedule", func() {
+		data.EXPECT().HasData(ctx).Return(false, nil).Once()
+		profiles.EXPECT().Create(ctx, &profilemodels.CreateParams{Name: "Alex"}).
+			Return(&profilemodels.Profile{Id: 7, Name: "Alex"}, nil).Once()
+		chores.EXPECT().CreateManualScheduled(ctx, mock.Anything).
+			Return(&models.CreateChoreResult{Chore: &models.Chore{Id: 42}}, nil).Once()
+		chores.EXPECT().
+			SetAssignment(ctx, &models.SetAssignmentParams{Id: 42, OwnerProfileId: 7}).
+			Return(&models.ChoreDetails{}, nil).
+			Once()
+		Expect(service.Populate(ctx, &demomodels.Data{
+			Profiles: []string{"Alex"},
+			ScheduledChores: []demomodels.ScheduledChore{
+				{Name: "Routine", Owner: "Alex", ScheduleName: "Weekly", IntervalDays: 7},
+			},
+		})).To(Succeed())
+	})
+
+	It("stops when assigning a one-off chore fails", func() {
+		data.EXPECT().HasData(ctx).Return(false, nil).Once()
+		profiles.EXPECT().Create(ctx, &profilemodels.CreateParams{Name: "Alex"}).
+			Return(&profilemodels.Profile{Id: 7, Name: "Alex"}, nil).Once()
+		chores.EXPECT().CreateManualOneOff(ctx, mock.Anything).
+			Return(&models.CreateChoreResult{Chore: &models.Chore{Id: 42}}, nil).Once()
+		chores.EXPECT().
+			SetAssignment(ctx, &models.SetAssignmentParams{Id: 42, OwnerProfileId: 7}).
+			Return(nil, failure).
+			Once()
+		Expect(service.Populate(ctx, &demomodels.Data{
+			Profiles: []string{"Alex"},
+			OneOffChores: []demomodels.OneOffChore{
+				{Name: "Errand", Owner: "Alex", CompletedDays: new(-1)},
+			},
+		})).To(MatchError(failure))
+	})
+
+	It("stops when assigning a scheduled chore fails", func() {
+		data.EXPECT().HasData(ctx).Return(false, nil).Once()
+		profiles.EXPECT().Create(ctx, &profilemodels.CreateParams{Name: "Alex"}).
+			Return(&profilemodels.Profile{Id: 7, Name: "Alex"}, nil).Once()
+		chores.EXPECT().CreateManualScheduled(ctx, mock.Anything).
+			Return(&models.CreateChoreResult{Chore: &models.Chore{Id: 42}}, nil).Once()
+		chores.EXPECT().
+			SetAssignment(ctx, &models.SetAssignmentParams{Id: 42, OwnerProfileId: 7}).
+			Return(nil, failure).
+			Once()
+		Expect(service.Populate(ctx, &demomodels.Data{
+			Profiles: []string{"Alex"},
+			ScheduledChores: []demomodels.ScheduledChore{
+				{Name: "Routine", Owner: "Alex", ScheduleName: "Weekly", IntervalDays: 7},
+			},
+		})).To(MatchError(failure))
 	})
 
 	It("stops when the pre-flight check fails", func() {

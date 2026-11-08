@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 
 	models "github.com/bpsoos/shiftbell/internal/models/demo"
@@ -32,7 +33,19 @@ func Load(path string) (*models.Data, error) {
 	if err := decoder.Decode(new(any)); !errors.Is(err, io.EOF) {
 		return nil, errors.New("demo data must contain a single JSON object")
 	}
+	for i, name := range data.Profiles {
+		if strings.TrimSpace(name) == "" {
+			return nil, fmt.Errorf("profiles[%d] is required", i)
+		}
+	}
 	for i, chore := range data.OneOffChores {
+		if chore.Owner != "" && !slices.Contains(data.Profiles, chore.Owner) {
+			return nil, fmt.Errorf(
+				"one_off_chores[%d].owner %q is not in profiles",
+				i,
+				chore.Owner,
+			)
+		}
 		if strings.TrimSpace(chore.Name) == "" {
 			return nil, fmt.Errorf("one_off_chores[%d].name is required", i)
 		}
@@ -44,6 +57,13 @@ func Load(path string) (*models.Data, error) {
 		}
 	}
 	for i, chore := range data.ScheduledChores {
+		if chore.Owner != "" && !slices.Contains(data.Profiles, chore.Owner) {
+			return nil, fmt.Errorf(
+				"scheduled_chores[%d].owner %q is not in profiles",
+				i,
+				chore.Owner,
+			)
+		}
 		if strings.TrimSpace(chore.Name) == "" {
 			return nil, fmt.Errorf("scheduled_chores[%d].name is required", i)
 		}

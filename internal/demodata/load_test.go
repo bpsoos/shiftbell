@@ -27,20 +27,23 @@ var _ = Describe("Load", func() {
 		"loads custom data and distinguishes omitted completion from completion today",
 		func() {
 			Expect(os.WriteFile(path, []byte(`{
+			"profiles": ["Alex", "Sam"],
 			"one_off_chores": [
-				{"name":"Buy milk","description":"Two bottles","deadline_days":2,"save_as_chore_template":true},
+				{"name":"Buy milk","owner":"Alex","description":"Two bottles","deadline_days":2,"save_as_chore_template":true},
 				{"name":"Call back","deadline_days":-1,"completed_days":0}
 			],
 			"scheduled_chores": [
-				{"name":"Sweep","description":"Kitchen","deadline_days":-3,"schedule_name":"Weekly sweep","interval_days":7}
+				{"name":"Sweep","owner":"Sam","description":"Kitchen","deadline_days":-3,"schedule_name":"Weekly sweep","interval_days":7}
 			]
 		}`), 0o600)).To(Succeed())
 			data, err := demodata.Load(path)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data).To(Equal(&models.Data{
+				Profiles: []string{"Alex", "Sam"},
 				OneOffChores: []models.OneOffChore{
 					{
 						Name:                "Buy milk",
+						Owner:               "Alex",
 						Description:         "Two bottles",
 						DeadlineDays:        2,
 						SaveAsChoreTemplate: true,
@@ -50,6 +53,7 @@ var _ = Describe("Load", func() {
 				ScheduledChores: []models.ScheduledChore{
 					{
 						Name:         "Sweep",
+						Owner:        "Sam",
 						Description:  "Kitchen",
 						DeadlineDays: -3,
 						ScheduleName: "Weekly sweep",
@@ -111,6 +115,20 @@ var _ = Describe("Load", func() {
 		Entry("null", "null"),
 		Entry("array root", "[]"),
 		Entry("unknown field", `{"one_off_chore":[]}`),
+		Entry("blank profile name", `{"profiles":[" "]}`),
+		Entry("invalid profile name type", `{"profiles":[42]}`),
+		Entry(
+			"unknown one-off owner",
+			`{"profiles":["Alex"],"one_off_chores":[{"name":"Chore","owner":"Sam"}]}`,
+		),
+		Entry(
+			"unknown scheduled owner",
+			`{"profiles":["Alex"],"scheduled_chores":[{"name":"Chore","owner":"Sam","schedule_name":"Weekly","interval_days":7}]}`,
+		),
+		Entry(
+			"owner without profiles",
+			`{"one_off_chores":[{"name":"Chore","owner":"Alex"}]}`,
+		),
 		Entry(
 			"unknown nested field",
 			`{"one_off_chores":[{"name":"Chore","deadlin_days":1}]}`,

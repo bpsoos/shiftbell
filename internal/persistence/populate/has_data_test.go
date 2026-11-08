@@ -50,6 +50,10 @@ var _ = Describe("HasData", func() {
 		),
 		Entry("a template", "INSERT INTO chore_templates (name) VALUES ('Template')"),
 		Entry(
+			"a profile",
+			"INSERT INTO profiles (name, name_key) VALUES ('Alex', 'alex')",
+		),
+		Entry(
 			"an inactive template",
 			"INSERT INTO chore_templates (name, deactivated_at) VALUES ('Template', '2026-01-01')",
 		),

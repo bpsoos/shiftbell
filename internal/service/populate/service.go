@@ -5,9 +5,11 @@ import (
 	"time"
 
 	models "github.com/bpsoos/shiftbell/internal/models/chores"
+	profilemodels "github.com/bpsoos/shiftbell/internal/models/profiles"
 )
 
 type Service struct {
+	profileService ProfileService
 	dataPersister  DataPersister
 	chorePersister ChorePersister
 	now            func() time.Time
@@ -15,6 +17,7 @@ type Service struct {
 }
 
 type Deps struct {
+	ProfileService ProfileService
 	DataPersister  DataPersister
 	ChorePersister ChorePersister
 	Now            func() time.Time
@@ -26,6 +29,7 @@ type Config struct {
 
 func NewService(deps *Deps, config *Config) *Service {
 	return &Service{
+		profileService: deps.ProfileService,
 		dataPersister:  deps.DataPersister,
 		chorePersister: deps.ChorePersister,
 		now:            deps.Now,
@@ -37,7 +41,15 @@ type DataPersister interface {
 	HasData(context.Context) (bool, error)
 }
 
+type ProfileService interface {
+	Create(context.Context, *profilemodels.CreateParams) (*profilemodels.Profile, error)
+}
+
 type ChorePersister interface {
+	SetAssignment(
+		context.Context,
+		*models.SetAssignmentParams,
+	) (*models.ChoreDetails, error)
 	CreateManualOneOff(
 		context.Context,
 		*models.CreateManualOneOffParams,

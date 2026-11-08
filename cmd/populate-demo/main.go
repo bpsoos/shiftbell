@@ -11,7 +11,10 @@ import (
 	"github.com/bpsoos/shiftbell/internal/logging"
 	chorespersistence "github.com/bpsoos/shiftbell/internal/persistence/chores"
 	populatepersistence "github.com/bpsoos/shiftbell/internal/persistence/populate"
+	profilespersistence "github.com/bpsoos/shiftbell/internal/persistence/profiles"
+	"github.com/bpsoos/shiftbell/internal/service/normalization"
 	populateservice "github.com/bpsoos/shiftbell/internal/service/populate"
+	profilesservice "github.com/bpsoos/shiftbell/internal/service/profiles"
 )
 
 func main() {
@@ -41,6 +44,13 @@ func execute() int {
 		}
 	}()
 	service := populateservice.NewService(&populateservice.Deps{
+		ProfileService: profilesservice.NewService(&profilesservice.Deps{
+			Persister: profilespersistence.NewPersister(
+				&profilespersistence.Deps{Db: db},
+				&profilespersistence.Config{MaxProfiles: 50},
+			),
+			Normalizer: normalization.New(normalization.Config{NameLimit: 200}),
+		}),
 		DataPersister: populatepersistence.NewPersister(
 			&populatepersistence.PersisterDeps{
 				Db: db,
