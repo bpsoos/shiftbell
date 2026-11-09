@@ -6,6 +6,8 @@ import (
 )
 
 var (
+	ErrInvalidUsername       = errors.New("invalid username")
+	ErrInvalidPassword       = errors.New("invalid password")
 	ErrInvalidName           = errors.New("invalid name")
 	ErrInvalidScheduleName   = fmt.Errorf("%w", ErrInvalidName)
 	ErrInvalidDescription    = errors.New("invalid description")
@@ -19,6 +21,7 @@ var (
 	ErrInvalidCompletionDate = errors.New("invalid completion date")
 	ErrInvalidUTF8           = errors.New("invalid UTF-8")
 	ErrRequired              = errors.New("value is required")
+	ErrTooShort              = errors.New("value is too short")
 	ErrTooLong               = errors.New("value is too long")
 	ErrDisallowedCharacter   = errors.New("value contains a disallowed character")
 )

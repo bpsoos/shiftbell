@@ -13,6 +13,7 @@ require (
 	github.com/onsi/gomega v1.44.0
 	github.com/stretchr/testify v1.12.1
 	github.com/yuin/goldmark v1.8.7
+	golang.org/x/crypto v0.58.0
 	golang.org/x/text v0.43.0
 	modernc.org/sqlite v1.61.0
 )
